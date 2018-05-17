@@ -14,4 +14,8 @@ def load(info):
     html_vars = {'title': 'Vaui', 'externalJsUrls': []}
     webroot.updateHtmlVars(html_vars)
     
+    info['serverRoot'], info['serverRoot'].girder = (webroot,
+                                                     info['serverRoot'])
+    info['serverRoot'].api = info['serverRoot'].girder.api
+
     info['apiRoot'].workingSet = workingSet.WorkingSetResource()

@@ -14,10 +14,15 @@
         :drawing.sync='drawing'
         :editing.sync='editing'
         :editable='true'
-        :annotations.sync='annotations'>
+        :annotations.sync='edit.annotations'>
       </GeojsAnnotationLayer>
       <GeojsGeojsonLayer
-        :geojson='workingSetRegions'>
+        :geojson='editingWorkingSetAllRegionFilters'>
+      </GeojsGeojsonLayer>
+      <GeojsGeojsonLayer 
+        v-if='editingWorkingSetSelectedRegionFilters'
+        :geojson='editingWorkingSetSelectedRegionFilters'
+        :featureStyle='{polygon:{fillColor:"red"}}'>
       </GeojsGeojsonLayer>
     </GeojsMapViewport>
 
@@ -31,11 +36,11 @@
         <SidePanelAction
         v-for="action in actions" 
         :key='action.name'
-        @click.stop='drawing = action.name'>
+        @click.stop='clickAction(action.name)'>
         <v-icon>{{action.icon}}</v-icon>
         </SidePanelAction>
       </template>
-      <v-expansion-panel v-if='!editingWorkingSet'>
+      <v-expansion-panel v-if='!edit.workingSet'>
         <v-expansion-panel-content
           v-for="workingSet in workingSets" 
           :key="workingSet.name">
@@ -43,7 +48,7 @@
           <v-container grid-list-xs>
             <v-layout row wrap>
               <v-flex xs2 offset-xs1>
-                <v-btn block color='grey lighten-3' depressed @click="editingWorkingSet=workingSet">
+                <v-btn block color='grey lighten-3' depressed @click="edit.workingSet=workingSet">
                   <v-icon>edit</v-icon>
                 </v-btn>
               </v-flex>
@@ -57,11 +62,13 @@
           </v-container>
         </v-expansion-panel-content>
       </v-expansion-panel>
-      <new-working-set v-if='!editingWorkingSet' default='working-set-1' @confirm='addNewWorkingSet' />
+      <new-working-set v-if='!edit.workingSet' default='working-set-1' @confirm='addNewWorkingSet' />
       <EditWorkingSet 
-      v-if='editingWorkingSet'
-      :annotations.sync='annotations'
-      :workingSet.sync='editingWorkingSet' />
+      v-if='edit.workingSet'
+      :annotations.sync='edit.annotations'
+      :workingSet.sync='edit.workingSet'
+      :selectedFilter.sync='edit.selectedFilter'
+      :pickDataRange.sync='edit.pickDateRange' />
     </SidePanel>
   </FullScreenViewport>
 </template>
@@ -89,8 +96,12 @@ export default {
   },
   data() {
     return {
-      editingWorkingSet: null,
-      annotations: [],
+      edit: {
+        workingSet: null,
+        selectedFilter: null,
+        annotations: [],
+        pickDateRange: false
+      },
       viewport: {
         center: [-100, 30],
         zoom: 4
@@ -101,24 +112,37 @@ export default {
   },
   computed: {
     actions() {
-      if (this.editingWorkingSet) {
-        return [{ name: "rectangle", icon: "aspect_ratio" }];
+      if (this.edit.workingSet) {
+        return [
+          { name: "rectangle", icon: "aspect_ratio" },
+          { name: "daterange", icon: "date_range" }
+        ];
       }
       return [];
     },
-    workingSetRegions() {
-      if (!this.editingWorkingSet) {
-        return {
-          type: "Point",
-          coordinates: [98.0859375, 47.27922900257082]
-        };
+    editingWorkingSetAllRegionFilters() {
+      if (!this.edit.workingSet) {
+        return null;
       }
       return {
         type: "FeatureCollection",
-        features: this.editingWorkingSet.filters
-          .filter(filter => filter.type === "region")
+        features: this.edit.workingSet.filters
+          .filter(
+            filter =>
+              filter.type === "region" && filter !== this.edit.selectedFilter
+          )
           .map(filter => filter.geojson)
       };
+    },
+    editingWorkingSetSelectedRegionFilters() {
+      if (
+        !this.edit.workingSet ||
+        !this.edit.selectedFilter ||
+        this.edit.selectedFilter.type !== "region"
+      ) {
+        return null;
+      }
+      return this.edit.selectedFilter.geojson;
     },
     ...mapState(["workingSets"])
   },
@@ -126,8 +150,15 @@ export default {
     this.$store.dispatch("loadWorkingSets");
   },
   methods: {
-    clickAction(drawing) {
-      this.drawing = drawing;
+    clickAction(name) {
+      switch (name) {
+        case "rectangle":
+          this.drawing = name;
+          break;
+        case "daterange":
+          this.edit.pickDateRange = true;
+          break;
+      }
     },
     clearItems() {
       this.panel.items = 0;
@@ -135,7 +166,7 @@ export default {
     addNewWorkingSet(name) {
       this.$store.dispatch("tryAddWorkingSets", name).then(workingSet => {
         if (workingSet) {
-          this.editingWorkingSet = workingSet;
+          this.edit.workingSet = workingSet;
         }
       });
     },
