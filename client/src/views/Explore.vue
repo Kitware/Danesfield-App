@@ -8,21 +8,25 @@
     >
       <GeojsTileLayer
         url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
-        attribution='© OpenStreetMap contributors, © CARTO'>
+        attribution='© OpenStreetMap contributors, © CARTO'
+        :zIndex='0'>
       </GeojsTileLayer>
       <GeojsAnnotationLayer
         :drawing.sync='drawing'
         :editing.sync='editing'
         :editable='true'
-        :annotations.sync='edit.annotations'>
+        :annotations.sync='edit.annotations'
+        :zIndex='3'>
       </GeojsAnnotationLayer>
       <GeojsGeojsonLayer
-        :geojson='editingWorkingSetAllRegionFilters'>
+        :geojson='editingWorkingSetAllRegionFilters'
+        :zIndex='1'>
       </GeojsGeojsonLayer>
       <GeojsGeojsonLayer 
         v-if='editingWorkingSetSelectedRegionFilters'
         :geojson='editingWorkingSetSelectedRegionFilters'
-        :featureStyle='{polygon:{fillColor:"red"}}'>
+        :featureStyle='{polygon:{fillColor:"red"}}'
+        :zIndex='2'>
       </GeojsGeojsonLayer>
     </GeojsMapViewport>
 
@@ -40,35 +44,39 @@
         <v-icon>{{action.icon}}</v-icon>
         </SidePanelAction>
       </template>
-      <v-expansion-panel v-if='!edit.workingSet'>
-        <v-expansion-panel-content
-          v-for="workingSet in workingSets" 
-          :key="workingSet.name">
-          <div slot='header'>{{workingSet.name}}</div>
-          <v-container grid-list-xs>
-            <v-layout row wrap>
-              <v-flex xs2 offset-xs1>
-                <v-btn block color='grey lighten-3' depressed @click="edit.workingSet=workingSet">
-                  <v-icon>edit</v-icon>
-                </v-btn>
-              </v-flex>
-              <v-flex xs4 offset-xs4>
-                <v-btn block color='primary' class='' depressed @click="focusWorkingSet(workingSet)">
-                  Focus
-                  <v-icon class='pl-1'>center_focus_strong</v-icon>
-                </v-btn>
-              </v-flex>
-            </v-layout>
-          </v-container>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <new-working-set v-if='!edit.workingSet' default='working-set-1' @confirm='addNewWorkingSet' />
-      <EditWorkingSet 
-      v-if='edit.workingSet'
-      :annotations.sync='edit.annotations'
-      :workingSet.sync='edit.workingSet'
-      :selectedFilter.sync='edit.selectedFilter'
-      :pickDataRange.sync='edit.pickDateRange' />
+      <transition name="fade" mode="out-in">
+        <div v-if='!edit.workingSet'>
+          <v-expansion-panel>
+            <v-expansion-panel-content
+              v-for="workingSet in workingSets" 
+              :key="workingSet.name">
+              <div slot='header'>{{workingSet.name}}</div>
+              <v-container grid-list-xs>
+                <v-layout row wrap>
+                  <v-flex xs2 offset-xs1>
+                    <v-btn block color='grey lighten-3' depressed @click="edit.workingSet=workingSet">
+                      <v-icon>edit</v-icon>
+                    </v-btn>
+                  </v-flex>
+                  <v-flex xs4 offset-xs4>
+                    <v-btn block color='primary' class='' depressed @click="focusWorkingSet(workingSet)">
+                      Focus
+                      <v-icon class='pl-1'>center_focus_strong</v-icon>
+                    </v-btn>
+                  </v-flex>
+                </v-layout>
+              </v-container>
+            </v-expansion-panel-content>
+          </v-expansion-panel>
+          <new-working-set default='working-set-1' @confirm='addNewWorkingSet' />
+        </div>
+        <EditWorkingSet
+        v-else
+        :annotations.sync='edit.annotations'
+        :workingSet.sync='edit.workingSet'
+        :selectedFilter.sync='edit.selectedFilter'
+        :pickDataRange.sync='edit.pickDateRange' />
+      </transition>
     </SidePanel>
   </FullScreenViewport>
 </template>

@@ -12,6 +12,7 @@
     "postcss-url": "^7.3.2",
     "pug": "^2.0.3",
     "pug-loader": "^2.4.0",
+    "pug-plain-loader": "^1.0.0",
     "resonantgeo": "file:../../resonantgeo",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",

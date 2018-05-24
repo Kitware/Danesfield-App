@@ -6,13 +6,16 @@
     >
       <GeojsTileLayer
         url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
-        attribution='© OpenStreetMap contributors, © CARTO'>
+        attribution='© OpenStreetMap contributors, © CARTO'
+        :zIndex='0'>
       </GeojsTileLayer>
       <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
-        :url='getTileURL(dataset)'>
+        :url='getTileURL(dataset)'
+        :zIndex='1'>
       </GeojsTileLayer>
       <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
-        :geojson='datasetDataMap.get(dataset)'>
+        :geojson='datasetDataMap.get(dataset)'
+        :zIndex='2'>
       </GeojsGeojsonLayer>
     </GeojsMapViewport>
 
