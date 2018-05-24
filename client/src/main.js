@@ -3,6 +3,7 @@ import Vuetify from 'vuetify'
 import ResonantGeo from 'resonantgeo/src';
 import { setApiUrl, getTokenFromCookie } from 'girder/src/rest';
 import { API_URL } from './constants';
+import eventstream from './utils/eventstream';
 
 import App from './App.vue';
 import router from './router';
@@ -14,6 +15,7 @@ Vue.use(Vuetify);
 Vue.use(ResonantGeo);
 
 setApiUrl(API_URL);
+eventstream.open();
 store.commit('auth/setToken', getTokenFromCookie());
 store.dispatch('auth/whoami').then(() => new Vue({
   router,

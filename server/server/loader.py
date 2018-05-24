@@ -3,7 +3,7 @@
 
 import os
 from girder.utility.webroot import Webroot
-from rest import workingSet
+from rest import workingSet, processing
 
 
 def load(info):
@@ -19,3 +19,4 @@ def load(info):
     info['serverRoot'].api = info['serverRoot'].girder.api
 
     info['apiRoot'].workingSet = workingSet.WorkingSetResource()
+    info['apiRoot'].processing = processing.ProcessingResource()

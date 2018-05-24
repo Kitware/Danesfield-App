@@ -26,14 +26,9 @@ body,
 </style>
 
 <script>
-// import AppToolbar from "resonantgeo/AppToolbar";
-// import SidePanel from "resonantgeo/SidePanel";
-
 export default {
   name: "App",
   components: {
-    // AppToolbar,
-    // SidePanel
   },
   data() {
     return {

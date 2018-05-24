@@ -27,7 +27,7 @@
           <v-menu offset-y v-if="action.name==='process'">
             <v-icon slot="activator">{{action.icon}}</v-icon>
             <v-list>
-              <v-list-tile v-for="process in processes" :key="process" @click="123">
+              <v-list-tile v-for="process in processes" :key="process" @click="processClicked(process)">
                 <v-list-tile-title>{{process}}</v-list-tile-title>
               </v-list-tile>
             </v-list>
@@ -79,6 +79,8 @@ import { mapState } from "vuex";
 import loadDataset from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
+import eventstream from "../utils/eventstream";
+import rest from "girder/src/rest";
 
 export default {
   name: "focus",
@@ -93,7 +95,7 @@ export default {
       selectedDatasetIds: {},
       drawing: false,
       editing: false,
-      processes: ["centroid", "buffer"]
+      processes: ["DSM"]
     };
   },
   computed: {
@@ -125,6 +127,12 @@ export default {
     this.datasetDataMap = new WeakMap();
     this.$store.dispatch("loadWorkingSets").then(() => {
       if (this.selectedWorkingSetId) {
+        this.loadDatasets();
+      }
+    });
+
+    eventstream.on("job_status", e => {
+      if (e.data.status === 3) {
         this.loadDatasets();
       }
     });
@@ -171,6 +179,12 @@ export default {
         "encoding=PNG&projection=EPSG:3857"
       )}`;
       return url;
+    },
+    processClicked(process) {
+      var itemId = Object.entries(this.selectedDatasetIds).filter(
+        ([itemId, selected]) => selected
+      )[0][0];
+      return rest.post(`/processing/${itemId}`);
     }
   }
 };
