@@ -1,6 +1,6 @@
 <template>
   <div class='new-workingset'>
-    <transition name="fade">
+    <transition name="fade" mode='out-in'>
       <v-btn flat block large 
       class='my-0 button'
       v-if="!adding"
@@ -9,9 +9,7 @@
         <v-icon class='mr-2'>add_circle</v-icon>
         New working set
       </v-btn>
-    </transition>
-    <transition name="fade">
-    <v-text-field
+      <v-text-field
         class="input"
         v-if="adding"
         name="Name"
@@ -41,15 +39,6 @@
 .button,
 .input {
   position: absolute;
-}
-.fade-enter-active,
-.fade-leave-active {
-  position: absolute;
-  transition: opacity 0.3s;
-}
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>
 

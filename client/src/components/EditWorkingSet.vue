@@ -2,13 +2,15 @@
   <div class='edit-workingset'>
     <div class='main'>
       <div class='datasets'>
-        <v-container grid-list-xs>
-          <v-layout row wrap>
-            <v-flex xs10 offset-xs1 v-for="dataset in datasets" :key="dataset._id">
-              <v-chip class='dataset grey lighten-3'>{{dataset.name}}</v-chip>
-            </v-flex>
-          </v-layout>
-        </v-container>
+        <transition name='fade'>
+          <v-container grid-list-xs v-if="datasets.length">
+            <v-layout row wrap>
+              <v-flex xs10 offset-xs1 v-for="dataset in datasets" :key="dataset._id">
+                <v-chip class='dataset grey lighten-3'>{{dataset.name}}</v-chip>
+              </v-flex>
+            </v-layout>
+          </v-container>
+        </transition>
       </div>
       <v-expansion-panel class='filters'>
         <v-expansion-panel-content :value='true'>

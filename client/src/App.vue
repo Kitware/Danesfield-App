@@ -5,18 +5,30 @@
     :title='title' 
     :userIcon='userIcon' 
     @click-user='loginDialog = true' />
-    
-    <router-view />
+
+    <transition name="fade" mode='out-in'>
+      <router-view></router-view>
+    </transition>
 </v-app>
 </template>
 
 <style>
+/* global */
 html,
 body,
 .application,
 .application--wrap {
   height: 100vh;
   overflow: hidden;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* overwrite */
