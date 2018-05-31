@@ -79,7 +79,7 @@
 
 <script>
 import { mapState } from "vuex";
-import loadDataset from "../utils/loadDataset";
+import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
@@ -130,13 +130,13 @@ export default {
     this.datasetDataMap = new WeakMap();
     this.$store.dispatch("loadWorkingSets").then(() => {
       if (this.selectedWorkingSetId) {
-        this.loadDatasets();
+        this.load();
       }
     });
 
     eventstream.on("job_status", e => {
       if (e.data.status === 3) {
-        this.loadDatasets();
+        this.load();
       }
     });
   },
@@ -146,22 +146,18 @@ export default {
         this.datasets = [];
         this.selectedDatasetIds = {};
       }
-      this.loadDatasets();
+      this.load();
     }
   },
   methods: {
-    addNewWorkingSet(name) {
-      this.$store.dispatch("tryAddWorkingSets", name).then(workingSet => {
-        if (workingSet) {
-          this.editingWorkingSet = workingSet;
-        }
-      });
-    },
     change(workingSetId) {
       this.$store.commit("selectWorkingSetId", workingSetId);
     },
-    loadDatasets() {
-      loadDataset().then(datasets => {
+    load() {
+      var selectedWorkingSet = this.workingSets.filter(
+        workingSet => workingSet._id === this.selectedWorkingSetId
+      )[0];
+      loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         return Promise.all(
           datasets
             .filter(dataset => dataset.meta.type === "geojson")

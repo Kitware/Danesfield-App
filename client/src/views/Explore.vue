@@ -15,24 +15,27 @@
         :drawing.sync='drawing'
         :editing.sync='editing'
         :editable='true'
-        :annotations.sync='edit.annotations'
+        :annotations='annotations'
+        @update:annotations="$store.commit('filter/setAnnotations',$event)"
         :zIndex='3'>
       </GeojsAnnotationLayer>
       <GeojsGeojsonLayer
-        :geojson='editingWorkingSetAllRegionFilters'
+        v-if='editingConditionsGeojson'
+        :geojson='editingConditionsGeojson'
         :zIndex='1'>
       </GeojsGeojsonLayer>
       <GeojsGeojsonLayer 
-        v-if='editingWorkingSetSelectedRegionFilters'
-        :geojson='editingWorkingSetSelectedRegionFilters'
+        v-if='editingSelectedConditionGeojson'
+        :geojson='editingSelectedConditionGeojson'
         :featureStyle='{polygon:{fillColor:"red"}}'
         :zIndex='2'>
       </GeojsGeojsonLayer>
     </GeojsMapViewport>
 
     <SidePanel
+    class='side-panel'
     :top='64'
-    :toolbar='{title: "Working Sets"}'
+    :toolbar='{title}'
     :expanded='true'
     :footer='false'
     >
@@ -44,39 +47,26 @@
         <v-icon>{{action.icon}}</v-icon>
         </SidePanelAction>
       </template>
-      <transition name="fade" mode="out-in">
-        <div v-if='!edit.workingSet'>
-          <v-expansion-panel>
-            <v-expansion-panel-content
-              v-for="workingSet in workingSets" 
-              :key="workingSet.name">
-              <div slot='header'>{{workingSet.name}}</div>
-              <v-container grid-list-xs>
-                <v-layout row wrap>
-                  <v-flex xs2 offset-xs1>
-                    <v-btn block color='grey lighten-3' depressed @click="edit.workingSet=workingSet">
-                      <v-icon>edit</v-icon>
-                    </v-btn>
-                  </v-flex>
-                  <v-flex xs4 offset-xs4>
-                    <v-btn block color='primary' class='' depressed @click="focusWorkingSet(workingSet)">
-                      Focus
-                      <v-icon class='pl-1'>center_focus_strong</v-icon>
-                    </v-btn>
-                  </v-flex>
-                </v-layout>
-              </v-container>
-            </v-expansion-panel-content>
-          </v-expansion-panel>
-          <new-working-set default='working-set-1' @confirm='addNewWorkingSet' />
-        </div>
-        <EditWorkingSet
-        v-else
-        :annotations.sync='edit.annotations'
-        :workingSet.sync='edit.workingSet'
-        :selectedFilter.sync='edit.selectedFilter'
-        :pickDataRange.sync='edit.pickDateRange' />
-      </transition>
+      <div class='main'>
+        <transition name="slide-fade" mode="out-in">
+         <WorkingSetModule 
+            v-if="exploreTab==='workingSet'"
+           />
+          <FilterModule 
+            v-if="exploreTab==='filter'"
+           />
+        </transition>
+      </div>
+      <v-bottom-nav :value="true" :active="exploreTab" @update:active="$store.commit('setExploreTab',$event)" color="transparent">
+        <v-btn flat color="primary" value="workingSet">
+          <span>Working sets</span>
+          <v-icon>history</v-icon>
+        </v-btn>
+        <v-btn flat color="primary" value="filter">
+          <span>Filters</span>
+          <v-icon>place</v-icon>
+        </v-btn>
+      </v-bottom-nav>
     </SidePanel>
   </FullScreenViewport>
 </template>
@@ -85,31 +75,32 @@
 .map {
   z-index: 0;
 }
-// overwrite
-.expansion-panel {
-  box-shadow: none;
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 }
 </style>
 <script>
-import { mapState } from "vuex";
+import { mapState, mapGetters } from "vuex";
 
-import NewWorkingSet from "../components/NewWorkingSet";
-import EditWorkingSet from "../components/EditWorkingSet";
+import WorkingSetModule from "./WorkingSetModule";
+import FilterModule from "./FilterModule";
 
 export default {
   name: "explore",
   components: {
-    NewWorkingSet,
-    EditWorkingSet
+    WorkingSetModule,
+    FilterModule
   },
   data() {
     return {
-      edit: {
-        workingSet: null,
-        selectedFilter: null,
-        annotations: [],
-        pickDateRange: false
-      },
       viewport: {
         center: [-100, 30],
         zoom: 4
@@ -120,7 +111,7 @@ export default {
   },
   computed: {
     actions() {
-      if (this.edit.workingSet) {
+      if (this.editingFilter) {
         return [
           { name: "rectangle", icon: "aspect_ratio" },
           { name: "daterange", icon: "date_range" }
@@ -128,59 +119,48 @@ export default {
       }
       return [];
     },
-    editingWorkingSetAllRegionFilters() {
-      if (!this.edit.workingSet) {
-        return null;
+    title() {
+      switch (this.exploreTab) {
+        case "workingSet":
+          if (!this.editingWorkingSet) {
+            return "Working Sets";
+          } else {
+            return "Edit Working Set";
+          }
+        case "filter":
+          if (!this.editingFilter) {
+            return "Filters";
+          } else {
+            return "Edit Filter";
+          }
       }
-      return {
-        type: "FeatureCollection",
-        features: this.edit.workingSet.filters
-          .filter(
-            filter =>
-              filter.type === "region" && filter !== this.edit.selectedFilter
-          )
-          .map(filter => filter.geojson)
-      };
     },
-    editingWorkingSetSelectedRegionFilters() {
-      if (
-        !this.edit.workingSet ||
-        !this.edit.selectedFilter ||
-        this.edit.selectedFilter.type !== "region"
-      ) {
-        return null;
-      }
-      return this.edit.selectedFilter.geojson;
-    },
-    ...mapState(["workingSets"])
+    ...mapState(["exploreTab"]),
+    ...mapState("workingSet", ["editingWorkingSet"]),
+    ...mapState("filter", [
+      "editingFilter",
+      "annotations",
+      "selectedCondition"
+    ]),
+    ...mapGetters("filter", [
+      "editingConditionsGeojson",
+      "editingSelectedConditionGeojson"
+    ])
   },
   created() {
     this.$store.dispatch("loadWorkingSets");
+    this.$store.dispatch("loadFilters");
   },
   methods: {
     clickAction(name) {
       switch (name) {
         case "rectangle":
-          this.drawing = name;
+          this.drawing = this.drawing !== name ? name : null;
           break;
         case "daterange":
-          this.edit.pickDateRange = true;
+          this.$store.commit("filter/setPickDateRange", true);
           break;
       }
-    },
-    clearItems() {
-      this.panel.items = 0;
-    },
-    addNewWorkingSet(name) {
-      this.$store.dispatch("tryAddWorkingSets", name).then(workingSet => {
-        if (workingSet) {
-          this.edit.workingSet = workingSet;
-        }
-      });
-    },
-    focusWorkingSet(workingSet) {
-      this.$store.commit("selectWorkingSetId", workingSet._id);
-      this.$router.push("focus");
     }
   }
 };

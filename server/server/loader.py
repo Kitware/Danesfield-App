@@ -3,20 +3,13 @@
 
 import os
 from girder.utility.webroot import Webroot
-from rest import workingSet, processing
+from rest import workingSet, processing, filter
 
 
 def load(info):
-    # Load the mako template for Vaui and serve it as the root document.
-    mako = os.path.join(os.path.dirname(__file__), "index.mako")
-    webroot = Webroot(mako)
-    webroot.updateHtmlVars(info['serverRoot'].vars)
-    html_vars = {'title': 'Vaui', 'externalJsUrls': []}
-    webroot.updateHtmlVars(html_vars)
-    
-    info['serverRoot'], info['serverRoot'].girder = (webroot,
-                                                     info['serverRoot'])
+    info['serverRoot'].girder = info['serverRoot']
     info['serverRoot'].api = info['serverRoot'].girder.api
 
     info['apiRoot'].workingSet = workingSet.WorkingSetResource()
+    info['apiRoot'].filter = filter.FilterResource()
     info['apiRoot'].processing = processing.ProcessingResource()

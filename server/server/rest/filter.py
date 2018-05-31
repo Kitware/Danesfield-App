@@ -24,15 +24,15 @@ from girder.api.describe import autoDescribeRoute, Description
 from girder.constants import AccessType
 from girder.api.rest import Resource, setResponseHeader, rawResponse
 from girder.models.folder import Folder
-from ..models.workingSet import WorkingSet
+from ..models.filter import Filter
 
 
-class WorkingSetResource(Resource):
+class FilterResource(Resource):
 
     def __init__(self):
-        super(WorkingSetResource, self).__init__()
+        super(FilterResource, self).__init__()
 
-        self.resourceName = 'workingSet'
+        self.resourceName = 'filter'
         self.route('GET', (), self.getAll)
         self.route('GET', (':id',), self.get)
         self.route('POST', (), self.create)
@@ -46,17 +46,17 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def getAll(self, params):
-        return list(WorkingSet().find({}))
+        return list(Filter().find({}))
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=Filter, destName='filter')
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
     @access.user
-    def get(self, workingSet, params):
-        return workingSet
+    def get(self, filter, params):
+        return filter
 
     @autoDescribeRoute(
         Description('')
@@ -66,28 +66,28 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def create(self, data, params):
-        return WorkingSet().save(data)
+        return Filter().save(data)
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=Filter, destName='filter')
         .jsonParam('data', '', requireObject=True, paramType='body')
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
     @access.user
-    def edit(self, workingSet, data, params):
+    def edit(self, filter, data, params):
         data.pop('_id', None)
-        workingSet.update(data)
-        return WorkingSet().save(workingSet)
+        filter.update(data)
+        return Filter().save(filter)
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=Filter, destName='filter')
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
     @access.user
-    def delete(self, workingSet, params):
-        WorkingSet().remove(workingSet)
+    def delete(self, filter, params):
+        Filter().remove(filter)
         return

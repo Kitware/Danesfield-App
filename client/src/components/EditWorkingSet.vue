@@ -1,35 +1,42 @@
 <template>
   <div class='edit-workingset'>
     <div class='main'>
-      <div class='datasets'>
-        <transition name='fade'>
-          <v-container grid-list-xs v-if="datasets.length">
-            <v-layout row wrap>
-              <v-flex xs10 offset-xs1 v-for="dataset in datasets" :key="dataset._id">
-                <v-chip class='dataset grey lighten-3'>{{dataset.name}}</v-chip>
-              </v-flex>
-            </v-layout>
-          </v-container>
-        </transition>
-      </div>
-      <v-expansion-panel class='filters'>
-        <v-expansion-panel-content :value='true'>
-          <div slot='header'>Filters</div>
-            <v-expansion-panel>
-              <v-expansion-panel-content
-                expand-icon="arrow_drop_down"
-                v-for="(filter,i) in workingSet.filters" 
-                :key="i" @mouseenter.native="setSelectedFilter(filter)" @mouseleave.native="setSelectedFilter(null)">
-                <div slot='header'><v-icon class="mr-2">{{getFilterIcon(filter)}}</v-icon>{{getFilterDisplayType(filter)}}<v-icon class="filter-delete" @click.stop='deleteFilter(filter)'>delete</v-icon></div>
-                <v-card>
-                  <v-card-text class="text-xs-center">
-                    Expansion panel content for item {{filter.type}}
-                  </v-card-text>
-                </v-card>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
+      <v-container grid-list-md>
+        <v-layout row wrap>
+          <v-flex>
+            <v-text-field
+              class="input"
+              name="Name"
+              label="Name"
+              hint="A unique name for the filter"
+              v-model="name"
+            ></v-text-field>
+          </v-flex>
+        </v-layout>
+        <v-layout row wrap>
+          <v-flex>
+            <v-select
+              :items="filters"
+              v-model="filterId"
+              label="Filter"
+              item-text="name"
+              item-value='_id'
+            ></v-select>
+          </v-flex>
+        </v-layout>
+        <v-layout row wrap>
+          <transition name='fade'>
+            <div class='datasets' v-if="datasets.length">
+              <div class='body-2'>Datasets</div>
+              <transition-group name="dataset" tag="div">
+                <v-flex v-for="dataset in datasets" :key="dataset._id" class="dataset-item">
+                  <v-chip outline close color="primary" class='dataset' @input="removeDataset(dataset)">{{dataset.name}}</v-chip>
+                </v-flex>
+              </transition-group>
+            </div>
+          </transition>
+        </v-layout>
+      </v-container>
     </div>
     <div class='bottom py-3'>
       <v-container grid-list-xs>
@@ -53,24 +60,6 @@
         </v-layout>
       </v-container>
     </div>
-    <v-dialog 
-      :value="pickDataRange" 
-      @input="closeDataRangeDialog($event)" 
-      max-width="350"
-      lazy>
-      <v-card>
-        <v-card-title class="headline">Create date range filter</v-card-title>
-        <v-card-text><DateRangeControl 
-        :start.sync='dateRangeFilter.start'
-        :end.sync='dateRangeFilter.end'
-        /></v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="error" flat @click="createDataRangeFilter()">Cancel</v-btn>
-          <v-btn color="primary" @click="createDataRangeFilter()">Save</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <v-snackbar
         :timeout="3000"
         :bottom="true"
@@ -120,10 +109,27 @@
 .expansion-panel {
   box-shadow: none;
 }
+
+//transition
+
+.dataset-item {
+  transition: all 0.15s;
+}
+.dataset-enter, .dataset-leave-to
+/* .dataset-leave-active below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.dataset-leave-active {
+  position: absolute;
+  width: 100%;
+}
 </style>
 
 <script>
-import loadDataset from "../utils/loadDataset";
+import { mapState } from "vuex";
+
+import loadDataset, { loadDatasetById } from "../utils/loadDataset";
 import DateRangeControl from "./DateRangeControl";
 
 export default {
@@ -131,37 +137,21 @@ export default {
   components: {
     DateRangeControl
   },
-  props: {
-    workingSet: {
-      type: Object,
-      default: null
-    },
-    selectedFilter: {
-      type: Object,
-      default: null
-    },
-    annotations: {
-      type: Array,
-      default: []
-    },
-    pickDataRange: {
-      type: Boolean,
-      default: false
-    }
-  },
+  props: {},
   data() {
     return {
       datasets: [],
       undoMessage: null,
       undoAction: null,
-      dateRangeFilter: {
-        start: null,
-        end: null
-      }
+      name: null,
+      filterId: null
     };
   },
   created() {
-    loadDataset().then(datasets => {
+    this.name = this.editingWorkingSet.name;
+    this.filterId = this.editingWorkingSet.filterId;
+    loadDatasetById(this.editingWorkingSet.datasetIds).then(datasets => {
+      this.initialized = true;
       this.datasets = datasets;
     });
   },
@@ -185,23 +175,22 @@ export default {
           this.undoMessage = null;
         }
       }
-    }
+    },
+    ...mapState(["filters"]),
+    ...mapState("workingSet", ["editingWorkingSet"])
   },
   watch: {
-    annotations([annotation]) {
-      if (annotation && annotation.geojson()) {
-        this.workingSet.filters.push({
-          type: "region",
-          geojson: annotation.geojson()
-        });
-        this.$emit("update:annotations", []);
+    filterId(filterId) {
+      if (!this.initialized) {
+        return;
       }
-    },
-    pickDataRange(value) {
-      if (value) {
-        this.dateRangeFilter.start = null;
-        this.dateRangeFilter.end = null;
+      if (!filterId) {
+        return;
       }
+      this.datasets = [];
+      loadDataset().then(datasets => {
+        this.datasets = datasets;
+      });
     }
   },
   methods: {
@@ -222,12 +211,20 @@ export default {
       }
     },
     exit() {
-      this.$emit("update:workingSet", null);
+      this.$store.commit("workingSet/setEditingWorkingSet", null);
     },
     save() {
-      this.$store.dispatch("saveWorkingSet", this.workingSet).then(() => {
-        this.exit();
-      });
+      this.$store
+        .dispatch("saveWorkingSet", {
+          _id: this.editingWorkingSet._id,
+          name: this.name,
+          filterId: this.filterId,
+          datasetIds: this.datasets.map(dataset => dataset._id)
+        })
+        .then(workingSet => {
+          Object.assign(this.editingWorkingSet, workingSet);
+          this.exit();
+        });
     },
     deleteFilter(filter) {
       this.setSelectedFilter(null);
@@ -239,15 +236,14 @@ export default {
       this.undoMessage = "Filter deleted";
     },
     deleteRecord() {
-      this.$store.dispatch("deleteWorkingSet", this.workingSet).then(() => {
-        this.exit();
-      });
+      this.$store
+        .dispatch("deleteWorkingSet", this.editingWorkingSet)
+        .then(() => {
+          this.exit();
+        });
     },
     setSelectedFilter(filter) {
       this.$emit("update:selectedFilter", filter);
-    },
-    closeDataRangeDialog(value) {
-      this.$emit("update:pickDataRange", value);
     },
     createDataRangeFilter() {
       this.closeDataRangeDialog(false);
@@ -256,6 +252,9 @@ export default {
         start: this.dateRangeFilter.start,
         end: this.dateRangeFilter.end
       });
+    },
+    removeDataset(dataset) {
+      this.datasets.splice(this.datasets.indexOf(dataset), 1);
     }
   }
 };

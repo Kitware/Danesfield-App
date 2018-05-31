@@ -31,6 +31,22 @@ body,
   opacity: 0;
 }
 
+.slide-fade-enter-active {
+  transition: all 0.15s ease;
+}
+.slide-fade-leave-active {
+  transition: all 0.15s ease;
+}
+.slide-fade-enter {
+  transform: translateX(-10px);
+  opacity: 0;
+}
+
+.slide-fade-leave-to {
+  transform: translateX(10px);
+  opacity: 0;
+}
+
 /* overwrite */
 .btn--block {
   min-width: 0;
@@ -40,8 +56,7 @@ body,
 <script>
 export default {
   name: "App",
-  components: {
-  },
+  components: {},
   data() {
     return {
       title: "Core3D",

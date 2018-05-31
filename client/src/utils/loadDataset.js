@@ -30,3 +30,10 @@ export default () => {
         })
     });
 }
+
+export const loadDatasetById = (ids) => {
+    return Promise.all(ids.map(id => {
+        return rest.get(`item/${id}`)
+            .then(({ data }) => data)
+    }));
+}
