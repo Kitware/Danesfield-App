@@ -1,3 +1,6 @@
+import rest from 'girder/src/rest';
+import _ from 'lodash';
+
 export default {
   namespaced: true,
   state: {
@@ -5,7 +8,8 @@ export default {
     selectedCondition: null,
     annotations: [],
     pickDateRange: false,
-    editingConditions: null
+    editingConditions: null,
+    datasetBounds: []
   },
   mutations: {
     setEditingFilter(state, filter) {
@@ -26,9 +30,19 @@ export default {
     },
     setEditingConditions(state, conditions) {
       state.editingConditions = conditions;
+    },
+    setBounds(state, bounds) {
+      state.bounds = bounds;
     }
   },
-  actions: {},
+  actions: {
+    loadBounds({ commit, state }) {
+      rest.get('dataset/bounds')
+        .then((({ data }) => {
+          state.datasetBounds = data;
+        }));
+    }
+  },
   getters: {
     editingConditionsGeojson(state) {
       if (!state.editingConditions) {
@@ -53,6 +67,21 @@ export default {
         return null;
       }
       return state.selectedCondition.geojson;
+    },
+    heatmapData(state) {
+      var a = state.datasetBounds.map(datasetBound => {
+        var longs = datasetBound.bounds.coordinates[0].map(data => data[0]);
+        var lats = datasetBound.bounds.coordinates[0].map(data => data[1]);
+        var midLong = (_.max(longs) + _.min(longs)) / 2;
+        var midLat = (_.max(lats) + _.min(lats)) / 2;
+        return {
+          x: midLong,
+          y: midLat,
+          name
+        }
+      });
+      console.log(a);
+      return a;
     }
   }
 };

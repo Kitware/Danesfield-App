@@ -45,7 +45,6 @@ export default new Vuex.Store({
         });
     },
     saveWorkingSet({ commit, state }, workingSet) {
-      // return rest.put(`workingSet/${workingSet._id}`, workingSet);
       if (workingSet._id) {
         return rest.put(`workingSet/${workingSet._id}`, workingSet)
           .then(({ data }) => {

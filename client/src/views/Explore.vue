@@ -17,19 +17,27 @@
         :editable='true'
         :annotations='annotations'
         @update:annotations="$store.commit('filter/setAnnotations',$event)"
-        :zIndex='3'>
+        :zIndex='4'>
       </GeojsAnnotationLayer>
       <GeojsGeojsonLayer
         v-if='editingConditionsGeojson'
         :geojson='editingConditionsGeojson'
-        :zIndex='1'>
+        :zIndex='2'>
       </GeojsGeojsonLayer>
       <GeojsGeojsonLayer 
         v-if='editingSelectedConditionGeojson'
         :geojson='editingSelectedConditionGeojson'
         :featureStyle='{polygon:{fillColor:"red"}}'
-        :zIndex='2'>
+        :zIndex='3'>
       </GeojsGeojsonLayer>
+      <GeojsHeatmapLayer
+        :data='heatmapData'
+        :binned='10'
+        :maxIntensity='5'
+        :minIntensity='0'
+        :updateDelay='100'
+        :zIndex='1'>
+      </GeojsHeatmapLayer>
     </GeojsMapViewport>
 
     <SidePanel
@@ -144,7 +152,8 @@ export default {
     ]),
     ...mapGetters("filter", [
       "editingConditionsGeojson",
-      "editingSelectedConditionGeojson"
+      "editingSelectedConditionGeojson",
+      "heatmapData"
     ])
   },
   created() {

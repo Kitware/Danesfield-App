@@ -196,6 +196,7 @@ export default {
       "filter/setEditingConditions",
       this.editingFilter.conditions.slice()
     );
+    this.$store.dispatch("filter/loadBounds");
   },
   methods: {
     getConditionIcon(filter) {

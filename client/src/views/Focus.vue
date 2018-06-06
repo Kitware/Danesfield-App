@@ -119,10 +119,10 @@ export default {
       });
     },
     geojsonDatasets() {
-      return this.datasets.filter(dataset => dataset.meta.type === "geojson");
+      return this.datasets.filter(dataset => dataset.geometa.driver === "GeoJSON");
     },
     geotiffDatasets() {
-      return this.datasets.filter(dataset => dataset.meta.type === "geotiff");
+      return this.datasets.filter(dataset => dataset.geometa.driver === "GeoTIFF");
     },
     ...mapState(["workingSets", "selectedWorkingSetId"])
   },
@@ -160,7 +160,7 @@ export default {
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         return Promise.all(
           datasets
-            .filter(dataset => dataset.meta.type === "geojson")
+            .filter(dataset => dataset.geometa.driver === "GeoJSON")
             .map(dataset => {
               return loadDatasetData(dataset).then(data => {
                 this.datasetDataMap.set(dataset, data);

@@ -27,7 +27,6 @@ from girder.models.user import User
 from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.item import Item
-from girder.plugins.danesfield.api.danesfield import DanesfieldResource
 
 
 class ProcessingResource(Resource):
@@ -46,12 +45,14 @@ class ProcessingResource(Resource):
     )
     @access.user
     def dsm(self, item, params):
-        file = Item().childFiles(item)[0]
+        pass
+        # from girder.plugins.danesfield.api.danesfield import DanesfieldResource
+        # file = Item().childFiles(item)[0]
 
-        adminUser = User().getAdmins().next()
-        collection = Collection().createCollection('core3d', creator=adminUser,
-                                                   description='', public=True, reuseExisting=True)
-        folder = Folder().createFolder(
-            collection, 'datasets', parentType='collection', public=False,
-            creator=adminUser, reuseExisting=True)
-        return DanesfieldResource().generateDsm(fileId=file['_id'], outputFolderId=folder['_id'], params={})
+        # adminUser = User().getAdmins().next()
+        # collection = Collection().createCollection('core3d', creator=adminUser,
+        #                                            description='', public=True, reuseExisting=True)
+        # folder = Folder().createFolder(
+        #     collection, 'datasets', parentType='collection', public=False,
+        #     creator=adminUser, reuseExisting=True)
+        # return DanesfieldResource().generateDsm(fileId=file['_id'], outputFolderId=folder['_id'], params={})
