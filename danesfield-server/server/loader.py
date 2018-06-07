@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-from girder.utility.webroot import Webroot
 from rest import dataset, workingSet, processing, filter
 
 

@@ -16,13 +16,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ##############################################################################
-import json
-from bson import ObjectId
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.constants import AccessType
-from girder.api.rest import Resource, setResponseHeader, rawResponse
+from girder.api.rest import Resource
 from girder.models.user import User
 from girder.models.collection import Collection
 from girder.models.folder import Folder
