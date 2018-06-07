@@ -16,7 +16,7 @@ with open('requirements.txt') as f:
             else:
                 requires.append(line)
 
-setup(name='core3dapp',
+setup(name='danesfield-server',
       version='0.0.0.dev1',
       description='',
       url='',
