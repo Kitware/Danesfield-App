@@ -59,7 +59,7 @@ export default {
   components: {},
   data() {
     return {
-      title: "Core3D",
+      title: "Danesfield",
       tabs: [
         {
           title: "Explore",
