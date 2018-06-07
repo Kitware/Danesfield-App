@@ -17,11 +17,9 @@
 #  limitations under the License.
 ##############################################################################
 
-import calendar
 import itertools
 import json
 import os
-import time
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
@@ -36,12 +34,11 @@ from girder.plugins.jobs.models.job import Job
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import BindMountVolume, VolumePath
 from girder_worker.docker.transforms.girder import (
-    GirderFileIdToVolume, GirderUploadVolumePathToItem)
+    GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
 
 _DANESFIELD_DOCKER_IMAGE = 'core3d/danesfield'
 _DANESFIELD_SOURCE_KEY = 'danesfieldSource'
-_DANESFIELD_ITEMS_KEY = 'danesfieldItems'
 
 _P3D_DOCKER_IMAGE = 'p3d_gw'
 
@@ -101,16 +98,12 @@ class ProcessingResource(Resource):
         # TODO: generate-dsm.py supports multiple point cloud files as input. To support
         # that workflow, this endpoint could accept a JSON list of file IDs.
         source = 'generate-dsm'
-        user = self.getCurrentUser()
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
         # Set output file name based on point cloud file
         dsmName = os.path.splitext(file['name'])[0] + '.tif'
         outputVolumePath = VolumePath(dsmName)
-
-        # Create item for output file
-        outputItem = Item().createItem(name=dsmName, creator=user, folder=outputFolder)
 
         # Docker container arguments
         containerArgs = [
@@ -121,10 +114,10 @@ class ProcessingResource(Resource):
         ]
 
         # Result hooks
-        # - Upload output files to output item
+        # - Upload output files to output folder
         # - Provide source algorithm reference
         resultHooks = [
-            GirderUploadVolumePathToItem(outputVolumePath, outputItem['_id'], upload_kwargs={
+            GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
                 'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
             })
         ]
@@ -138,7 +131,6 @@ class ProcessingResource(Resource):
 
         # Provide info for job event listeners
         job[_DANESFIELD_SOURCE_KEY] = source
-        job[_DANESFIELD_ITEMS_KEY] = [outputItem['_id']]
 
         return Job().save(job)
 
@@ -178,11 +170,6 @@ class ProcessingResource(Resource):
             for itemId in imageItemIds
         ]
 
-        # Create item for output files
-        timestamp = calendar.timegm(time.gmtime())
-        outputItem = Item().createItem(
-            name='p3d_output_%s' % str(timestamp), creator=user, folder=outputFolder)
-
         # Docker volumes
         volumes = [
             BindMountVolume(host_path='/mnt/GTOPO30', container_path='/P3D/GTOPO30', mode='ro')
@@ -209,12 +196,10 @@ class ProcessingResource(Resource):
         ))
 
         # Result hooks
-        # - Upload output files to output item
+        # - Upload output files to output folder
         # - Provide source algorithm reference
-        # TODO: If multiple output files are desired, use GirderUploadToFolder
-        # (https://github.com/girder/girder_worker/pull/292) once available
         resultHooks = [
-            GirderUploadVolumePathToItem(outputVolumePath, outputItem['_id'], upload_kwargs={
+            GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
                 'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
             })
         ]
@@ -229,6 +214,5 @@ class ProcessingResource(Resource):
 
         # Provide info for job event listeners
         job[_DANESFIELD_SOURCE_KEY] = source
-        job[_DANESFIELD_ITEMS_KEY] = [outputItem['_id']]
 
         return Job().save(job)

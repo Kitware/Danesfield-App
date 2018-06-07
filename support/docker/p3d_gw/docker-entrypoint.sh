@@ -20,7 +20,7 @@ set -eo pipefail
 #
 # On the output side, this script ensures that the point cloud files are located
 # in the root output directory. This ensures that they will be uploaded to
-# Girder by GirderUploadVolumePathToItem. By default, the p3d Docker image
+# Girder by GirderUploadVolumePathToFolder. By default, the p3d Docker image
 # places the point cloud files in a tp_manual_<timestamp> subdirectory of the
 # root output directory.
 
@@ -103,7 +103,7 @@ set -- "${ARGS[@]}" "--in" "${IMAGE_DIR}"
 # Run command
 "$@"
 
-# Girder Worker's GirderUploadVolumePathToItem uploads the files
+# Girder Worker's GirderUploadVolumePathToFolder uploads the files
 # in the specified output directory to an item, nonrecursively.
 # Move the primary point cloud output file to the output directory
 # and delete the rest.

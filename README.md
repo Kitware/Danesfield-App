@@ -7,7 +7,7 @@ Application to run Danesfield algorithms.
 ## Requirements
 
 - [Girder](https://github.com/girder/girder)
-- [Girder Worker](https://github.com/girder/girder_worker) at revision [b55f1b5](https://github.com/girder/girder_worker/commit/b55f1b53ecdca4f02b474ab13bd8c03650208409) or later
+- [Girder Worker](https://github.com/girder/girder_worker) at revision [ad3e384](https://github.com/girder/girder_worker/commit/ad3e384f4894b8fb747b3bab87e39376e3701049) or later
 - [Docker](https://www.docker.com/)
 
 ## Setup
