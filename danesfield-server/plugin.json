@@ -1,8 +1,9 @@
 {
     "name": "danesfield-server",
-    "description": "",
+    "description": "Danesfield application and algorithms for the IARPA CORE3D program.",
     "version": "0.1.0",
     "dependencies": [
-        "girder_geospatial"
+        "girder_geospatial",
+        "worker"
     ]
 }
