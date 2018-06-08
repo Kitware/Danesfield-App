@@ -1,23 +1,31 @@
 <template>
   <FullScreenViewport>
-    <GeojsMapViewport
-      class='map'
-      :viewport.sync='viewport'
-    >
-      <GeojsTileLayer
-        url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
-        attribution='© OpenStreetMap contributors, © CARTO'
-        :zIndex='0'>
-      </GeojsTileLayer>
-      <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
-        :url='getTileURL(dataset)'
-        :zIndex='1'>
-      </GeojsTileLayer>
-      <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
-        :geojson='datasetDataMap.get(dataset)'
-        :zIndex='2'>
-      </GeojsGeojsonLayer>
-    </GeojsMapViewport>
+    <WorkspaceContainer :focus.sync='focus' @duplicate='createNewView($event)'>
+      <template :slot="workspace+i+'-actions'" v-for="(workspace,i) in workspaces">
+        <WorkspaceAction :key="'map'+i" @click='(e)=>{console.log(e)}'>Map</WorkspaceAction>
+        <WorkspaceAction :key="'point-cloud'+i" @click='(e)=>{console.log(e)}'>Point Cloud</WorkspaceAction>
+      </template>
+      <template :slot="workspace+i" v-for="(workspace,i) in workspaces">
+        <GeojsMapViewport :key="'geojs-map'+i"
+          class='map'
+          :viewport.sync='viewport'
+        >
+          <GeojsTileLayer
+            url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+            attribution='© OpenStreetMap contributors, © CARTO'
+            :zIndex='0'>
+          </GeojsTileLayer>
+          <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
+            :url='getTileURL(dataset)'
+            :zIndex='1'>
+          </GeojsTileLayer>
+          <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
+            :geojson='datasetDataMap.get(dataset)'
+            :zIndex='2'>
+          </GeojsGeojsonLayer>
+        </GeojsMapViewport>
+      </template>
+    </WorkspaceContainer>
 
     <SidePanel
     :top='64'
@@ -79,15 +87,21 @@
 
 <script>
 import { mapState } from "vuex";
+import rest from "girder/src/rest";
+
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
-import rest from "girder/src/rest";
+import WorkspaceContainer from "./Workspace/Container";
+import WorkspaceAction from "./Workspace/Action";
 
 export default {
   name: "focus",
-  components: {},
+  components: {
+    WorkspaceContainer,
+    WorkspaceAction
+  },
   data() {
     return {
       viewport: {
@@ -98,7 +112,9 @@ export default {
       selectedDatasetIds: {},
       drawing: false,
       editing: false,
-      processes: ["DSM"]
+      processes: ["DSM"],
+      focus: "1",
+      workspaces: ["map"]
     };
   },
   computed: {
@@ -119,10 +135,14 @@ export default {
       });
     },
     geojsonDatasets() {
-      return this.datasets.filter(dataset => dataset.geometa.driver === "GeoJSON");
+      return this.datasets.filter(
+        dataset => dataset.geometa.driver === "GeoJSON"
+      );
     },
     geotiffDatasets() {
-      return this.datasets.filter(dataset => dataset.geometa.driver === "GeoTIFF");
+      return this.datasets.filter(
+        dataset => dataset.geometa.driver === "GeoTIFF"
+      );
     },
     ...mapState(["workingSets", "selectedWorkingSetId"])
   },
@@ -184,6 +204,10 @@ export default {
         ([itemId, selected]) => selected
       )[0][0];
       return rest.post(`/processing/${itemId}`);
+    },
+    createNewView(slotName) {
+      console.log(slotName);
+      this.workspaces.push(slotName);
     }
   }
 };

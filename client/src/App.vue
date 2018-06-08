@@ -48,7 +48,7 @@ body,
 }
 
 /* overwrite */
-.btn--block {
+.btn {
   min-width: 0;
 }
 </style>
