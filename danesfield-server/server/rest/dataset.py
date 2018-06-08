@@ -1,13 +1,8 @@
-import json
-from bson import ObjectId
-
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.constants import AccessType
 from girder.api.rest import Resource
-from girder.models.file import File
 from girder.models.item import Item
-from ..models.filter import Filter
 
 
 class DatasetResource(Resource):
