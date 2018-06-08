@@ -151,12 +151,12 @@ export default {
     },
     geojsonDatasets() {
       return this.datasets.filter(
-        dataset => dataset.geometa.driver === "GeoJSON"
+        dataset => dataset.geometa && dataset.geometa.driver === "GeoJSON"
       );
     },
     geotiffDatasets() {
       return this.datasets.filter(
-        dataset => dataset.geometa.driver === "GeoTIFF"
+        dataset => dataset.geometa && dataset.geometa.driver === "GeoTIFF"
       );
     },
     ...mapState(["workingSets", "selectedWorkingSetId"])
@@ -195,7 +195,9 @@ export default {
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         return Promise.all(
           datasets
-            .filter(dataset => dataset.geometa.driver === "GeoJSON")
+            .filter(
+              dataset => dataset.geometa && dataset.geometa.driver === "GeoJSON"
+            )
             .map(dataset => {
               return loadDatasetData(dataset).then(data => {
                 this.datasetDataMap.set(dataset, data);
@@ -218,7 +220,7 @@ export default {
       var itemId = Object.entries(this.selectedDatasetIds).filter(
         ([itemId, selected]) => selected
       )[0][0];
-      return rest.post(`/processing/${itemId}`);
+      return rest.post(`/processing/generate_dsm/?itemId=${itemId}`);
     },
     createNewView(type) {
       this.workspaces.push({
