@@ -111,7 +111,7 @@ class ProcessingResource(Resource):
 
         # Docker container arguments
         containerArgs = [
-            'python', 'danesfield/tools/fit-dtm.py',
+            'danesfield/tools/fit_dtm.py',
             '--num-iterations', str(iterations),
             '--tension', str(tension),
             GirderFileIdToVolume(file['_id']),
@@ -167,7 +167,7 @@ class ProcessingResource(Resource):
 
         # Docker container arguments
         containerArgs = [
-            'python', 'danesfield/tools/generate-dsm.py',
+            'danesfield/tools/generate_dsm.py',
             outputVolumePath,
             '--source_points',
             GirderFileIdToVolume(file['_id'])
