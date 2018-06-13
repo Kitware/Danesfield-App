@@ -52,6 +52,7 @@ class ProcessingResource(Resource):
 
         self.resourceName = 'processing'
 
+        self.route('POST', ('fit_dtm',), self.fitDtm)
         self.route('POST', ('generate_dsm',), self.generateDsm)
         self.route('POST', ('generate_point_cloud',), self.generatePointCloud)
 
@@ -78,6 +79,65 @@ class ProcessingResource(Resource):
             raise RestException(
                 'Item must contain %d files, but should contain only one.' % files.count())
         return files[0]
+
+    @access.user
+    @filtermodel(model=Job)
+    @autoDescribeRoute(
+        Description('Fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).')
+        .modelParam('itemId', 'The ID of the DSM image item.', model=Item, paramType='query',
+                    level=AccessType.READ)
+        .param('iterations', 'Base number of iterations at the coarsest scale.',
+               dataType='integer', required=False, default=100)
+        .param('tension', 'Number of inner smoothing iterations.',
+               dataType='integer', required=False, default=10)
+        .errorResponse()
+        .errorResponse('Read access was denied on the item.', 403)
+    )
+    def fitDtm(self, item, iterations, tension, params):
+        """
+        Fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
+
+        Requirements:
+        - core3d/danesfield Docker image is available on host
+        """
+        source = 'fit-dtm'
+        file = self._fileFromItem(item)
+        outputFolder = self._datasetsFolder()
+
+        # Set output file name based on input file name
+        parts = os.path.splitext(file['name'])
+        dsmName = '-dtm'.join(parts)
+        outputVolumePath = VolumePath(dsmName)
+
+        # Docker container arguments
+        containerArgs = [
+            'python', 'danesfield/tools/fit-dtm.py',
+            '--num-iterations', str(iterations),
+            '--tension', str(tension),
+            GirderFileIdToVolume(file['_id']),
+            outputVolumePath
+        ]
+
+        # Result hooks
+        # - Upload output files to output folder
+        # - Provide source algorithm reference
+        resultHooks = [
+            GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
+                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
+            })
+        ]
+
+        job = docker_run.delay(
+            image=_DANESFIELD_DOCKER_IMAGE,
+            pull_image=False,
+            container_args=containerArgs,
+            girder_job_title='Fit DTM: %s' % file['name'],
+            girder_result_hooks=resultHooks).job
+
+        # Provide info for job event listeners
+        job[_DANESFIELD_SOURCE_KEY] = source
+
+        return Job().save(job)
 
     @access.user
     @filtermodel(model=Job)
