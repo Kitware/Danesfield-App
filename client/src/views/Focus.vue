@@ -27,6 +27,7 @@
           </GeojsTileLayer>
           <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
             :url='getTileURL(dataset)'
+            :keepLower="false"
             :zIndex='1'>
           </GeojsTileLayer>
           <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'

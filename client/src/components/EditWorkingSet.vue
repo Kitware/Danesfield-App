@@ -128,7 +128,10 @@
 <script>
 import { mapState } from "vuex";
 
-import loadDataset, { loadDatasetById } from "../utils/loadDataset";
+import {
+  loadDatasetById,
+  loadDatasetByFilterConditions
+} from "../utils/loadDataset";
 import DateRangeControl from "./DateRangeControl";
 
 export default {
@@ -187,7 +190,8 @@ export default {
         return;
       }
       this.datasets = [];
-      loadDataset().then(datasets => {
+      var filter = this.filters.filter(filter => filter._id === filterId)[0];
+      loadDatasetByFilterConditions(filter.conditions).then(datasets => {
         this.datasets = datasets;
       });
     }

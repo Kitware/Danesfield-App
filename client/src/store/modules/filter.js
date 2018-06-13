@@ -1,6 +1,8 @@
 import rest from 'girder/src/rest';
 import _ from 'lodash';
 
+import { loadDatasetByFilterConditions } from "../../utils/loadDataset";
+
 export default {
   namespaced: true,
   state: {
@@ -31,16 +33,19 @@ export default {
     setEditingConditions(state, conditions) {
       state.editingConditions = conditions;
     },
-    setBounds(state, bounds) {
-      state.bounds = bounds;
+    setDatasetBounds(state, datasetBounds) {
+      state.datasetBounds = datasetBounds;
     }
   },
   actions: {
-    loadBounds({ commit, state }) {
-      rest.get('dataset/bounds')
-        .then((({ data }) => {
-          state.datasetBounds = data;
-        }));
+    async loadBounds({ commit, state }, conditions) {
+      var datasets = await loadDatasetByFilterConditions(conditions);
+      return state.datasetBounds = datasets.map(dataset => {
+        return {
+          name: dataset['name'],
+          bounds: dataset['geometa']['bounds']
+        }
+      });
     }
   },
   getters: {
@@ -69,7 +74,7 @@ export default {
       return state.selectedCondition.geojson;
     },
     heatmapData(state) {
-      var a = state.datasetBounds.map(datasetBound => {
+      return state.datasetBounds.map(datasetBound => {
         var longs = datasetBound.bounds.coordinates[0].map(data => data[0]);
         var lats = datasetBound.bounds.coordinates[0].map(data => data[1]);
         var midLong = (_.max(longs) + _.min(longs)) / 2;
@@ -80,8 +85,6 @@ export default {
           name
         }
       });
-      console.log(a);
-      return a;
     }
   }
 };

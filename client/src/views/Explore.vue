@@ -11,33 +11,45 @@
         attribution='© OpenStreetMap contributors, © CARTO'
         :zIndex='0'>
       </GeojsTileLayer>
-      <GeojsAnnotationLayer
-        :drawing.sync='drawing'
-        :editing.sync='editing'
-        :editable='true'
-        :annotations='annotations'
-        @update:annotations="$store.commit('filter/setAnnotations',$event)"
-        :zIndex='4'>
-      </GeojsAnnotationLayer>
-      <GeojsGeojsonLayer
-        v-if='editingConditionsGeojson'
-        :geojson='editingConditionsGeojson'
-        :zIndex='2'>
-      </GeojsGeojsonLayer>
-      <GeojsGeojsonLayer 
-        v-if='editingSelectedConditionGeojson'
-        :geojson='editingSelectedConditionGeojson'
-        :featureStyle='{polygon:{fillColor:"red"}}'
-        :zIndex='3'>
-      </GeojsGeojsonLayer>
-      <GeojsHeatmapLayer
-        :data='heatmapData'
-        :binned='10'
-        :maxIntensity='5'
-        :minIntensity='0'
-        :updateDelay='100'
-        :zIndex='1'>
-      </GeojsHeatmapLayer>
+      <template v-if="exploreTab==='workingSet'">
+        <GeojsAnnotationLayer
+          :drawing.sync='drawing'
+          :editing.sync='editing'
+          :editable='true'
+          :annotations='annotations'
+          @update:annotations="$store.commit('filter/setAnnotations',$event)"
+          :zIndex='4'>
+        </GeojsAnnotationLayer>
+      </template>
+      <template v-if="exploreTab==='filter'">
+        <GeojsAnnotationLayer
+          :drawing.sync='drawing'
+          :editing.sync='editing'
+          :editable='true'
+          :annotations='annotations'
+          @update:annotations="$store.commit('filter/setAnnotations',$event)"
+          :zIndex='4'>
+        </GeojsAnnotationLayer>
+        <GeojsGeojsonLayer
+          v-if='editingConditionsGeojson'
+          :geojson='editingConditionsGeojson'
+          :zIndex='2'>
+        </GeojsGeojsonLayer>
+        <GeojsGeojsonLayer 
+          v-if='editingSelectedConditionGeojson'
+          :geojson='editingSelectedConditionGeojson'
+          :featureStyle='{polygon:{fillColor:"red"}}'
+          :zIndex='3'>
+        </GeojsGeojsonLayer>
+        <GeojsHeatmapLayer v-if="editingFilter"
+          :data='heatmapData'
+          :binned='10'
+          :maxIntensity='5'
+          :minIntensity='0'
+          :updateDelay='100'
+          :zIndex='1'>
+        </GeojsHeatmapLayer>
+      </template>
     </GeojsMapViewport>
 
     <SidePanel

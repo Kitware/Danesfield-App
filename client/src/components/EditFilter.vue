@@ -188,6 +188,9 @@ export default {
         this.dateRangeFilter.start = null;
         this.dateRangeFilter.end = null;
       }
+    },
+    editingConditions(value) {
+      this.$store.dispatch("filter/loadBounds", this.editingConditions);
     }
   },
   created() {
@@ -196,7 +199,6 @@ export default {
       "filter/setEditingConditions",
       this.editingFilter.conditions.slice()
     );
-    this.$store.dispatch("filter/loadBounds");
   },
   methods: {
     getConditionIcon(filter) {

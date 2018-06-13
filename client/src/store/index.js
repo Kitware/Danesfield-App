@@ -32,7 +32,7 @@ export default new Vuex.Store({
       state.filters.push(filter);
     },
     createWorkingSetFromFilter(state, filter) {
-      var workingSet = { name: '', filterId: filter._id };
+      var workingSet = { name: '', filterId: filter._id, datasets: [] };
       state.exploreTab = 'workingSet';
       state.workingSet.editingWorkingSet = workingSet;
     }
