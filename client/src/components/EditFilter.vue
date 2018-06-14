@@ -13,6 +13,16 @@
             ></v-text-field>
           </v-flex>
         </v-layout>
+        <v-layout row wrap>
+          <transition name='fade'>
+            <v-flex xs12>
+              <div class='datasets' v-if="datasetBounds.length">
+                <div class='body-2'>Datasets</div>
+                <v-chip outline color="primary" v-for="(datasetBound, i) in datasetBounds" :key="i">{{datasetBound.name}}</v-chip>
+              </div>
+            </v-flex>
+          </transition>
+        </v-layout>
       </v-container>
       <v-expansion-panel class='conditions'>
         <v-expansion-panel-content :value='true'>
@@ -90,35 +100,6 @@
   </div>
 </template>
 
-<style lang="scss" scoped>
-.edit-filter {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  .main {
-    flex: 1;
-
-    .conditions {
-      .condition-delete {
-        float: right;
-      }
-    }
-  }
-
-  .bottom {
-    .btn {
-      min-width: 0;
-    }
-  }
-}
-
-// overwrite
-.expansion-panel {
-  box-shadow: none;
-}
-</style>
-
 <script>
 import { mapState } from "vuex";
 
@@ -170,7 +151,8 @@ export default {
       "selectedCondition",
       "editingConditions",
       "annotations",
-      "pickDateRange"
+      "pickDateRange",
+      "datasetBounds"
     ])
   },
   watch: {
@@ -219,6 +201,7 @@ export default {
     },
     exit() {
       this.$store.commit("filter/setEditingFilter", null);
+      this.$store.commit("filter/setDatasetBounds", []);
     },
     save() {
       this.$store
@@ -262,3 +245,45 @@ export default {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.edit-filter {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .main {
+    flex: 1;
+
+    .conditions {
+      .condition-delete {
+        float: right;
+      }
+    }
+  }
+
+  .bottom {
+    .btn {
+      min-width: 0;
+    }
+  }
+}
+
+// overwrite
+.expansion-panel {
+  box-shadow: none;
+}
+</style>
+
+<style lang="scss">
+.datasets {
+  .chip {
+    max-width: 100%;
+
+    .chip__content {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+  }
+}
+</style>

@@ -13,12 +13,10 @@
       </GeojsTileLayer>
       <template v-if="exploreTab==='workingSet'">
         <GeojsAnnotationLayer
-          :drawing.sync='drawing'
-          :editing.sync='editing'
-          :editable='true'
-          :annotations='annotations'
-          @update:annotations="$store.commit('filter/setAnnotations',$event)"
-          :zIndex='4'>
+          :editable='false'
+          :labels='true'
+          :initialGeojson='datasetBoundsFeature'
+          :zIndex='1'>
         </GeojsAnnotationLayer>
       </template>
       <template v-if="exploreTab==='filter'">
@@ -164,6 +162,7 @@ export default {
       "annotations",
       "selectedCondition"
     ]),
+    ...mapGetters("workingSet", ["datasetBoundsFeature"]),
     ...mapGetters("filter", [
       "editingConditionsGeojson",
       "editingSelectedConditionGeojson",
