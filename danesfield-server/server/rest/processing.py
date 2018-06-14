@@ -36,11 +36,7 @@ from girder_worker.docker.transforms import BindMountVolume, VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-
-_DANESFIELD_DOCKER_IMAGE = 'core3d/danesfield'
-_DANESFIELD_SOURCE_KEY = 'danesfieldSource'
-
-_P3D_DOCKER_IMAGE = 'p3d_gw'
+from ..constants import DanesfieldJobKey, DockerImage
 
 
 class ProcessingResource(Resource):
@@ -123,19 +119,19 @@ class ProcessingResource(Resource):
         # - Provide source algorithm reference
         resultHooks = [
             GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
-                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
+                'reference': json.dumps({DanesfieldJobKey.SOURCE: source})
             })
         ]
 
         job = docker_run.delay(
-            image=_DANESFIELD_DOCKER_IMAGE,
+            image=DockerImage.DANESFIELD,
             pull_image=False,
             container_args=containerArgs,
             girder_job_title='Fit DTM: %s' % file['name'],
             girder_result_hooks=resultHooks).job
 
         # Provide info for job event listeners
-        job[_DANESFIELD_SOURCE_KEY] = source
+        job[DanesfieldJobKey.SOURCE] = source
 
         return Job().save(job)
 
@@ -178,19 +174,19 @@ class ProcessingResource(Resource):
         # - Provide source algorithm reference
         resultHooks = [
             GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
-                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
+                'reference': json.dumps({DanesfieldJobKey.SOURCE: source})
             })
         ]
 
         job = docker_run.delay(
-            image=_DANESFIELD_DOCKER_IMAGE,
+            image=DockerImage.DANESFIELD,
             pull_image=False,
             container_args=containerArgs,
             girder_job_title='Generate DSM: %s' % file['name'],
             girder_result_hooks=resultHooks).job
 
         # Provide info for job event listeners
-        job[_DANESFIELD_SOURCE_KEY] = source
+        job[DanesfieldJobKey.SOURCE] = source
 
         return Job().save(job)
 
@@ -260,12 +256,12 @@ class ProcessingResource(Resource):
         # - Provide source algorithm reference
         resultHooks = [
             GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
-                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
+                'reference': json.dumps({DanesfieldJobKey.SOURCE: source})
             })
         ]
 
         job = docker_run.delay(
-            image=_P3D_DOCKER_IMAGE,
+            image=DockerImage.P3D,
             pull_image=False,
             volumes=volumes,
             container_args=containerArgs,
@@ -273,6 +269,6 @@ class ProcessingResource(Resource):
             girder_result_hooks=resultHooks).job
 
         # Provide info for job event listeners
-        job[_DANESFIELD_SOURCE_KEY] = source
+        job[DanesfieldJobKey.SOURCE] = source
 
         return Job().save(job)

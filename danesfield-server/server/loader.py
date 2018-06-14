@@ -8,6 +8,8 @@ from girder.models.item import Item
 
 from rest import dataset, workingSet, processing, filter
 
+from .constants import DanesfieldJobKey
+
 
 def _onFinalizeUpload(event):
     """Event handler for finalize upload event."""
@@ -18,15 +20,15 @@ def _onFinalizeUpload(event):
     except (TypeError, ValueError):
         return
 
-    if not isinstance(reference, dict) or 'danesfieldSource' not in reference:
+    if not isinstance(reference, dict) or DanesfieldJobKey.SOURCE not in reference:
         return
 
+    source = reference[DanesfieldJobKey.SOURCE]
     # Record source algorithm in metadata
     file = event.info['file']
     item = Item().load(file['itemId'], force=True, exc=True)
-    item['danesfieldSource'] = reference['danesfieldSource']
     Item().setMetadata(item, {
-        'danesfieldSource': reference['danesfieldSource']
+        'danesfieldSource': source
     })
 
 
