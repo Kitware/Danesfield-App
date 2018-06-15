@@ -1,14 +1,3 @@
-<template>
-  <div class="workspace-container">
-    <transition-group class="views" name="view" tag="div" @after-enter="afterTransition('afterEnter')" @after-leave="afterTransition('afterLeave')"
-    @before-enter="beforeTransition('beforeEnter')" @before-leave="beforeTransition('beforeLeave')">
-      <div class='view' :key=key v-for="(value, key) in $slots" v-if="!maximizedWorkspace || value[0].componentOptions.propsData.identifier===maximizedWorkspace">
-        <slot :name='key'></slot>
-      </div>
-    </transition-group>
-  </div>
-</template>
-
 <script>
 import Workspace from "./Workspace";
 
@@ -16,6 +5,54 @@ export default {
   name: "WorkspaceContainer",
   components: {
     Workspace
+  },
+
+  render(h) {
+    return h("div", { class: ["workspace-container"] }, [
+      h(
+        "transition-group",
+        {
+          class: ["views"],
+          props: {
+            name: "view",
+            tag: "div"
+          },
+          on: {
+            "after-enter": () => {
+              this.afterTransition("afterEnter");
+            },
+            "after-leave": () => {
+              this.afterTransition("afterLeave");
+            },
+            "before-enter": () => {
+              this.beforeTransition("beforeEnter");
+            },
+            "before-leave": () => {
+              this.beforeTransition("beforeLeave");
+            }
+          }
+        },
+        this.$slots.default
+          .map(workspaceVNode => {
+            var { identifier } = workspaceVNode.componentOptions.propsData;
+            if (
+              !this.maximizedWorkspace ||
+              identifier === this.maximizedWorkspace
+            ) {
+              return h(
+                "div",
+                {
+                  class: "view",
+                  key: identifier.type + identifier.id
+                },
+                [workspaceVNode]
+              );
+            } else {
+              return null;
+            }
+          })
+      )
+    ]);
   },
   props: {
     focus: {
@@ -60,51 +97,15 @@ export default {
     this.$on("workspace_focus", identifier => {
       this.$emit("update:focus", identifier);
     });
-    if (process.env.NODE_ENV === "development") {
-      var names = Object.keys(this.$slots);
-      if (names.length === 1 && names[0] === "default") {
-        // console.error("Workspace Container needs named slot as slot");
-        throw new Error("Workspace Container needs named slot as slot");
-      }
-    }
   },
-  // render(h) {
-  //   console.log("Container render()");
-  //   return h("div", { class: ["workspace-container"] }, [
-  //     h(
-  //       "div",
-  //       { class: ["views"] },
-  //       Object.entries(this.$slots).map(([name, slot]) => {
-  //         // slot[0].data.props = { abc: 1 };
-  //         slot[0].componentOptions.propsData["abc"] = 1;
-  //         var a = h(
-  //           "div",
-  //           {
-  //             class: "view",
-  //             key: name,
-  //             props: {
-  //               myProp: "bar"
-  //             }
-  //           },
-  //           slot
-  //         );
-  //         return a;
-  //       })
-  //     )
-  //   ]);
-  // },
   // mounted() {
-  //   console.log("Container mounted");
-  // this.listenToMaximize();
   // },
   // beforeUpdate() {
-  //   console.log("Container beforeUpdate");
-  // this.stopListener();
   // },
   updated() {
     // console.log("Container updated");
-    let workspaces = Object.values(this.$slots).map(
-      ([workspaceVNode]) => workspaceVNode.componentOptions.propsData.identifier
+    let workspaces = this.$slots.default.map(
+      workspaceVNode => workspaceVNode.componentOptions.propsData.identifier
     );
     for (let workspace of this.workspaces) {
       if (workspaces.indexOf(workspace) == -1) {
@@ -127,7 +128,7 @@ export default {
         this.resizeEventHandle = setInterval(() => {
           // console.log('sending resize');
           window.dispatchEvent(new Event("resize"));
-        }, 30);
+        }, 50);
       }
     },
     afterTransition(transitionType) {

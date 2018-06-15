@@ -6,7 +6,6 @@
       :max="2"
     >
       <Workspace
-        :slot="workspace.type+workspace.id"
         :key="workspace.type+workspace.id"
         :identifier="workspace"
         v-for="(workspace) in workspaces"
