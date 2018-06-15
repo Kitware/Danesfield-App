@@ -101,6 +101,8 @@ import { mapState, mapGetters } from "vuex";
 import WorkingSetModule from "./WorkingSetModule";
 import FilterModule from "./FilterModule";
 
+import rest from "girder/src/rest";
+
 export default {
   name: "explore",
   components: {
@@ -159,6 +161,9 @@ export default {
   created() {
     this.$store.dispatch("loadWorkingSets");
     this.$store.dispatch("loadFilters");
+    rest.get("item/geometa?bbox=-180,-90,180,90&relation=intersects").then(({ data }) => {
+      console.log(data);
+    });
   },
   methods: {
     clickAction(name) {

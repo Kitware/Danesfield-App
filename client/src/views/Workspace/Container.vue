@@ -1,18 +1,9 @@
 <template>
   <div class="workspace-container">
-    <transition-group class="views" name="view" tag="div">
-      <div class='view' :key=key v-for="(value, key) in $slots" v-if="(!maximizeSlotName || maximizeSlotName===key) && !key.endsWith('actions')">
-        <Workspace 
-          :maximized="maximizeSlotName===key"
-          @maximize="maximizeSlotName=key"
-          @minimize="maximizeSlotName=null"
-          :focused="focus===key"
-          @focus="$emit('update:focus', key)"
-          @duplicate="$emit('duplicate', key)"
-          @close="$emit('close', key)">
-          <slot :name="key"></slot>
-          <slot :name="key+'-actions'" slot='actions'></slot>
-        </Workspace>
+    <transition-group class="views" name="view" tag="div" @after-enter="afterTransition('afterEnter')" @after-leave="afterTransition('afterLeave')"
+    @before-enter="beforeTransition('beforeEnter')" @before-leave="beforeTransition('beforeLeave')">
+      <div class='view' :key=key v-for="(value, key) in $slots" v-if="!maximizedWorkspace || value[0].componentOptions.propsData.identifier===maximizedWorkspace">
+        <slot :name='key'></slot>
       </div>
     </transition-group>
   </div>
@@ -28,22 +19,127 @@ export default {
   },
   props: {
     focus: {
-      type: String,
+      type: Object,
       default: null
+    },
+    autoResize: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
-      maximizeSlotName: null
+      maximizedWorkspace: null,
+      workspaces: []
     };
   },
-  computed: {},
-  watch: {},
-  created() {
-    window.container=this;
+  provide() {
+    return {
+      container: this
+    };
   },
-  beforeUpdate() {},
-  methods: {}
+  watch: {
+    maximizedWorkspace(value) {
+      this.$emit("workspaceMaximized", value);
+    },
+    workspaces(value) {
+      // console.log("workspaces changed", value);
+      this.$emit("workspacesChanged", value);
+      this.maximizedWorkspace = null;
+    }
+  },
+  created() {
+    // console.log("Container created");
+    window.container = this;
+    this.$on("workspace_maximize", identifier => {
+      this.maximizedWorkspace = identifier;
+    });
+    this.$on("workspace_minimize", identifier => {
+      this.maximizedWorkspace = null;
+    });
+    this.$on("workspace_focus", identifier => {
+      this.$emit("update:focus", identifier);
+    });
+    if (process.env.NODE_ENV === "development") {
+      var names = Object.keys(this.$slots);
+      if (names.length === 1 && names[0] === "default") {
+        // console.error("Workspace Container needs named slot as slot");
+        throw new Error("Workspace Container needs named slot as slot");
+      }
+    }
+  },
+  // render(h) {
+  //   console.log("Container render()");
+  //   return h("div", { class: ["workspace-container"] }, [
+  //     h(
+  //       "div",
+  //       { class: ["views"] },
+  //       Object.entries(this.$slots).map(([name, slot]) => {
+  //         // slot[0].data.props = { abc: 1 };
+  //         slot[0].componentOptions.propsData["abc"] = 1;
+  //         var a = h(
+  //           "div",
+  //           {
+  //             class: "view",
+  //             key: name,
+  //             props: {
+  //               myProp: "bar"
+  //             }
+  //           },
+  //           slot
+  //         );
+  //         return a;
+  //       })
+  //     )
+  //   ]);
+  // },
+  // mounted() {
+  //   console.log("Container mounted");
+  // this.listenToMaximize();
+  // },
+  // beforeUpdate() {
+  //   console.log("Container beforeUpdate");
+  // this.stopListener();
+  // },
+  updated() {
+    // console.log("Container updated");
+    let workspaces = Object.values(this.$slots).map(
+      ([workspaceVNode]) => workspaceVNode.componentOptions.propsData.identifier
+    );
+    for (let workspace of this.workspaces) {
+      if (workspaces.indexOf(workspace) == -1) {
+        var index = this.workspaces.indexOf(workspace);
+        this.workspaces.splice(index, 1);
+      }
+    }
+    for (let workspace of workspaces) {
+      if (this.workspaces.indexOf(workspace) == -1) {
+        this.workspaces.push(workspace);
+      }
+    }
+  },
+  methods: {
+    beforeTransition(transitionType) {
+      // console.log("beforeTransition");
+      this.$emit("beforeTransition", transitionType);
+      if (this.autoResize) {
+        clearInterval(this.resizeEventHandle);
+        this.resizeEventHandle = setInterval(() => {
+          // console.log('sending resize');
+          window.dispatchEvent(new Event("resize"));
+        }, 30);
+      }
+    },
+    afterTransition(transitionType) {
+      // console.log("afterTransition");
+      this.$emit("afterTransition", transitionType);
+      if (this.autoResize || this.resizeEventHandle) {
+        window.dispatchEvent(new Event("resize"));
+        clearInterval(this.resizeEventHandle);
+        this.resizeEventHandle = null;
+      }
+    }
+  }
 };
 </script>
 
@@ -61,18 +157,17 @@ export default {
       flex-basis: auto;
       position: relative;
       overflow: hidden;
-      transition: all 0.15s;
       background: #ddd;
+      overflow-x: hidden;
+    }
 
-      // .view-enter-active {
-      //   transition: all 10s ease;
-      // }
-      // .view-leave-active {
-      //   transition: all 10s ease;
-      // }
-      &.view-leave-to/*, .view-enter*/ {
-        flex-grow: 0.00001;
-      }
+    .view-enter-active,
+    .view-leave-active {
+      transition: all 0.15s;
+    }
+    .view-leave-to,
+    .view-enter {
+      flex-grow: 0.00001;
     }
   }
 }

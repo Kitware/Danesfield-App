@@ -1,12 +1,22 @@
 <template>
   <FullScreenViewport>
-    <WorkspaceContainer :focus.sync='focus' @duplicate='createNewView($event)'>
-      <template :slot="workspace+i+'-actions'" v-for="(workspace,i) in workspaces">
-        <WorkspaceAction :key="'map'+i" @click='(e)=>{console.log(e)}'>Map</WorkspaceAction>
-        <WorkspaceAction :key="'point-cloud'+i" @click='(e)=>{console.log(e)}'>Point Cloud</WorkspaceAction>
-      </template>
-      <template :slot="workspace+i" v-for="(workspace,i) in workspaces">
-        <GeojsMapViewport :key="'geojs-map'+i"
+    <WorkspaceContainer 
+      :focus.sync="focus"
+      :autoResize="true"
+      :max="2"
+    >
+      <Workspace
+        :slot="workspace.type+workspace.id"
+        :key="workspace.type+workspace.id"
+        :identifier="workspace"
+        v-for="(workspace) in workspaces"
+        @duplicate="createNewView(workspace.type)" 
+        @close="close(workspace)">
+        <template slot="actions">
+          <WorkspaceAction @click='(e)=>{console.log(e)}'>Map</WorkspaceAction>
+          <WorkspaceAction @click='(e)=>{console.log(e)}'>Point Cloud</WorkspaceAction>
+        </template>
+        <GeojsMapViewport key="geojs-map"
           class='map'
           :viewport.sync='viewport'
         >
@@ -24,7 +34,7 @@
             :zIndex='2'>
           </GeojsGeojsonLayer>
         </GeojsMapViewport>
-      </template>
+      </Workspace>
     </WorkspaceContainer>
 
     <SidePanel
@@ -94,12 +104,14 @@ import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
 import WorkspaceContainer from "./Workspace/Container";
+import Workspace from "./Workspace/Workspace";
 import WorkspaceAction from "./Workspace/Action";
 
 export default {
-  name: "focus",
+  name: "Focus",
   components: {
     WorkspaceContainer,
+    Workspace,
     WorkspaceAction
   },
   data() {
@@ -113,8 +125,8 @@ export default {
       drawing: false,
       editing: false,
       processes: ["DSM"],
-      focus: "1",
-      workspaces: ["map"]
+      focus: null,
+      workspaces: [{ type: "map", id: 0 }, { type: "map", id: 1 }]
     };
   },
   computed: {
@@ -205,9 +217,17 @@ export default {
       )[0][0];
       return rest.post(`/processing/${itemId}`);
     },
-    createNewView(slotName) {
-      console.log(slotName);
-      this.workspaces.push(slotName);
+    createNewView(type) {
+      this.workspaces.push({
+        type,
+        id: Math.random()
+          .toString(36)
+          .substring(7)
+      });
+    },
+    close(workspace) {
+      var index = this.workspaces.indexOf(workspace);
+      this.workspaces.splice(index, 1);
     }
   }
 };
