@@ -12,7 +12,8 @@
         :zIndex='0'>
       </GeojsTileLayer>
       <template v-if="exploreTab==='workingSet'">
-        <GeojsAnnotationLayer
+        <GeojsAnnotationLayer v-if="editingWorkingSet"
+          :key="(editingWorkingSet._id?editingWorkingSet._id:'new')+datasetBoundsFeature.features.length"
           :editable='false'
           :labels='true'
           :initialGeojson='datasetBoundsFeature'
@@ -114,7 +115,7 @@ import FilterModule from "./FilterModule";
 import rest from "girder/src/rest";
 
 export default {
-  name: "explore",
+  name: "Explore",
   components: {
     WorkingSetModule,
     FilterModule
@@ -134,6 +135,7 @@ export default {
       if (this.editingFilter) {
         return [
           { name: "rectangle", icon: "aspect_ratio" },
+          { name: "polygon", icon: "label_outline" },
           { name: "daterange", icon: "date_range" }
         ];
       }
@@ -180,6 +182,9 @@ export default {
     clickAction(name) {
       switch (name) {
         case "rectangle":
+          this.drawing = this.drawing !== name ? name : null;
+          break;
+        case "polygon":
           this.drawing = this.drawing !== name ? name : null;
           break;
         case "daterange":

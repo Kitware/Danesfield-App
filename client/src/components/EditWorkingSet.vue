@@ -8,7 +8,7 @@
               class="input"
               name="Name"
               label="Name"
-              hint="A unique name for the filter"
+              hint="A unique name for the working set"
               v-model="name"
             ></v-text-field>
           </v-flex>

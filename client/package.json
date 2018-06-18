@@ -19,8 +19,7 @@
     "vue": "^2.5.16",
     "vue-router": "^3.0.1",
     "vuetify": "^1.0.17",
-    "vuex": "^3.0.1",
-    "wkx": "^0.4.5"
+    "vuex": "^3.0.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.0-beta.7",

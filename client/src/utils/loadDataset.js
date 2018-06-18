@@ -1,5 +1,4 @@
 
-import wkx from 'wkx';
 import rest from 'girder/src/rest';
 
 export default () => {
@@ -15,14 +14,12 @@ export const loadDatasetByFilterConditions = async (conditions) => {
             collection.geometries.push(geometry);
             return collection;
         }, { type: 'GeometryCollection', geometries: [] })
-    var wkxGeometry = wkx.Geometry.parseGeoJSON(geometryCollection);
-    var wkt = wkxGeometry.toWkt();
 
     var result;
-    if (wkxGeometry.geometries.length) {
+    if (geometryCollection.geometries.length) {
         result = await rest.get('item/geometa', {
             params: {
-                geometry: wkt,
+                geojson: geometryCollection,
                 relation: 'within'
             }
         });

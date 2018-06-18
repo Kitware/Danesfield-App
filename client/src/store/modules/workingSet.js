@@ -41,7 +41,7 @@ export default {
     datasetBoundsFeature(state) {
       return state.datasets.reduce((featureCollection, dataset) => {
         featureCollection.features.push({
-          type: 'feature',
+          type: 'Feature',
           properties: {
             name: dataset['name']
           },
