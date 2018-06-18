@@ -6,7 +6,6 @@ export default {
   components: {
     Workspace
   },
-
   render(h) {
     return h("div", { class: ["workspace-container"] }, [
       h(
@@ -32,36 +31,39 @@ export default {
             }
           }
         },
-        this.$slots.default
-          .map(workspaceVNode => {
-            var { identifier } = workspaceVNode.componentOptions.propsData;
-            if (
-              !this.maximizedWorkspace ||
-              identifier === this.maximizedWorkspace
-            ) {
-              return h(
-                "div",
-                {
-                  class: "view",
-                  key: identifier.type + identifier.id
-                },
-                [workspaceVNode]
-              );
-            } else {
-              return null;
-            }
-          })
+        this.$slots.default.map(workspaceVNode => {
+          var { identifier } = workspaceVNode.componentOptions.propsData;
+          if (
+            !this.maximizedWorkspace ||
+            identifier === this.maximizedWorkspace
+          ) {
+            return h(
+              "div",
+              {
+                class: "view",
+                key: identifier.valueOf()
+              },
+              [workspaceVNode]
+            );
+          } else {
+            return null;
+          }
+        })
       )
     ]);
   },
   props: {
-    focus: {
-      type: Object,
+    focused: {
+      type: [String, Number, Object],
       default: null
     },
     autoResize: {
       type: Boolean,
       default: false
+    },
+    max: {
+      type: Number,
+      default: 4
     }
   },
   data() {
@@ -80,14 +82,19 @@ export default {
       this.$emit("workspaceMaximized", value);
     },
     workspaces(value) {
-      // console.log("workspaces changed", value);
-      this.$emit("workspacesChanged", value);
       this.maximizedWorkspace = null;
+      this.setDefaultFocus();
+      this.$emit("workspacesChanged", value);
+    },
+    max(value) {
+      this.$emit("maxChanged", value);
     }
   },
   created() {
-    // console.log("Container created");
     window.container = this;
+    setTimeout(() => {
+      this.setDefaultFocus();
+    }, 0);
     this.$on("workspace_maximize", identifier => {
       this.maximizedWorkspace = identifier;
     });
@@ -95,15 +102,10 @@ export default {
       this.maximizedWorkspace = null;
     });
     this.$on("workspace_focus", identifier => {
-      this.$emit("update:focus", identifier);
+      this.$emit("update:focused", identifier);
     });
   },
-  // mounted() {
-  // },
-  // beforeUpdate() {
-  // },
   updated() {
-    // console.log("Container updated");
     let workspaces = this.$slots.default.map(
       workspaceVNode => workspaceVNode.componentOptions.propsData.identifier
     );
@@ -138,6 +140,14 @@ export default {
         window.dispatchEvent(new Event("resize"));
         clearInterval(this.resizeEventHandle);
         this.resizeEventHandle = null;
+      }
+    },
+    setDefaultFocus() {
+      if (!this.focused || this.workspaces.indexOf(this.focused) === -1) {
+        this.$emit(
+          "update:focused",
+          this.$slots.default[0].componentOptions.propsData.identifier
+        );
       }
     }
   }

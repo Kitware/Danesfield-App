@@ -1,21 +1,21 @@
 <template>
   <FullScreenViewport>
     <WorkspaceContainer 
-      :focus.sync="focus"
+      :focused.sync="focused"
       :autoResize="true"
       :max="2"
     >
       <Workspace
-        :key="workspace.type+workspace.id"
-        :identifier="workspace"
-        v-for="(workspace) in workspaces"
-        @duplicate="createNewView(workspace.type)" 
+        :key="workspace.id"
+        :identifier="workspace.id"
+        v-for="workspace in workspaces"
+        @duplicate="createNewView(workspace.type)"
         @close="close(workspace)">
         <template slot="actions">
-          <WorkspaceAction @click='(e)=>{console.log(e)}'>Map</WorkspaceAction>
-          <WorkspaceAction @click='(e)=>{console.log(e)}'>Point Cloud</WorkspaceAction>
+          <WorkspaceAction @click="changeToMap(workspace)">Map</WorkspaceAction>
+          <WorkspaceAction @click="changeToPointCloud(workspace)">Point Cloud</WorkspaceAction>
         </template>
-        <GeojsMapViewport key="geojs-map"
+        <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
           class='map'
           :viewport.sync='viewport'
         >
@@ -33,6 +33,9 @@
             :zIndex='2'>
           </GeojsGeojsonLayer>
         </GeojsMapViewport>
+        <div v-if="workspace.type==='pc'">
+          {{focused}}
+        </div>
       </Workspace>
     </WorkspaceContainer>
 
@@ -124,8 +127,8 @@ export default {
       drawing: false,
       editing: false,
       processes: ["DSM"],
-      focus: null,
-      workspaces: [{ type: "map", id: 0 }, { type: "map", id: 1 }]
+      focused: null,
+      workspaces: [{ type: "map", id: 0 }]
     };
   },
   computed: {
@@ -227,6 +230,12 @@ export default {
     close(workspace) {
       var index = this.workspaces.indexOf(workspace);
       this.workspaces.splice(index, 1);
+    },
+    changeToMap(workspace) {
+      workspace.type = "map";
+    },
+    changeToPointCloud(workspace) {
+      workspace.type = "pc";
     }
   }
 };

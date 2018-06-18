@@ -1,5 +1,5 @@
 <template>
-  <div class='workspace' @click="focus">
+  <div class='workspace' @mousedown="focus">
     <div class='focus-indicator' v-if='!onlyWorkspace && focused'></div>
     <div class='button-container'>
       <v-menu offset-y>
@@ -9,13 +9,19 @@
           color="primary"
         ><v-icon>menu</v-icon></v-btn>
         <v-list>
-          <v-list-tile @click="$emit('duplicate')">
+          <v-list-tile
+            v-if="$listeners.duplicate"
+            :disabled="workspaces.length===max" 
+            @click="duplicate">
             <v-list-tile-title>Duplicate</v-list-tile-title>
           </v-list-tile>
-          <v-list-tile :disabled="onlyWorkspace" @click="close">
+          <v-list-tile
+            v-if="$listeners.close"
+            :disabled="onlyWorkspace" 
+            @click="close">
             <v-list-tile-title>Close</v-list-tile-title>
           </v-list-tile>
-          <v-divider v-if='$slots.actions'></v-divider>
+          <v-divider v-if='$slots.actions && ($listeners.duplicate || $listeners.close)'></v-divider>
           <slot name='actions'></slot>
         </v-list>
       </v-menu>
@@ -40,33 +46,43 @@ export default {
   inject: ["container"],
   props: {
     identifier: {
-      type: Object,
+      type: [String, Number, Object],
       required: true
     }
   },
   data() {
     return {
-      maximized: false,
-      focused: false,
-      onlyWorkspace: false
+      maximizedWorkspace: null,
+      focusedWorkspace: null,
+      workspaces: null,
+      max: null
     };
   },
   computed: {
-    bar() {
-      return this.foo;
+    maximized() {
+      return this.maximizedWorkspace === this.identifier;
+    },
+    onlyWorkspace() {
+      return this.workspaces.length === 1;
+    },
+    focused() {
+      return this.focusedWorkspace === this.identifier;
     }
   },
   created() {
     // console.log("workspace created");
     this.container.$on("workspaceMaximized", this.workspaceMaximized);
     this.container.$on("workspacesChanged", this.workspacesChanged);
-    this.container.$on("update:focus", this.focusChanged);
     this.workspacesChanged(this.container.workspaces);
+    this.container.$on("update:focused", this.focusChanged);
+    this.focusChanged(this.container.focused);
+    this.container.$on("maxChanged", this.maxChanged);
+    this.maxChanged(this.container.max);
   },
   beforeDestroy() {
     this.container.$off("workspaceMaximized", this.workspaceMaximized);
     this.container.$off("workspacesChanged", this.workspacesChanged);
-    this.container.$off("update:focus", this.focusChanged);
+    this.container.$off("update:focused", this.focusChanged);
   },
   watch: {},
   methods: {
@@ -79,19 +95,27 @@ export default {
         this.identifier
       );
     },
+    duplicate() {
+      if (this.workspaces.length !== this.max) {
+        this.$emit("duplicate");
+      }
+    },
     close() {
       if (!this.onlyWorkspace) {
         this.$emit("close");
       }
     },
     workspaceMaximized(identifier) {
-      this.maximized = identifier === this.identifier;
+      this.maximizedWorkspace = identifier;
     },
     focusChanged(identifier) {
-      this.focused = identifier === this.identifier;
+      this.focusedWorkspace = identifier;
     },
     workspacesChanged(workspaces) {
-      this.onlyWorkspace = workspaces.length === 1;
+      this.workspaces = workspaces;
+    },
+    maxChanged(max) {
+      this.max = max;
     }
   }
 };
