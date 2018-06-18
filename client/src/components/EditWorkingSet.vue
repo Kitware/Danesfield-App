@@ -115,8 +115,7 @@
 .dataset-item {
   transition: all 0.15s;
 }
-.dataset-enter, .dataset-leave-to
-/* .dataset-leave-active below version 2.1.8 */ {
+.dataset-enter, .dataset-leave-to {
   opacity: 0;
   transform: translateX(30px);
 }

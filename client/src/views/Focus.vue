@@ -1,23 +1,43 @@
 <template>
   <FullScreenViewport>
-    <GeojsMapViewport
-      class='map'
-      :viewport.sync='viewport'
+    <WorkspaceContainer 
+      :focused.sync="focused"
+      :autoResize="true"
+      :max="2"
     >
-      <GeojsTileLayer
-        url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
-        attribution='© OpenStreetMap contributors, © CARTO'
-        :zIndex='0'>
-      </GeojsTileLayer>
-      <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
-        :url='getTileURL(dataset)'
-        :zIndex='1'>
-      </GeojsTileLayer>
-      <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
-        :geojson='datasetDataMap.get(dataset)'
-        :zIndex='2'>
-      </GeojsGeojsonLayer>
-    </GeojsMapViewport>
+      <Workspace
+        :key="workspace.id"
+        :identifier="workspace.id"
+        v-for="workspace in workspaces"
+        @duplicate="createNewView(workspace.type)"
+        @close="close(workspace)">
+        <template slot="actions">
+          <WorkspaceAction @click="changeToMap(workspace)">Map</WorkspaceAction>
+          <WorkspaceAction @click="changeToPointCloud(workspace)">Point Cloud</WorkspaceAction>
+        </template>
+        <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
+          class='map'
+          :viewport.sync='viewport'
+        >
+          <GeojsTileLayer
+            url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+            attribution='© OpenStreetMap contributors, © CARTO'
+            :zIndex='0'>
+          </GeojsTileLayer>
+          <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
+            :url='getTileURL(dataset)'
+            :zIndex='1'>
+          </GeojsTileLayer>
+          <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
+            :geojson='datasetDataMap.get(dataset)'
+            :zIndex='2'>
+          </GeojsGeojsonLayer>
+        </GeojsMapViewport>
+        <div v-if="workspace.type==='pc'">
+          {{focused}}
+        </div>
+      </Workspace>
+    </WorkspaceContainer>
 
     <SidePanel
     :top='64'
@@ -79,15 +99,23 @@
 
 <script>
 import { mapState } from "vuex";
+import rest from "girder/src/rest";
+
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
-import rest from "girder/src/rest";
+import WorkspaceContainer from "./Workspace/Container";
+import Workspace from "./Workspace/Workspace";
+import WorkspaceAction from "./Workspace/Action";
 
 export default {
-  name: "focus",
-  components: {},
+  name: "Focus",
+  components: {
+    WorkspaceContainer,
+    Workspace,
+    WorkspaceAction
+  },
   data() {
     return {
       viewport: {
@@ -98,7 +126,9 @@ export default {
       selectedDatasetIds: {},
       drawing: false,
       editing: false,
-      processes: ["DSM"]
+      processes: ["DSM"],
+      focused: null,
+      workspaces: [{ type: "map", id: 0 }]
     };
   },
   computed: {
@@ -119,10 +149,14 @@ export default {
       });
     },
     geojsonDatasets() {
-      return this.datasets.filter(dataset => dataset.geometa.driver === "GeoJSON");
+      return this.datasets.filter(
+        dataset => dataset.geometa.driver === "GeoJSON"
+      );
     },
     geotiffDatasets() {
-      return this.datasets.filter(dataset => dataset.geometa.driver === "GeoTIFF");
+      return this.datasets.filter(
+        dataset => dataset.geometa.driver === "GeoTIFF"
+      );
     },
     ...mapState(["workingSets", "selectedWorkingSetId"])
   },
@@ -184,6 +218,24 @@ export default {
         ([itemId, selected]) => selected
       )[0][0];
       return rest.post(`/processing/${itemId}`);
+    },
+    createNewView(type) {
+      this.workspaces.push({
+        type,
+        id: Math.random()
+          .toString(36)
+          .substring(7)
+      });
+    },
+    close(workspace) {
+      var index = this.workspaces.indexOf(workspace);
+      this.workspaces.splice(index, 1);
+    },
+    changeToMap(workspace) {
+      workspace.type = "map";
+    },
+    changeToPointCloud(workspace) {
+      workspace.type = "pc";
     }
   }
 };
