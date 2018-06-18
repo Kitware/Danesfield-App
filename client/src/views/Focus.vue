@@ -19,6 +19,7 @@
         <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
           class='map'
           :viewport.sync='viewport'
+      	  ref='geojsMapViewport'
         >
           <GeojsTileLayer
             url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
@@ -102,6 +103,9 @@
 <script>
 import { mapState } from "vuex";
 import rest from "girder/src/rest";
+import { geometryCollection } from "@turf/helpers";
+import bbox from "@turf/bbox";
+import bboxPolygon from "@turf/bbox-polygon";
 
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
@@ -206,6 +210,19 @@ export default {
             })
         ).then(() => {
           this.datasets = datasets;
+          var bboxOfAllDatasets = bbox(
+            geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
+          );
+          var something = this.$refs.geojsMapViewport[0].$geojsMap.zoomAndCenterFromBounds(
+            {
+              left: bboxOfAllDatasets[0],
+              right: bboxOfAllDatasets[2],
+              top: bboxOfAllDatasets[3],
+              bottom: bboxOfAllDatasets[1]
+            }
+          );
+          this.viewport.center = something.center;
+          this.viewport.zoom = something.zoom;
         });
       });
     },

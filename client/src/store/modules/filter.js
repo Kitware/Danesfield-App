@@ -1,5 +1,7 @@
 import rest from 'girder/src/rest';
 import _ from 'lodash';
+import { polygon } from '@turf/helpers';
+import pointOnFeature from '@turf/point-on-feature';
 
 import { loadDatasetByFilterConditions } from "../../utils/loadDataset";
 
@@ -75,14 +77,13 @@ export default {
     },
     heatmapData(state) {
       return state.datasetBounds.map(datasetBound => {
-        var longs = datasetBound.bounds.coordinates[0].map(data => data[0]);
-        var lats = datasetBound.bounds.coordinates[0].map(data => data[1]);
-        var midLong = (_.max(longs) + _.min(longs)) / 2;
-        var midLat = (_.max(lats) + _.min(lats)) / 2;
+        // console.log(datasetBound.bounds);
+        // let geojson = polygon([datasetBound.bounds]);
+        let point = pointOnFeature(datasetBound.bounds);
         return {
-          x: midLong,
-          y: midLat,
-          name
+          x: point.geometry.coordinates[0],
+          y: point.geometry.coordinates[1],
+          name: datasetBound.name
         }
       });
     }

@@ -7,6 +7,7 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
+    "@turf/turf": "^5.1.6",
     "girder": "file:../../girder-vue",
     "postcss-import": "^11.1.0",
     "postcss-url": "^7.3.2",

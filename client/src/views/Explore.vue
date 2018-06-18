@@ -15,7 +15,6 @@
         <GeojsAnnotationLayer v-if="editingWorkingSet"
           :key="(editingWorkingSet._id?editingWorkingSet._id:'new')+datasetBoundsFeature.features.length"
           :editable='false'
-          :labels='true'
           :initialGeojson='datasetBoundsFeature'
           :zIndex='1'>
         </GeojsAnnotationLayer>
@@ -174,9 +173,6 @@ export default {
   created() {
     this.$store.dispatch("loadWorkingSets");
     this.$store.dispatch("loadFilters");
-    rest.get("item/geometa?bbox=-180,-90,180,90&relation=intersects").then(({ data }) => {
-      console.log(data);
-    });
   },
   methods: {
     clickAction(name) {

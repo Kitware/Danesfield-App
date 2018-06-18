@@ -1,9 +1,9 @@
 <template>
 <v-app>
-    <AppToolbar 
-    :tabs='tabs' 
-    :title='title' 
-    :userIcon='userIcon' 
+    <AppToolbar
+    :tabs='tabs'
+    :title='title'
+    :userIcon='userIcon'
     @click-user='loginDialog = true' />
 
     <transition name="fade" mode='out-in'>
