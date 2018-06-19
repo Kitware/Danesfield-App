@@ -4,12 +4,13 @@
       :focused.sync="focused"
       :autoResize="true"
       :max="2"
+      :flex-grow-first="5/4"
     >
       <Workspace
         :key="workspace.id"
         :identifier="workspace.id"
         v-for="workspace in workspaces"
-        @duplicate="createNewView(workspace.type)"
+        @split="createNewView(workspace.type)"
         @close="close(workspace)">
         <template slot="actions">
           <WorkspaceAction @click="changeToMap(workspace)">Map</WorkspaceAction>

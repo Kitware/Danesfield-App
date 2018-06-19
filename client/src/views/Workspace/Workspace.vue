@@ -5,15 +5,15 @@
       <v-menu offset-y>
         <v-btn slot="activator" 
           small
-          outline
+          flat
           color="primary"
-        ><v-icon>menu</v-icon></v-btn>
+        ><v-icon>more_vert</v-icon></v-btn>
         <v-list>
           <v-list-tile
-            v-if="$listeners.duplicate"
+            v-if="$listeners.split"
             :disabled="workspaces.length===max" 
-            @click="duplicate">
-            <v-list-tile-title>Duplicate</v-list-tile-title>
+            @click="split">
+            <v-list-tile-title>Split</v-list-tile-title>
           </v-list-tile>
           <v-list-tile
             v-if="$listeners.close"
@@ -21,16 +21,17 @@
             @click="close">
             <v-list-tile-title>Close</v-list-tile-title>
           </v-list-tile>
-          <v-divider v-if='$slots.actions && ($listeners.duplicate || $listeners.close)'></v-divider>
+          <v-divider v-if='$slots.actions && ($listeners.split || $listeners.close)'></v-divider>
           <slot name='actions'></slot>
         </v-list>
       </v-menu>
       <v-btn
         small
-        outline
+        flat
         color="primary"
         @click="sendEvent()"
         v-if="!onlyWorkspace"
+        :title="!maximized?'Maximize':'Minimize'"
       >
         <v-icon v-if="!maximized">maximize</v-icon>
         <v-icon v-if="maximized">minimize</v-icon>
@@ -95,9 +96,9 @@ export default {
         this.identifier
       );
     },
-    duplicate() {
+    split() {
       if (this.workspaces.length !== this.max) {
-        this.$emit("duplicate");
+        this.$emit("split");
       }
     },
     close() {
