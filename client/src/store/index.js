@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 import auth from 'girder/src/store/auth';
 import rest from 'girder/src/rest';
 
+import prompt from "../components/prompt/module";
 import filter from './modules/filter';
 import workingSet from './modules/workingSet';
 
@@ -101,6 +102,7 @@ export default new Vuex.Store({
   modules: {
     auth,
     filter,
-    workingSet
+    workingSet,
+    prompt
   }
 });

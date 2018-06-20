@@ -9,6 +9,8 @@
     <transition name="fade" mode='out-in'>
       <router-view></router-view>
     </transition>
+
+    <Prompt />
 </v-app>
 </template>
 
@@ -54,9 +56,11 @@ body,
 </style>
 
 <script>
+import Prompt from "./components/prompt/Prompt";
+
 export default {
   name: "App",
-  components: {},
+  components: { Prompt },
   data() {
     return {
       title: "Danesfield",

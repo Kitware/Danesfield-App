@@ -89,14 +89,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-snackbar
-        :timeout="3000"
-        :bottom="true"
-        v-model="undoSnackbar"
-      >
-        {{ undoMessage }}
-        <v-btn flat color="pink" @click.native="undoAction();undoMessage=null;">Undo</v-btn>
-      </v-snackbar>
   </div>
 </template>
 
@@ -114,8 +106,6 @@ export default {
   props: {},
   data() {
     return {
-      undoMessage: null,
-      undoAction: null,
       dateRangeFilter: {
         start: null,
         end: null
@@ -133,18 +123,6 @@ export default {
       return this.editingFilter.conditions.filter(
         filter => filter.type === "daterange"
       );
-    },
-    undoSnackbar: {
-      // getter
-      get: function() {
-        return !!this.undoMessage;
-      },
-      // setter
-      set: function(value) {
-        if (!value) {
-          this.undoMessage = null;
-        }
-      }
     },
     ...mapState("filter", [
       "editingFilter",
@@ -218,10 +196,17 @@ export default {
       this.setSelectedCondition(null);
       var index = this.editingConditions.indexOf(filter);
       this.editingConditions.splice(index, 1);
-      this.undoAction = () => {
-        this.editingConditions.splice(index, 0, filter);
-      };
-      this.undoMessage = "Filter deleted";
+      this.$store
+        .dispatch("prompt/prompt", {
+          message: "Filter deleted",
+          button: "undo",
+          timeout: 3000
+        })
+        .then(result => {
+          if (result === "undo") {
+            this.editingConditions.splice(index, 0, filter);
+          }
+        });
     },
     deleteRecord() {
       this.$store.dispatch("deleteFilter", this.editingFilter).then(() => {
