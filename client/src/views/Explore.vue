@@ -20,52 +20,60 @@
         </GeojsAnnotationLayer>
       </template>
       <template v-if="exploreTab==='filter'">
-        <GeojsAnnotationLayer
-          :drawing.sync='drawing'
-          :editing.sync='editing'
-          :editable='true'
-          :annotations='annotations'
-          @update:annotations="$store.commit('filter/setAnnotations',$event)"
-          :zIndex='4'>
-        </GeojsAnnotationLayer>
-        <GeojsGeojsonLayer
-          v-if='editingConditionsGeojson'
-          :geojson='editingConditionsGeojson'
-          :zIndex='2'>
-        </GeojsGeojsonLayer>
-        <GeojsGeojsonLayer 
-          v-if='editingSelectedConditionGeojson'
-          :geojson='editingSelectedConditionGeojson'
-          :featureStyle='{polygon:{fillColor:"red"}}'
-          :zIndex='3'>
-        </GeojsGeojsonLayer>
         <GeojsHeatmapLayer v-if="editingFilter"
-          :data='heatmapData'
-          :binned='10'
-          :maxIntensity='5'
-          :minIntensity='0'
-          :updateDelay='100'
-          :zIndex='1'>
+          :data="heatmapData"
+          :binned="10"
+          :maxIntensity="5"
+          :minIntensity="0"
+          :updateDelay="100"
+          :zIndex="1">
         </GeojsHeatmapLayer>
+        <GeojsAnnotationLayer
+          :drawing.sync="drawing"
+          :editing.sync="editing"
+          :editable="true"
+          :annotations="annotations"
+          @update:annotations="$store.commit('filter/setAnnotations',$event)"
+          :zIndex="2">
+        </GeojsAnnotationLayer>
+        <GeojsGeojsonLayer 
+          v-if="editingConditionsGeojson"
+          :geojson="editingConditionsGeojson"
+          :featureStyle="filterGeojsonLayerStyle"
+          :zIndex="3">
+        </GeojsGeojsonLayer>
+      </template>
+      <template v-if="combinedSelectedDatasetPoint">
+        <GeojsGeojsonLayer
+          :geojson="{type:'Point',coordinates:[combinedSelectedDatasetPoint.x, combinedSelectedDatasetPoint.y]}"
+          :featureStyle="{point:{strokeColor:'black',strokeWidth:2,radius:3}}"
+          :zIndex="4">
+        </GeojsGeojsonLayer>
+        <GeojsWidgetLayer
+          :position="combinedSelectedDatasetPoint"
+          :offset="{x:0,y:-20}"
+          :zIndex="5">
+          <v-chip small color="green" text-color="white">{{combinedSelectedDataset.name}}</v-chip>
+        </GeojsWidgetLayer>
       </template>
     </GeojsMapViewport>
 
     <SidePanel
-    class='side-panel'
-    :top='64'
-    :toolbar='{title}'
-    :expanded='true'
-    :footer='false'
+    class="side-panel"
+    :top="64"
+    :toolbar="{title}"
+    :expanded="true"
+    :footer="false"
     >
-      <template slot='actions'>
+      <template slot="actions">
         <SidePanelAction
         v-for="action in actions" 
-        :key='action.name'
-        @click.stop='clickAction(action.name)'>
+        :key="action.name"
+        @click.stop="clickAction(action.name)">
         <v-icon>{{action.icon}}</v-icon>
         </SidePanelAction>
       </template>
-      <div class='main'>
+      <div class="main">
         <transition name="slide-fade" mode="out-in">
          <WorkingSetModule 
             v-if="exploreTab==='workingSet'"
@@ -156,6 +164,24 @@ export default {
           }
       }
     },
+    filterGeojsonLayerStyle() {
+      return {
+        polygon: {
+          fillColor: (a, b, data) => {
+            return this.selectedCondition &&
+              data === this.selectedCondition.geojson
+              ? "red"
+              : "DodgerBlue";
+          }
+        }
+      };
+    },
+    combinedSelectedDataset() {
+      return this.$store.state.workingSet.selectedDataset || this.$store.state.filter.selectedDataset;
+    },
+    combinedSelectedDatasetPoint() {
+      return this.$store.getters["workingSet/selectedDatasetPoint"] || this.$store.getters["filter/selectedDatasetPoint"];
+    },
     ...mapState(["exploreTab"]),
     ...mapState("workingSet", ["editingWorkingSet"]),
     ...mapState("filter", [
@@ -166,7 +192,6 @@ export default {
     ...mapGetters("workingSet", ["datasetBoundsFeature"]),
     ...mapGetters("filter", [
       "editingConditionsGeojson",
-      "editingSelectedConditionGeojson",
       "heatmapData"
     ])
   },

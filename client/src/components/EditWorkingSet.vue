@@ -30,7 +30,11 @@
               <div class='body-2'>Datasets</div>
               <transition-group name="dataset" tag="div">
                 <div v-for="dataset in datasets" :key="dataset._id" class="dataset-item">
-                  <v-chip outline close color="primary" class='dataset' @input="removeDataset(dataset)"><span>{{dataset.name}}</span></v-chip>
+                  <v-chip outline close color="primary" class='dataset'
+                    @input="removeDataset(dataset)"
+                    @mouseenter.native="setSelectedDataset(dataset)"
+                    @mouseleave.native="setSelectedDataset(null)"
+                  ><span>{{dataset.name}}</span></v-chip>
                 </div>
               </transition-group>
             </v-flex>
@@ -115,7 +119,8 @@
 .dataset-item {
   transition: all 0.15s;
 }
-.dataset-enter, .dataset-leave-to {
+.dataset-enter,
+.dataset-leave-to {
   opacity: 0;
   transform: translateX(30px);
 }
@@ -126,7 +131,7 @@
 </style>
 
 <script>
-import { mapState } from "vuex";
+import { mapState, mapMutations } from "vuex";
 
 import {
   loadDatasetById,
@@ -183,7 +188,11 @@ export default {
       }
     },
     ...mapState(["filters"]),
-    ...mapState("workingSet", ["editingWorkingSet", "datasets"])
+    ...mapState("workingSet", [
+      "editingWorkingSet",
+      "datasets",
+      "selectedDataset"
+    ])
   },
   watch: {
     filterId(filterId) {
@@ -266,7 +275,8 @@ export default {
     },
     removeDataset(dataset) {
       this.datasets.splice(this.datasets.indexOf(dataset), 1);
-    }
+    },
+    ...mapMutations("workingSet", ["setSelectedDataset"])
   }
 };
 </script>

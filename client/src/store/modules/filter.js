@@ -1,6 +1,3 @@
-import rest from 'girder/src/rest';
-import _ from 'lodash';
-import { polygon } from '@turf/helpers';
 import pointOnFeature from '@turf/point-on-feature';
 
 import { loadDatasetByFilterConditions } from "../../utils/loadDataset";
@@ -13,7 +10,8 @@ export default {
     annotations: [],
     pickDateRange: false,
     editingConditions: null,
-    datasetBounds: []
+    datasets: [],
+    selectedDataset: null
   },
   mutations: {
     setEditingFilter(state, filter) {
@@ -35,19 +33,17 @@ export default {
     setEditingConditions(state, conditions) {
       state.editingConditions = conditions;
     },
-    setDatasetBounds(state, datasetBounds) {
-      state.datasetBounds = datasetBounds;
+    setDatasets(state, datasets) {
+      state.datasets = datasets;
+    },
+    setSelectedDataset(state, dataset) {
+      state.selectedDataset = dataset;
     }
   },
   actions: {
-    async loadBounds({ commit, state }, conditions) {
+    async loadDatasets({ commit, state }, conditions) {
       var datasets = await loadDatasetByFilterConditions(conditions);
-      return state.datasetBounds = datasets.map(dataset => {
-        return {
-          name: dataset['name'],
-          bounds: dataset['geometa']['bounds']
-        }
-      });
+      commit('setDatasets', datasets);
     }
   },
   getters: {
@@ -55,13 +51,13 @@ export default {
       if (!state.editingConditions) {
         return null;
       }
+      state.selectedCondition;
       return {
         type: "FeatureCollection",
         features: state.editingConditions
           .filter(
             condition =>
-              condition.type === "region" &&
-              condition !== state.selectedCondition
+              condition.type === "region"
           )
           .map(condition => condition.geojson)
       };
@@ -76,16 +72,21 @@ export default {
       return state.selectedCondition.geojson;
     },
     heatmapData(state) {
-      return state.datasetBounds.map(datasetBound => {
-        // console.log(datasetBound.bounds);
-        // let geojson = polygon([datasetBound.bounds]);
-        let point = pointOnFeature(datasetBound.bounds);
+      return state.datasets.map(dataset => {
+        let point = pointOnFeature(dataset.geometa.bounds);
         return {
+          _id: dataset._id,
+          name: dataset.name,
           x: point.geometry.coordinates[0],
-          y: point.geometry.coordinates[1],
-          name: datasetBound.name
+          y: point.geometry.coordinates[1]
         }
       });
+    },
+    selectedDatasetPoint(state, getters) {
+      if (!getters.heatmapData.length || !state.selectedDataset) {
+        return null;
+      }
+      return getters.heatmapData.filter(point => point._id === state.selectedDataset._id)[0];
     }
   }
 };

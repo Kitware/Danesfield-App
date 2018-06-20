@@ -16,9 +16,14 @@
         <v-layout row wrap>
           <transition name='fade'>
             <v-flex xs12>
-              <div class='datasets' v-if="datasetBounds.length">
+              <div class='datasets' v-if="datasets.length">
                 <div class='body-2'>Datasets</div>
-                <v-chip outline color="primary" v-for="(datasetBound, i) in datasetBounds" :key="i">{{datasetBound.name}}</v-chip>
+                <v-chip outline color="primary" 
+                  v-for="(dataset, i) in datasets" 
+                  :key="i"
+                  @mouseenter.native="setSelectedDataset(dataset)"
+                  @mouseleave.native="setSelectedDataset(null)"
+                >{{dataset.name}}</v-chip>
               </div>
             </v-flex>
           </transition>
@@ -30,8 +35,10 @@
             <v-expansion-panel>
               <v-expansion-panel-content
                 expand-icon="arrow_drop_down"
-                v-for="(condition,i) in this.editingConditions" 
-                :key="i" @mouseenter.native="setSelectedCondition(condition)" @mouseleave.native="setSelectedCondition(null)">
+                v-for="(condition,i) in this.editingConditions"
+                :key="i"
+                @mouseenter.native="setSelectedCondition(condition)"
+                @mouseleave.native="setSelectedCondition(null)">
                 <div slot='header'><v-icon class="mr-2">{{getConditionIcon(condition)}}</v-icon>{{getConditionText(condition.type)}}<v-icon class="condition-delete" @click.stop='deleteCondition(condition)'>delete</v-icon></div>
                 <v-card>
                   <v-card-text class="text-xs-center p">
@@ -93,9 +100,8 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import { mapState, mapMutations } from "vuex";
 
-import loadDataset from "../utils/loadDataset";
 import DateRangeControl from "./DateRangeControl";
 
 export default {
@@ -130,7 +136,7 @@ export default {
       "editingConditions",
       "annotations",
       "pickDateRange",
-      "datasetBounds"
+      "datasets"
     ])
   },
   watch: {
@@ -150,7 +156,7 @@ export default {
       }
     },
     editingConditions(value) {
-      this.$store.dispatch("filter/loadBounds", this.editingConditions);
+      this.$store.dispatch("filter/loadDatasets", this.editingConditions);
     }
   },
   created() {
@@ -179,7 +185,7 @@ export default {
     },
     exit() {
       this.$store.commit("filter/setEditingFilter", null);
-      this.$store.commit("filter/setDatasetBounds", []);
+      this.$store.commit("filter/setDatasets", []);
     },
     save() {
       this.$store
@@ -213,9 +219,6 @@ export default {
         this.exit();
       });
     },
-    setSelectedCondition(condition) {
-      this.$store.commit("filter/setSelectedCondition", condition);
-    },
     closeDataRangeDialog(value) {
       this.$store.commit("filter/setPickDateRange", value);
     },
@@ -226,7 +229,11 @@ export default {
         start: this.dateRangeFilter.start,
         end: this.dateRangeFilter.end
       });
-    }
+    },
+    ...mapMutations("filter", [
+      "setSelectedCondition",
+      "setSelectedDataset"
+    ])
   }
 };
 </script>
