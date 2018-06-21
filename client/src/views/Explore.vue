@@ -118,8 +118,6 @@ import { mapState, mapGetters } from "vuex";
 import WorkingSetModule from "./WorkingSetModule";
 import FilterModule from "./FilterModule";
 
-import rest from "girder/src/rest";
-
 export default {
   name: "Explore",
   components: {

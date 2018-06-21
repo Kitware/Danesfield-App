@@ -1,21 +1,23 @@
 import Vue from 'vue'
 import ResonantGeo from 'resonantgeo/src';
-import { setApiUrl, getTokenFromCookie } from 'girder/src/rest';
+import { Session } from 'resonantgeo/src/rest';
 import { API_URL } from './constants';
 import eventstream from './utils/eventstream';
 
 import App from './App.vue';
 import router from './router';
 import store from './store';
+import girder from './girder';
 
 Vue.config.productionTip = false;
 Vue.use(ResonantGeo);
 
-setApiUrl(API_URL);
 eventstream.open();
-store.commit('auth/setToken', getTokenFromCookie());
-store.dispatch('auth/whoami').then(() => new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app'));
+girder.rest = new Session({ apiRoot: API_URL });
+girder.rest.$refresh().then(() => {
+  new Vue({
+    router,
+    store,
+    render: h => h(App)
+  }).$mount('#app');
+});

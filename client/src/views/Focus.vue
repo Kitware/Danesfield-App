@@ -102,7 +102,6 @@
 
 <script>
 import { mapState } from "vuex";
-import rest from "girder/src/rest";
 import { geometryCollection } from "@turf/helpers";
 import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
