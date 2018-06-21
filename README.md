@@ -8,6 +8,7 @@ Application to run Danesfield algorithms.
 
 - [Girder](https://github.com/girder/girder)
 - [Girder Worker](https://github.com/girder/girder_worker) at revision [ad3e384](https://github.com/girder/girder_worker/commit/ad3e384f4894b8fb747b3bab87e39376e3701049) or later
+- [Girder Geospatial](https://github.com/OpenGeoscience/girder_geospatial)
 - [Docker](https://www.docker.com/)
 
 ## Setup
@@ -33,3 +34,6 @@ Ensure `p3d_gw` Docker image is available by:
 
 Ensure that the [GTOPO 30 data](https://data.kitware.com/#folder/5aa993db8d777f068578d08c) is
 available in `/mnt/GTOPO30`. This data is a requirement of P3D.
+
+# Client Setup
+See [here](client/README.md)
