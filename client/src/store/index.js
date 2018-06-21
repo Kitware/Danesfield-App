@@ -1,5 +1,5 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import Vue from 'vue';
+import Vuex from 'vuex';
 
 import auth from 'girder/src/store/auth';
 import rest from 'girder/src/rest';
@@ -8,7 +8,7 @@ import prompt from "../components/prompt/module";
 import filter from './modules/filter';
 import workingSet from './modules/workingSet';
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
@@ -26,7 +26,7 @@ export default new Vuex.Store({
     addWorkingSet(state, workingSet) {
       state.workingSets.push(workingSet);
     },
-    selectWorkingSetId(state, workingSetId) {
+    setSelectWorkingSetId(state, workingSetId) {
       state.selectedWorkingSetId = workingSetId;
     },
     addFilter(state, filter) {
@@ -63,7 +63,7 @@ export default new Vuex.Store({
     },
     deleteWorkingSet({ commit, state }, workingSet) {
       if (this.state.selectedWorkingSetId === workingSet._id) {
-        this.commit("selectWorkingSetId", null);
+        this.commit("setSelectWorkingSetId", null);
       }
       return rest.delete(`workingSet/${workingSet._id}`).then(() => {
         this.state.workingSets.splice(this.state.workingSets.indexOf(workingSet), 1);

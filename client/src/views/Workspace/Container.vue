@@ -133,7 +133,6 @@ export default {
   },
   methods: {
     beforeTransition(transitionType) {
-      // console.log("beforeTransition");
       this.$emit("beforeTransition", transitionType);
       if (this.autoResize) {
         clearInterval(this.resizeEventHandle);
@@ -144,7 +143,6 @@ export default {
       }
     },
     afterTransition(transitionType) {
-      // console.log("afterTransition");
       this.$emit("afterTransition", transitionType);
       if (this.autoResize || this.resizeEventHandle) {
         window.dispatchEvent(new Event("resize"));

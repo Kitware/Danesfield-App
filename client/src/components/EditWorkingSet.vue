@@ -64,14 +64,6 @@
         </v-layout>
       </v-container>
     </div>
-    <v-snackbar
-        :timeout="3000"
-        :bottom="true"
-        v-model="undoSnackbar"
-      >
-        {{ undoMessage }}
-        <v-btn flat color="pink" @click.native="undoAction();undoMessage=null;">Undo</v-btn>
-      </v-snackbar>
   </div>
 </template>
 
@@ -147,8 +139,6 @@ export default {
   props: {},
   data() {
     return {
-      undoMessage: null,
-      undoAction: null,
       name: null,
       filterId: null
     };
@@ -156,7 +146,6 @@ export default {
   created() {
     this.name = this.editingWorkingSet.name;
     this.filterId = this.editingWorkingSet.filterId;
-    // Created from filter
     if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
       this.loadDatasets(this.filterId);
     } else {
@@ -176,11 +165,9 @@ export default {
       );
     },
     undoSnackbar: {
-      // getter
       get: function() {
         return !!this.undoMessage;
       },
-      // setter
       set: function(value) {
         if (!value) {
           this.undoMessage = null;
@@ -206,22 +193,6 @@ export default {
     }
   },
   methods: {
-    getFilterIcon(filter) {
-      switch (filter.type) {
-        case "region":
-          return "aspect_ratio";
-        case "daterange":
-          return "date_range";
-      }
-    },
-    getFilterDisplayType(filter) {
-      switch (filter.type) {
-        case "region":
-          return filter.type;
-        case "daterange":
-          return "Date range";
-      }
-    },
     exit() {
       this.$store.commit("workingSet/setDatasets", []);
       this.$store.commit("workingSet/setEditingWorkingSet", null);
@@ -239,32 +210,12 @@ export default {
           this.exit();
         });
     },
-    deleteFilter(filter) {
-      this.setSelectedFilter(null);
-      var index = this.workingSet.filters.indexOf(filter);
-      this.workingSet.filters.splice(index, 1);
-      this.undoAction = () => {
-        this.workingSet.filters.splice(index, 0, filter);
-      };
-      this.undoMessage = "Filter deleted";
-    },
     deleteRecord() {
       this.$store
         .dispatch("deleteWorkingSet", this.editingWorkingSet)
         .then(() => {
           this.exit();
         });
-    },
-    setSelectedFilter(filter) {
-      this.$emit("update:selectedFilter", filter);
-    },
-    createDataRangeFilter() {
-      this.closeDataRangeDialog(false);
-      this.workingSet.filters.push({
-        type: "daterange",
-        start: this.dateRangeFilter.start,
-        end: this.dateRangeFilter.end
-      });
     },
     loadDatasets(filterId) {
       this.$store.commit("workingSet/setDatasets", []);
@@ -297,12 +248,6 @@ export default {
 
     .datasets .dataset {
       width: 100%;
-    }
-
-    .filters {
-      .filter-delete {
-        float: right;
-      }
     }
   }
 

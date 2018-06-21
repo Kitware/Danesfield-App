@@ -59,7 +59,7 @@ export default {
       this.setEditingWorkingSet(workingSet);
     },
     focusWorkingSet(workingSet) {
-      this.$store.commit("selectWorkingSetId", workingSet._id);
+      this.$store.commit("setSelectWorkingSetId", workingSet._id);
       this.$router.push("focus");
     },
     ...mapMutations("workingSet", ["setEditingWorkingSet"])

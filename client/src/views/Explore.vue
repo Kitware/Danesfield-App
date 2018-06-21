@@ -12,12 +12,11 @@
         :zIndex='0'>
       </GeojsTileLayer>
       <template v-if="exploreTab==='workingSet'">
-        <GeojsAnnotationLayer v-if="editingWorkingSet"
-          :key="(editingWorkingSet._id?editingWorkingSet._id:'new')+datasetBoundsFeature.features.length"
-          :editable='false'
-          :initialGeojson='datasetBoundsFeature'
-          :zIndex='1'>
-        </GeojsAnnotationLayer>
+        <GeojsGeojsonLayer
+          v-if="editingWorkingSet"
+          :geojson="datasetBoundsFeature"
+          :zIndex="1">
+        </GeojsGeojsonLayer>
       </template>
       <template v-if="exploreTab==='filter'">
         <GeojsHeatmapLayer v-if="editingFilter"
@@ -165,6 +164,8 @@ export default {
       }
     },
     filterGeojsonLayerStyle() {
+      // Tell Vuejs selectedCondition is a dependancy of the filterGeojsonLayerStyle computed
+      this.selectedCondition;
       return {
         polygon: {
           fillColor: (a, b, data) => {
