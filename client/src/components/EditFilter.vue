@@ -13,6 +13,21 @@
             ></v-text-field>
           </v-flex>
         </v-layout>
+        <v-layout row wrap>
+          <transition name='fade'>
+            <v-flex xs12>
+              <div class='datasets' v-if="datasets.length">
+                <div class='body-2'>Datasets</div>
+                <v-chip outline color="primary" 
+                  v-for="(dataset, i) in datasets" 
+                  :key="i"
+                  @mouseenter.native="setSelectedDataset(dataset)"
+                  @mouseleave.native="setSelectedDataset(null)"
+                >{{dataset.name}}</v-chip>
+              </div>
+            </v-flex>
+          </transition>
+        </v-layout>
       </v-container>
       <v-expansion-panel class='conditions'>
         <v-expansion-panel-content :value='true'>
@@ -20,8 +35,10 @@
             <v-expansion-panel>
               <v-expansion-panel-content
                 expand-icon="arrow_drop_down"
-                v-for="(condition,i) in this.editingConditions" 
-                :key="i" @mouseenter.native="setSelectedCondition(condition)" @mouseleave.native="setSelectedCondition(null)">
+                v-for="(condition,i) in this.editingConditions"
+                :key="i"
+                @mouseenter.native="setSelectedCondition(condition)"
+                @mouseleave.native="setSelectedCondition(null)">
                 <div slot='header'><v-icon class="mr-2">{{getConditionIcon(condition)}}</v-icon>{{getConditionText(condition.type)}}<v-icon class="condition-delete" @click.stop='deleteCondition(condition)'>delete</v-icon></div>
                 <v-card>
                   <v-card-text class="text-xs-center p">
@@ -79,16 +96,147 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-snackbar
-        :timeout="3000"
-        :bottom="true"
-        v-model="undoSnackbar"
-      >
-        {{ undoMessage }}
-        <v-btn flat color="pink" @click.native="undoAction();undoMessage=null;">Undo</v-btn>
-      </v-snackbar>
   </div>
 </template>
+
+<script>
+import { mapState, mapMutations } from "vuex";
+
+import DateRangeControl from "./DateRangeControl";
+
+export default {
+  name: "EditFilter",
+  components: {
+    DateRangeControl
+  },
+  props: {},
+  data() {
+    return {
+      dateRangeFilter: {
+        start: null,
+        end: null
+      },
+      name: null
+    };
+  },
+  computed: {
+    regionFilters() {
+      return this.editingFilter.conditions.filter(
+        filter => filter.type === "region"
+      );
+    },
+    dateRangeFilters() {
+      return this.editingFilter.conditions.filter(
+        filter => filter.type === "daterange"
+      );
+    },
+    ...mapState("filter", [
+      "editingFilter",
+      "selectedCondition",
+      "editingConditions",
+      "annotations",
+      "pickDateRange",
+      "datasets"
+    ])
+  },
+  watch: {
+    annotations([annotation]) {
+      if (annotation && annotation.geojson()) {
+        this.editingConditions.push({
+          type: "region",
+          geojson: annotation.geojson()
+        });
+        this.$store.commit("filter/setAnnotations", []);
+      }
+    },
+    pickDateRange(value) {
+      if (value) {
+        this.dateRangeFilter.start = null;
+        this.dateRangeFilter.end = null;
+      }
+    },
+    editingConditions(value) {
+      this.$store.dispatch("filter/loadDatasets", this.editingConditions);
+    }
+  },
+  created() {
+    this.name = this.editingFilter.name;
+    this.$store.commit(
+      "filter/setEditingConditions",
+      this.editingFilter.conditions.slice()
+    );
+  },
+  methods: {
+    getConditionIcon(filter) {
+      switch (filter.type) {
+        case "region":
+          return "aspect_ratio";
+        case "daterange":
+          return "date_range";
+      }
+    },
+    getConditionText(type) {
+      switch (type) {
+        case "region":
+          return type;
+        case "daterange":
+          return "Date range";
+      }
+    },
+    exit() {
+      this.$store.commit("filter/setEditingFilter", null);
+      this.$store.commit("filter/setDatasets", []);
+    },
+    save() {
+      this.$store
+        .dispatch("saveFilter", {
+          _id: this.editingFilter._id,
+          name: this.name,
+          conditions: this.editingConditions
+        })
+        .then(filter => {
+          this.exit();
+        });
+    },
+    deleteCondition(filter) {
+      this.setSelectedCondition(null);
+      var index = this.editingConditions.indexOf(filter);
+      this.editingConditions.splice(index, 1);
+      this.$store
+        .dispatch("prompt/prompt", {
+          message: "Filter deleted",
+          button: "undo",
+          timeout: 3000
+        })
+        .then(result => {
+          if (result === "undo") {
+            this.editingConditions.splice(index, 0, filter);
+          }
+        });
+    },
+    deleteRecord() {
+      this.$store.dispatch("deleteFilter", this.editingFilter).then(() => {
+        this.exit();
+      });
+    },
+    closeDataRangeDialog(value) {
+      this.$store.commit("filter/setPickDateRange", value);
+    },
+    createDataRangeFilter() {
+      this.closeDataRangeDialog(false);
+      this.editingConditions.push({
+        type: "daterange",
+        start: this.dateRangeFilter.start,
+        end: this.dateRangeFilter.end
+      });
+    },
+    ...mapMutations("filter", [
+      "setSelectedCondition",
+      "setSelectedDataset"
+    ])
+  }
+};
+</script>
 
 <style lang="scss" scoped>
 .edit-filter {
@@ -119,144 +267,15 @@
 }
 </style>
 
-<script>
-import { mapState } from "vuex";
+<style lang="scss">
+.datasets {
+  .chip {
+    max-width: 100%;
 
-import loadDataset from "../utils/loadDataset";
-import DateRangeControl from "./DateRangeControl";
-
-export default {
-  name: "EditFilter",
-  components: {
-    DateRangeControl
-  },
-  props: {},
-  data() {
-    return {
-      undoMessage: null,
-      undoAction: null,
-      dateRangeFilter: {
-        start: null,
-        end: null
-      },
-      name: null
-    };
-  },
-  computed: {
-    regionFilters() {
-      return this.editingFilter.conditions.filter(
-        filter => filter.type === "region"
-      );
-    },
-    dateRangeFilters() {
-      return this.editingFilter.conditions.filter(
-        filter => filter.type === "daterange"
-      );
-    },
-    undoSnackbar: {
-      // getter
-      get: function() {
-        return !!this.undoMessage;
-      },
-      // setter
-      set: function(value) {
-        if (!value) {
-          this.undoMessage = null;
-        }
-      }
-    },
-    ...mapState("filter", [
-      "editingFilter",
-      "selectedCondition",
-      "editingConditions",
-      "annotations",
-      "pickDateRange"
-    ])
-  },
-  watch: {
-    annotations([annotation]) {
-      if (annotation && annotation.geojson()) {
-        this.editingConditions.push({
-          type: "region",
-          geojson: annotation.geojson()
-        });
-        this.$store.commit("filter/setAnnotations", []);
-      }
-    },
-    pickDateRange(value) {
-      if (value) {
-        this.dateRangeFilter.start = null;
-        this.dateRangeFilter.end = null;
-      }
-    }
-  },
-  created() {
-    this.name = this.editingFilter.name;
-    this.$store.commit(
-      "filter/setEditingConditions",
-      this.editingFilter.conditions.slice()
-    );
-    this.$store.dispatch("filter/loadBounds");
-  },
-  methods: {
-    getConditionIcon(filter) {
-      switch (filter.type) {
-        case "region":
-          return "aspect_ratio";
-        case "daterange":
-          return "date_range";
-      }
-    },
-    getConditionText(type) {
-      switch (type) {
-        case "region":
-          return type;
-        case "daterange":
-          return "Date range";
-      }
-    },
-    exit() {
-      this.$store.commit("filter/setEditingFilter", null);
-    },
-    save() {
-      this.$store
-        .dispatch("saveFilter", {
-          _id: this.editingFilter._id,
-          name: this.name,
-          conditions: this.editingConditions
-        })
-        .then(filter => {
-          this.exit();
-        });
-    },
-    deleteCondition(filter) {
-      this.setSelectedCondition(null);
-      var index = this.editingConditions.indexOf(filter);
-      this.editingConditions.splice(index, 1);
-      this.undoAction = () => {
-        this.editingConditions.splice(index, 0, filter);
-      };
-      this.undoMessage = "Filter deleted";
-    },
-    deleteRecord() {
-      this.$store.dispatch("deleteFilter", this.editingFilter).then(() => {
-        this.exit();
-      });
-    },
-    setSelectedCondition(condition) {
-      this.$store.commit("filter/setSelectedCondition", condition);
-    },
-    closeDataRangeDialog(value) {
-      this.$store.commit("filter/setPickDateRange", value);
-    },
-    createDataRangeFilter() {
-      this.closeDataRangeDialog(false);
-      this.editingConditions.push({
-        type: "daterange",
-        start: this.dateRangeFilter.start,
-        end: this.dateRangeFilter.end
-      });
+    .chip__content {
+      max-width: 100%;
+      overflow-x: hidden;
     }
   }
-};
-</script>
+}
+</style>

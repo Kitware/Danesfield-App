@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 import auth from 'girder/src/store/auth';
 import rest from 'girder/src/rest';
 
+import prompt from "../components/prompt/module";
 import filter from './modules/filter';
 import workingSet from './modules/workingSet';
 
@@ -32,7 +33,7 @@ export default new Vuex.Store({
       state.filters.push(filter);
     },
     createWorkingSetFromFilter(state, filter) {
-      var workingSet = { name: '', filterId: filter._id };
+      var workingSet = { name: '', filterId: filter._id, datasetIds: [] };
       state.exploreTab = 'workingSet';
       state.workingSet.editingWorkingSet = workingSet;
     }
@@ -101,6 +102,7 @@ export default new Vuex.Store({
   modules: {
     auth,
     filter,
-    workingSet
+    workingSet,
+    prompt
   }
 });

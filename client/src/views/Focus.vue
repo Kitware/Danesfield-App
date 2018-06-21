@@ -4,12 +4,13 @@
       :focused.sync="focused"
       :autoResize="true"
       :max="2"
+      :flex-grow-first="5/4"
     >
       <Workspace
         :key="workspace.id"
         :identifier="workspace.id"
         v-for="workspace in workspaces"
-        @duplicate="createNewView(workspace.type)"
+        @split="createNewView(workspace.type)"
         @close="close(workspace)">
         <template slot="actions">
           <WorkspaceAction @click="changeToMap(workspace)">Map</WorkspaceAction>
@@ -18,6 +19,7 @@
         <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
           class='map'
           :viewport.sync='viewport'
+      	  ref='geojsMapViewport'
         >
           <GeojsTileLayer
             url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
@@ -26,6 +28,7 @@
           </GeojsTileLayer>
           <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
             :url='getTileURL(dataset)'
+            :keepLower="false"
             :zIndex='1'>
           </GeojsTileLayer>
           <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
@@ -100,6 +103,9 @@
 <script>
 import { mapState } from "vuex";
 import rest from "girder/src/rest";
+import { geometryCollection } from "@turf/helpers";
+import bbox from "@turf/bbox";
+import bboxPolygon from "@turf/bbox-polygon";
 
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
@@ -150,12 +156,12 @@ export default {
     },
     geojsonDatasets() {
       return this.datasets.filter(
-        dataset => dataset.geometa.driver === "GeoJSON"
+        dataset => dataset.geometa && dataset.geometa.driver === "GeoJSON"
       );
     },
     geotiffDatasets() {
       return this.datasets.filter(
-        dataset => dataset.geometa.driver === "GeoTIFF"
+        dataset => dataset.geometa && dataset.geometa.driver === "GeoTIFF"
       );
     },
     ...mapState(["workingSets", "selectedWorkingSetId"])
@@ -194,7 +200,9 @@ export default {
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         return Promise.all(
           datasets
-            .filter(dataset => dataset.geometa.driver === "GeoJSON")
+            .filter(
+              dataset => dataset.geometa && dataset.geometa.driver === "GeoJSON"
+            )
             .map(dataset => {
               return loadDatasetData(dataset).then(data => {
                 this.datasetDataMap.set(dataset, data);
@@ -202,6 +210,19 @@ export default {
             })
         ).then(() => {
           this.datasets = datasets;
+          var bboxOfAllDatasets = bbox(
+            geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
+          );
+          var something = this.$refs.geojsMapViewport[0].$geojsMap.zoomAndCenterFromBounds(
+            {
+              left: bboxOfAllDatasets[0],
+              right: bboxOfAllDatasets[2],
+              top: bboxOfAllDatasets[3],
+              bottom: bboxOfAllDatasets[1]
+            }
+          );
+          this.viewport.center = something.center;
+          this.viewport.zoom = something.zoom;
         });
       });
     },
@@ -217,7 +238,7 @@ export default {
       var itemId = Object.entries(this.selectedDatasetIds).filter(
         ([itemId, selected]) => selected
       )[0][0];
-      return rest.post(`/processing/${itemId}`);
+      return rest.post(`/processing/generate_dsm/?itemId=${itemId}`);
     },
     createNewView(type) {
       this.workspaces.push({

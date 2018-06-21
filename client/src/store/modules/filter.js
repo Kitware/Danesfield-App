@@ -1,5 +1,6 @@
-import rest from 'girder/src/rest';
-import _ from 'lodash';
+import pointOnFeature from '@turf/point-on-feature';
+
+import { loadDatasetByFilterConditions } from "../../utils/loadDataset";
 
 export default {
   namespaced: true,
@@ -9,7 +10,8 @@ export default {
     annotations: [],
     pickDateRange: false,
     editingConditions: null,
-    datasetBounds: []
+    datasets: [],
+    selectedDataset: null
   },
   mutations: {
     setEditingFilter(state, filter) {
@@ -31,16 +33,17 @@ export default {
     setEditingConditions(state, conditions) {
       state.editingConditions = conditions;
     },
-    setBounds(state, bounds) {
-      state.bounds = bounds;
+    setDatasets(state, datasets) {
+      state.datasets = datasets;
+    },
+    setSelectedDataset(state, dataset) {
+      state.selectedDataset = dataset;
     }
   },
   actions: {
-    loadBounds({ commit, state }) {
-      rest.get('dataset/bounds')
-        .then((({ data }) => {
-          state.datasetBounds = data;
-        }));
+    async loadDatasets({ commit, state }, conditions) {
+      var datasets = await loadDatasetByFilterConditions(conditions);
+      commit('setDatasets', datasets);
     }
   },
   getters: {
@@ -48,13 +51,13 @@ export default {
       if (!state.editingConditions) {
         return null;
       }
+      state.selectedCondition;
       return {
         type: "FeatureCollection",
         features: state.editingConditions
           .filter(
             condition =>
-              condition.type === "region" &&
-              condition !== state.selectedCondition
+              condition.type === "region"
           )
           .map(condition => condition.geojson)
       };
@@ -69,19 +72,21 @@ export default {
       return state.selectedCondition.geojson;
     },
     heatmapData(state) {
-      var a = state.datasetBounds.map(datasetBound => {
-        var longs = datasetBound.bounds.coordinates[0].map(data => data[0]);
-        var lats = datasetBound.bounds.coordinates[0].map(data => data[1]);
-        var midLong = (_.max(longs) + _.min(longs)) / 2;
-        var midLat = (_.max(lats) + _.min(lats)) / 2;
+      return state.datasets.map(dataset => {
+        let point = pointOnFeature(dataset.geometa.bounds);
         return {
-          x: midLong,
-          y: midLat,
-          name
+          _id: dataset._id,
+          name: dataset.name,
+          x: point.geometry.coordinates[0],
+          y: point.geometry.coordinates[1]
         }
       });
-      console.log(a);
-      return a;
+    },
+    selectedDatasetPoint(state, getters) {
+      if (!getters.heatmapData.length || !state.selectedDataset) {
+        return null;
+      }
+      return getters.heatmapData.filter(point => point._id === state.selectedDataset._id)[0];
     }
   }
 };

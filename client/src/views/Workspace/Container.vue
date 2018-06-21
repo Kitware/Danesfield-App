@@ -31,16 +31,22 @@ export default {
             }
           }
         },
-        this.$slots.default.map(workspaceVNode => {
+        this.$slots.default.map((workspaceVNode, i) => {
           var { identifier } = workspaceVNode.componentOptions.propsData;
           if (
-            !this.maximizedWorkspace ||
+            this.maximizedWorkspace === null ||
             identifier === this.maximizedWorkspace
           ) {
             return h(
               "div",
               {
-                class: "view",
+                class: {
+                  view: true
+                },
+                style: {
+                  "flex-grow":
+                    this.flexGrowFirst && i === 0 ? this.flexGrowFirst : 1
+                },
                 key: identifier.valueOf()
               },
               [workspaceVNode]
@@ -64,6 +70,10 @@ export default {
     max: {
       type: Number,
       default: 4
+    },
+    flexGrowFirst: {
+      type: Number,
+      default: null
     }
   },
   data() {
@@ -178,7 +188,7 @@ export default {
     }
     .view-leave-to,
     .view-enter {
-      flex-grow: 0.00001;
+      flex-grow: 0.00001 !important;
     }
   }
 }
