@@ -204,9 +204,8 @@ export default {
       this.editingConditions.splice(index, 1);
       this.$store
         .dispatch("prompt/prompt", {
-          message: "Filter deleted",
-          button: "undo",
-          timeout: 3000
+          message: "Condition deleted",
+          button: "undo"
         })
         .then(result => {
           if (result === "undo") {

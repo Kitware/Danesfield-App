@@ -226,6 +226,7 @@ export default {
     },
     removeDataset(dataset) {
       this.datasets.splice(this.datasets.indexOf(dataset), 1);
+      this.setSelectedDataset(null);
     },
     ...mapMutations("workingSet", ["setSelectedDataset"])
   }
