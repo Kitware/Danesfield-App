@@ -1,8 +1,7 @@
-
-import rest from 'girder/src/rest';
+import girder from '../girder';
 
 export default (dataset) => {
-    return rest.get(`item/${dataset._id}/download`)
+    return girder.rest.get(`item/${dataset._id}/download`)
         .then(({ data }) => {
             return data;
         });

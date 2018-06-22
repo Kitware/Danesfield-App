@@ -51,7 +51,6 @@ export default {
       if (!state.editingConditions) {
         return null;
       }
-      state.selectedCondition;
       return {
         type: "FeatureCollection",
         features: state.editingConditions

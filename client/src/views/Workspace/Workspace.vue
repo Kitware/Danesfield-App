@@ -71,7 +71,6 @@ export default {
     }
   },
   created() {
-    // console.log("workspace created");
     this.container.$on("workspaceMaximized", this.workspaceMaximized);
     this.container.$on("workspacesChanged", this.workspacesChanged);
     this.workspacesChanged(this.container.workspaces);

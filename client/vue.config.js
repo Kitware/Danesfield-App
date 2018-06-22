@@ -1,11 +1,11 @@
 module.exports = {
-    devServer: {
-        proxy: 'http://localhost:8081'
-    },
-    chainWebpack: config => {
-        config.module
-            .rule('js')
-            .include
-            .add('resonantgeo')
-    }
+  devServer: {
+    proxy: process.env.API_PROXY
+  },
+  chainWebpack: config => {
+    config.module
+      .rule('js')
+      .include
+      .add('resonantgeo')
+  }
 }

@@ -28,9 +28,6 @@
   </transition>
 </template>
 
-<style lang="scss" scoped>
-</style>
-
 <script>
 import { mapState, mapMutations } from "vuex";
 
@@ -43,16 +40,7 @@ export default {
     NewWithName,
     EditFilter
   },
-  props: {
-    // start: {
-    //   type: String,
-    //   default: null
-    // },
-    // end: {
-    //   type: String,
-    //   default: null
-    // }
-  },
+  props: {},
   data() {
     return {};
   },
@@ -61,8 +49,7 @@ export default {
     ...mapState("filter", ["editingFilter"])
   },
   watch: {},
-  created() {
-  },
+  created() {},
   methods: {
     addNewFilter(name) {
       var filter = { name, conditions: [] };
@@ -72,3 +59,6 @@ export default {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+</style>

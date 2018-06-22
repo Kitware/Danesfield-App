@@ -102,7 +102,6 @@
 
 <script>
 import { mapState } from "vuex";
-import rest from "girder/src/rest";
 import { geometryCollection } from "@turf/helpers";
 import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
@@ -191,7 +190,7 @@ export default {
   },
   methods: {
     change(workingSetId) {
-      this.$store.commit("selectWorkingSetId", workingSetId);
+      this.$store.commit("setSelectWorkingSetId", workingSetId);
     },
     load() {
       var selectedWorkingSet = this.workingSets.filter(
