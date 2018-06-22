@@ -17,13 +17,9 @@
 #  limitations under the License.
 ##############################################################################
 
-import itertools
-import json
-import os
-
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
-from girder.api.rest import Resource, RestException, filtermodel
+from girder.api.rest import Resource, RestException, filtermodel, getApiUrl, getCurrentToken
 from girder.constants import AccessType
 from girder.models.collection import Collection
 from girder.models.folder import Folder
@@ -31,16 +27,7 @@ from girder.models.item import Item
 from girder.models.user import User
 from girder.plugins.jobs.models.job import Job
 
-from girder_worker.docker.tasks import docker_run
-from girder_worker.docker.transforms import BindMountVolume, VolumePath
-from girder_worker.docker.transforms.girder import (
-    GirderFileIdToVolume, GirderUploadVolumePathToFolder)
-
-
-_DANESFIELD_DOCKER_IMAGE = 'core3d/danesfield'
-_DANESFIELD_SOURCE_KEY = 'danesfieldSource'
-
-_P3D_DOCKER_IMAGE = 'p3d_gw'
+from ..algorithms import fitDtm, generateDsm, generatePointCloud
 
 
 class ProcessingResource(Resource):
@@ -90,54 +77,24 @@ class ProcessingResource(Resource):
                dataType='integer', required=False, default=100)
         .param('tension', 'Number of inner smoothing iterations.',
                dataType='integer', required=False, default=10)
+        .param('trigger', 'Whether to trigger the next step in the workflow.', dataType='boolean',
+               required=False, default=False)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
-    def fitDtm(self, item, iterations, tension, params):
+    def fitDtm(self, item, iterations, tension, trigger, params):
         """
         Fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
-
-        Requirements:
-        - core3d/danesfield Docker image is available on host
         """
-        source = 'fit-dtm'
+        user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
-        # Set output file name based on input file name
-        parts = os.path.splitext(file['name'])
-        dsmName = '-dtm'.join(parts)
-        outputVolumePath = VolumePath(dsmName)
-
-        # Docker container arguments
-        containerArgs = [
-            'danesfield/tools/fit_dtm.py',
-            '--num-iterations', str(iterations),
-            '--tension', str(tension),
-            GirderFileIdToVolume(file['_id']),
-            outputVolumePath
-        ]
-
-        # Result hooks
-        # - Upload output files to output folder
-        # - Provide source algorithm reference
-        resultHooks = [
-            GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
-                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
-            })
-        ]
-
-        job = docker_run.delay(
-            image=_DANESFIELD_DOCKER_IMAGE,
-            pull_image=False,
-            container_args=containerArgs,
-            girder_job_title='Fit DTM: %s' % file['name'],
-            girder_result_hooks=resultHooks).job
-
-        # Provide info for job event listeners
-        job[_DANESFIELD_SOURCE_KEY] = source
-
-        return Job().save(job)
+        return fitDtm(
+            user=user, apiUrl=apiUrl, token=token, trigger=trigger, file=file,
+            outputFolder=outputFolder, iterations=iterations, tension=tension)
 
     @access.user
     @filtermodel(model=Job)
@@ -145,54 +102,26 @@ class ProcessingResource(Resource):
         Description('Generate a Digital Surface Model (DSM) from a point cloud.')
         .modelParam('itemId', 'The ID of the point cloud item.', model=Item, paramType='query',
                     level=AccessType.READ)
+        .param('trigger', 'Whether to trigger the next step in the workflow.', dataType='boolean',
+               required=False, default=False)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
-    def generateDsm(self, item, params):
+    def generateDsm(self, item, trigger, params):
         """
         Generate a Digital Surface Model (DSM) from a point cloud.
-
-        Requirements:
-        - core3d/danesfield Docker image is available on host
         """
         # TODO: generate-dsm.py supports multiple point cloud files as input. To support
         # that workflow, this endpoint could accept a JSON list of file IDs.
-        source = 'generate-dsm'
+        user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
-        # Set output file name based on point cloud file
-        dsmName = os.path.splitext(file['name'])[0] + '.tif'
-        outputVolumePath = VolumePath(dsmName)
-
-        # Docker container arguments
-        containerArgs = [
-            'danesfield/tools/generate_dsm.py',
-            outputVolumePath,
-            '--source_points',
-            GirderFileIdToVolume(file['_id'])
-        ]
-
-        # Result hooks
-        # - Upload output files to output folder
-        # - Provide source algorithm reference
-        resultHooks = [
-            GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
-                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
-            })
-        ]
-
-        job = docker_run.delay(
-            image=_DANESFIELD_DOCKER_IMAGE,
-            pull_image=False,
-            container_args=containerArgs,
-            girder_job_title='Generate DSM: %s' % file['name'],
-            girder_result_hooks=resultHooks).job
-
-        # Provide info for job event listeners
-        job[_DANESFIELD_SOURCE_KEY] = source
-
-        return Job().save(job)
+        return generateDsm(
+            user=user, apiUrl=apiUrl, token=token, trigger=trigger, file=file,
+            outputFolder=outputFolder)
 
     @access.user
     @filtermodel(model=Job)
@@ -210,9 +139,13 @@ class ProcessingResource(Resource):
         .param('latitudeWidth',
                'The latitudinal dimension of the point cloud, in decimal degrees.',
                dataType='double')
+        .param('trigger', 'Whether to trigger the next step in the workflow.', dataType='boolean',
+               required=False, default=False)
+        .errorResponse()
+        .errorResponse('Read access was denied on the items.', 403)
     )
     def generatePointCloud(self, imageItemIds, longitude, latitude, longitudeWidth, latitudeWidth,
-                           params):
+                           trigger, params):
         """
         Generate a 3D point cloud from 2D images.
 
@@ -220,8 +153,9 @@ class ProcessingResource(Resource):
         - p3d_gw Docker image is available on host
         - Host folder /mnt/GTOPO30 contains GTOPO 30 data
         """
-        source = 'p3d'
         user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
         outputFolder = self._datasetsFolder()
 
         # Get file IDs from image item IDs
@@ -230,49 +164,7 @@ class ProcessingResource(Resource):
             for itemId in imageItemIds
         ]
 
-        # Docker volumes
-        volumes = [
-            BindMountVolume(host_path='/mnt/GTOPO30', container_path='/P3D/GTOPO30', mode='ro')
-        ]
-
-        outputVolumePath = VolumePath('__output__')
-
-        # Docker container arguments
-        # TODO: Consider a solution where args are written to a file, in case of very long
-        # command lines
-        containerArgs = list(itertools.chain(
-            [
-                'python', '/P3D/RTN_distro/scripts/generate_point_cloud.pyc',
-                '--out', outputVolumePath,
-                '--longitude', str(longitude),
-                '--latitude', str(latitude),
-                '--longitudeWidth', str(longitudeWidth),
-                '--latitudeWidth', str(latitudeWidth),
-                '--firstProc', '0',
-                '--threads', '1',
-                '--images'
-            ],
-            [GirderFileIdToVolume(fileId) for fileId in imageFileIds],
-        ))
-
-        # Result hooks
-        # - Upload output files to output folder
-        # - Provide source algorithm reference
-        resultHooks = [
-            GirderUploadVolumePathToFolder(outputVolumePath, outputFolder['_id'], upload_kwargs={
-                'reference': json.dumps({_DANESFIELD_SOURCE_KEY: source})
-            })
-        ]
-
-        job = docker_run.delay(
-            image=_P3D_DOCKER_IMAGE,
-            pull_image=False,
-            volumes=volumes,
-            container_args=containerArgs,
-            girder_job_title='Generate point cloud',
-            girder_result_hooks=resultHooks).job
-
-        # Provide info for job event listeners
-        job[_DANESFIELD_SOURCE_KEY] = source
-
-        return Job().save(job)
+        return generatePointCloud(
+            user=user, apiUrl=apiUrl, token=token, trigger=trigger, imageFileIds=imageFileIds,
+            outputFolder=outputFolder, longitude=longitude, latitude=latitude,
+            longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)

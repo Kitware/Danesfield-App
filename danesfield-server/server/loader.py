@@ -1,38 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-
 from girder import events
-from girder.models.item import Item
 
 from rest import dataset, workingSet, processing, filter
 
-
-def _onFinalizeUpload(event):
-    """Event handler for finalize upload event."""
-    upload = event.info['upload']
-
-    try:
-        reference = json.loads(upload.get('reference'))
-    except (TypeError, ValueError):
-        return
-
-    if not isinstance(reference, dict) or 'danesfieldSource' not in reference:
-        return
-
-    # Record source algorithm in metadata
-    file = event.info['file']
-    item = Item().load(file['itemId'], force=True, exc=True)
-    item['danesfieldSource'] = reference['danesfieldSource']
-    Item().setMetadata(item, {
-        'danesfieldSource': reference['danesfieldSource']
-    })
+from .event_handlers import onFinalizeUpload, onJobUpdate
+from .workflow import DanesfieldWorkflow
+from .workflow_handlers import runFitDtm, runGenerateDsm
+from .workflow_manager import DanesfieldWorkflowManager
 
 
 def load(info):
     # Install event handlers
-    events.bind('model.file.finalizeUpload.after', info['name'], _onFinalizeUpload)
+    events.bind('model.file.finalizeUpload.after', info['name'], onFinalizeUpload)
+    events.bind('jobs.job.update', info['name'], onJobUpdate)
+
+    # Configure Danesfield workflow
+    workflow = DanesfieldWorkflow()
+    workflow.addHandler('p3d', runGenerateDsm)
+    workflow.addHandler('generate-dsm', runFitDtm)
+    DanesfieldWorkflowManager.instance().workflow = workflow
 
     # Relocate Girder API
     info['serverRoot'].girder = info['serverRoot']
