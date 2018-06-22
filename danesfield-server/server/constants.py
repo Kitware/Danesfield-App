@@ -22,7 +22,11 @@ class DanesfieldJobKey(object):
     """
     Keys for metadata attached to Danesfield jobs and related objects.
     """
+    API_URL = 'danesfieldJobUrl'
+    ID = 'danesfieldJobId'
     SOURCE = 'danesfieldJobSource'
+    TOKEN = 'danesfieldJobToken'
+    TRIGGER = 'danesfieldJobTrigger'
 
 
 class DockerImage(object):

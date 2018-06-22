@@ -19,7 +19,7 @@
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
-from girder.api.rest import Resource, RestException, filtermodel
+from girder.api.rest import Resource, RestException, filtermodel, getApiUrl, getCurrentToken
 from girder.constants import AccessType
 from girder.models.collection import Collection
 from girder.models.folder import Folder
@@ -77,17 +77,24 @@ class ProcessingResource(Resource):
                dataType='integer', required=False, default=100)
         .param('tension', 'Number of inner smoothing iterations.',
                dataType='integer', required=False, default=10)
+        .param('trigger', 'Whether to trigger the next step in the workflow.', dataType='boolean',
+               required=False, default=False)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
-    def fitDtm(self, item, iterations, tension, params):
+    def fitDtm(self, item, iterations, tension, trigger, params):
         """
         Fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
         """
+        user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
-        return fitDtm(file, outputFolder, iterations, tension)
+        return fitDtm(
+            user=user, apiUrl=apiUrl, token=token, trigger=trigger, file=file,
+            outputFolder=outputFolder, iterations=iterations, tension=tension)
 
     @access.user
     @filtermodel(model=Job)
@@ -95,19 +102,26 @@ class ProcessingResource(Resource):
         Description('Generate a Digital Surface Model (DSM) from a point cloud.')
         .modelParam('itemId', 'The ID of the point cloud item.', model=Item, paramType='query',
                     level=AccessType.READ)
+        .param('trigger', 'Whether to trigger the next step in the workflow.', dataType='boolean',
+               required=False, default=False)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
-    def generateDsm(self, item, params):
+    def generateDsm(self, item, trigger, params):
         """
         Generate a Digital Surface Model (DSM) from a point cloud.
         """
         # TODO: generate-dsm.py supports multiple point cloud files as input. To support
         # that workflow, this endpoint could accept a JSON list of file IDs.
+        user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
-        return generateDsm(file, outputFolder)
+        return generateDsm(
+            user=user, apiUrl=apiUrl, token=token, trigger=trigger, file=file,
+            outputFolder=outputFolder)
 
     @access.user
     @filtermodel(model=Job)
@@ -125,9 +139,13 @@ class ProcessingResource(Resource):
         .param('latitudeWidth',
                'The latitudinal dimension of the point cloud, in decimal degrees.',
                dataType='double')
+        .param('trigger', 'Whether to trigger the next step in the workflow.', dataType='boolean',
+               required=False, default=False)
+        .errorResponse()
+        .errorResponse('Read access was denied on the items.', 403)
     )
     def generatePointCloud(self, imageItemIds, longitude, latitude, longitudeWidth, latitudeWidth,
-                           params):
+                           trigger, params):
         """
         Generate a 3D point cloud from 2D images.
 
@@ -136,6 +154,8 @@ class ProcessingResource(Resource):
         - Host folder /mnt/GTOPO30 contains GTOPO 30 data
         """
         user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
         outputFolder = self._datasetsFolder()
 
         # Get file IDs from image item IDs
@@ -145,4 +165,6 @@ class ProcessingResource(Resource):
         ]
 
         return generatePointCloud(
-            imageFileIds, outputFolder, longitude, latitude, longitudeWidth, latitudeWidth)
+            user=user, apiUrl=apiUrl, token=token, trigger=trigger, imageFileIds=imageFileIds,
+            outputFolder=outputFolder, longitude=longitude, latitude=latitude,
+            longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)
