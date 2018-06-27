@@ -63,7 +63,7 @@ export default {
   components: { Prompt },
   data() {
     return {
-      title: "Danesfield",
+      title: "Core3D",
       tabs: [
         {
           title: "Explore",
