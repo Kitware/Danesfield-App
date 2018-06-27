@@ -106,6 +106,7 @@ import { geometryCollection } from "@turf/helpers";
 import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
 
+import girder from '../girder';
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
@@ -237,7 +238,7 @@ export default {
       var itemId = Object.entries(this.selectedDatasetIds).filter(
         ([itemId, selected]) => selected
       )[0][0];
-      return rest.post(`/processing/generate_dsm/?itemId=${itemId}`);
+      return girder.rest.post(`/processing/generate_dsm/?itemId=${itemId}`);
     },
     createNewView(type) {
       this.workspaces.push({
