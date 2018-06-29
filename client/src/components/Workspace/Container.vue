@@ -67,6 +67,10 @@ export default {
       type: Boolean,
       default: false
     },
+    continuousResizeInterval: {
+      type: Number,
+      default: null
+    },
     max: {
       type: Number,
       default: 4
@@ -114,32 +118,37 @@ export default {
     this.$on("workspace_focus", identifier => {
       this.$emit("update:focused", identifier);
     });
+    this.updateWorkspace();
   },
   updated() {
-    let workspaces = this.$slots.default.map(
-      workspaceVNode => workspaceVNode.componentOptions.propsData.identifier
-    );
-    for (let workspace of this.workspaces) {
-      if (workspaces.indexOf(workspace) == -1) {
-        var index = this.workspaces.indexOf(workspace);
-        this.workspaces.splice(index, 1);
-      }
-    }
-    for (let workspace of workspaces) {
-      if (this.workspaces.indexOf(workspace) == -1) {
-        this.workspaces.push(workspace);
-      }
-    }
+    this.updateWorkspace();
   },
   methods: {
+    updateWorkspace() {
+      let workspaces = this.$slots.default.map(
+        workspaceVNode => workspaceVNode.componentOptions.propsData.identifier
+      );
+      for (let workspace of this.workspaces) {
+        if (workspaces.indexOf(workspace) == -1) {
+          var index = this.workspaces.indexOf(workspace);
+          this.workspaces.splice(index, 1);
+        }
+      }
+      for (let workspace of workspaces) {
+        if (this.workspaces.indexOf(workspace) == -1) {
+          this.workspaces.push(workspace);
+        }
+      }
+    },
     beforeTransition(transitionType) {
       this.$emit("beforeTransition", transitionType);
       if (this.autoResize) {
         clearInterval(this.resizeEventHandle);
-        this.resizeEventHandle = setInterval(() => {
-          // console.log('sending resize');
-          window.dispatchEvent(new Event("resize"));
-        }, 50);
+        if (this.continuousResizeInterval) {
+          this.resizeEventHandle = setInterval(() => {
+            window.dispatchEvent(new Event("resize"));
+          }, this.continuousResizeInterval);
+        }
       }
     },
     afterTransition(transitionType) {

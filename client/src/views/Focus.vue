@@ -238,7 +238,7 @@ export default {
       var itemId = Object.entries(this.selectedDatasetIds).filter(
         ([itemId, selected]) => selected
       )[0][0];
-      return girder.rest.post(`/processing/generate_dsm/?itemId=${itemId}`);
+      return girder.girder.post(`/processing/generate_dsm/?itemId=${itemId}`);
     },
     createNewView(type) {
       this.workspaces.push({

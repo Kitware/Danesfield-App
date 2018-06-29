@@ -1,3 +1,3 @@
 export default {
-    rest: null
+    girder: null
 }

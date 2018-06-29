@@ -13,8 +13,11 @@ Vue.config.productionTip = false;
 Vue.use(ResonantGeo);
 
 eventstream.open();
-girder.rest = new Session({ apiRoot: API_URL });
-girder.rest.$refresh().then(() => {
+girder.girder = new Session({ apiRoot: API_URL });
+girder.girder.$refresh().then(() => {
+  Vue.use(ResonantGeo, {
+    girder: girder.girder,
+  });
   new Vue({
     router,
     store,
