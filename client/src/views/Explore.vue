@@ -44,12 +44,12 @@
       </template>
       <template v-if="combinedSelectedDatasetPoint">
         <GeojsGeojsonLayer
-          :geojson="{type:'Point',coordinates:[combinedSelectedDatasetPoint.x, combinedSelectedDatasetPoint.y]}"
+          :geojson="combinedSelectedDatasetPoint"
           :featureStyle="{point:{strokeColor:'black',strokeWidth:2,radius:3}}"
           :zIndex="4">
         </GeojsGeojsonLayer>
         <GeojsWidgetLayer
-          :position="combinedSelectedDatasetPoint"
+          :position="combinedSelectedDatasetPoint.coordinates"
           :offset="{x:0,y:-20}"
           :zIndex="5">
           <v-chip small color="green" text-color="white">{{combinedSelectedDataset.name}}</v-chip>

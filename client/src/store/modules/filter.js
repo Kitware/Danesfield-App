@@ -73,19 +73,14 @@ export default {
     heatmapData(state) {
       return state.datasets.map(dataset => {
         let point = pointOnFeature(dataset.geometa.bounds);
-        return {
-          _id: dataset._id,
-          name: dataset.name,
-          x: point.geometry.coordinates[0],
-          y: point.geometry.coordinates[1]
-        }
+        return point.geometry.coordinates;
       });
     },
-    selectedDatasetPoint(state, getters) {
-      if (!getters.heatmapData.length || !state.selectedDataset) {
+    selectedDatasetPoint(state) {
+      if (!state.selectedDataset) {
         return null;
       }
-      return getters.heatmapData.filter(point => point._id === state.selectedDataset._id)[0];
+      return pointOnFeature(state.selectedDataset.geometa.bounds).geometry;
     }
   }
 };
