@@ -1,11 +1,7 @@
 <script>
-import Workspace from "./Workspace";
-
 export default {
   name: "WorkspaceContainer",
-  components: {
-    Workspace
-  },
+  components: {},
   render(h) {
     return h("div", { class: ["workspace-container"] }, [
       h(

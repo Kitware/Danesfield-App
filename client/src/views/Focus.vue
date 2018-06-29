@@ -111,9 +111,9 @@ import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
-import WorkspaceContainer from "./Workspace/Container";
-import Workspace from "./Workspace/Workspace";
-import WorkspaceAction from "./Workspace/Action";
+import WorkspaceContainer from "../components/Workspace/Container";
+import Workspace from "../components/Workspace/Workspace";
+import WorkspaceAction from "../components/Workspace/Action";
 
 export default {
   name: "Focus",

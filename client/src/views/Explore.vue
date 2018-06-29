@@ -176,10 +176,16 @@ export default {
       };
     },
     combinedSelectedDataset() {
-      return this.$store.state.workingSet.selectedDataset || this.$store.state.filter.selectedDataset;
+      return (
+        this.$store.state.workingSet.selectedDataset ||
+        this.$store.state.filter.selectedDataset
+      );
     },
     combinedSelectedDatasetPoint() {
-      return this.$store.getters["workingSet/selectedDatasetPoint"] || this.$store.getters["filter/selectedDatasetPoint"];
+      return (
+        this.$store.getters["workingSet/selectedDatasetPoint"] ||
+        this.$store.getters["filter/selectedDatasetPoint"]
+      );
     },
     ...mapState(["exploreTab"]),
     ...mapState("workingSet", ["editingWorkingSet"]),
@@ -189,10 +195,7 @@ export default {
       "selectedCondition"
     ]),
     ...mapGetters("workingSet", ["datasetBoundsFeature"]),
-    ...mapGetters("filter", [
-      "editingConditionsGeojson",
-      "heatmapData"
-    ])
+    ...mapGetters("filter", ["editingConditionsGeojson", "heatmapData"])
   },
   created() {
     this.$store.dispatch("loadWorkingSets");

@@ -10,7 +10,6 @@ import store from './store';
 import girder from './girder';
 
 Vue.config.productionTip = false;
-Vue.use(ResonantGeo);
 
 eventstream.open();
 girder.girder = new Session({ apiRoot: API_URL });
