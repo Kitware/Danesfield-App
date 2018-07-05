@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import ResonantGeo from 'resonantgeo/src';
+import ResonantGeo from 'resonantgeo';
 import { Session } from 'resonantgeo/src/rest';
 import { API_URL } from './constants';
 import eventstream from './utils/eventstream';
