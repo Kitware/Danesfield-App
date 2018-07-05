@@ -44,12 +44,12 @@
       </template>
       <template v-if="combinedSelectedDatasetPoint">
         <GeojsGeojsonLayer
-          :geojson="{type:'Point',coordinates:[combinedSelectedDatasetPoint.x, combinedSelectedDatasetPoint.y]}"
+          :geojson="combinedSelectedDatasetPoint"
           :featureStyle="{point:{strokeColor:'black',strokeWidth:2,radius:3}}"
           :zIndex="4">
         </GeojsGeojsonLayer>
         <GeojsWidgetLayer
-          :position="combinedSelectedDatasetPoint"
+          :position="combinedSelectedDatasetPoint.coordinates"
           :offset="{x:0,y:-20}"
           :zIndex="5">
           <v-chip small color="green" text-color="white">{{combinedSelectedDataset.name}}</v-chip>
@@ -176,10 +176,16 @@ export default {
       };
     },
     combinedSelectedDataset() {
-      return this.$store.state.workingSet.selectedDataset || this.$store.state.filter.selectedDataset;
+      return (
+        this.$store.state.workingSet.selectedDataset ||
+        this.$store.state.filter.selectedDataset
+      );
     },
     combinedSelectedDatasetPoint() {
-      return this.$store.getters["workingSet/selectedDatasetPoint"] || this.$store.getters["filter/selectedDatasetPoint"];
+      return (
+        this.$store.getters["workingSet/selectedDatasetPoint"] ||
+        this.$store.getters["filter/selectedDatasetPoint"]
+      );
     },
     ...mapState(["exploreTab"]),
     ...mapState("workingSet", ["editingWorkingSet"]),
@@ -189,10 +195,7 @@ export default {
       "selectedCondition"
     ]),
     ...mapGetters("workingSet", ["datasetBoundsFeature"]),
-    ...mapGetters("filter", [
-      "editingConditionsGeojson",
-      "heatmapData"
-    ])
+    ...mapGetters("filter", ["editingConditionsGeojson", "heatmapData"])
   },
   created() {
     this.$store.dispatch("loadWorkingSets");

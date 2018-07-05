@@ -1,15 +1,22 @@
 <template>
 <v-app>
     <AppToolbar
-    :tabs='tabs'
-    :title='title'
-    :userIcon='userIcon'
-    @click-user='loginDialog = true' />
+    :title="title"
+    :tabs='tabs'>
+      <template slot="right">
+        <GirderUserButton 
+          @login="userForm='login';userDialog=true;"
+          @user="userForm='logout';userDialog=true;" />
+      </template>
+    </AppToolbar>
 
     <transition name="fade" mode='out-in'>
       <router-view></router-view>
     </transition>
-
+    <GirderUserDialog
+      :form.sync='userForm'
+      v-model='userDialog'
+      />
     <Prompt />
 </v-app>
 </template>
@@ -63,7 +70,7 @@ export default {
   components: { Prompt },
   data() {
     return {
-      title: "Danesfield",
+      title: "Core3D",
       tabs: [
         {
           title: "Explore",
@@ -76,22 +83,11 @@ export default {
           icon: "center_focus_strong"
         }
       ],
-      userIcon: "account_circle",
-      loginDialog: false,
-      login: {
-        email: "",
-        password: "",
-        rules: [v => !!v || "Field is required"]
-      }
+      userForm: "login",
+      userDialog: false
     };
   },
   methods: {
-    submitLogin() {
-      if (this.$refs.login.validate()) {
-        console.log(`logged in as ${this.login.email}`);
-        this.loginDialog = false;
-      }
-    }
   }
 };
 </script>

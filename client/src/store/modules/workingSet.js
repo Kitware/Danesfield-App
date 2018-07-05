@@ -37,13 +37,7 @@ export default {
       if (!state.selectedDataset) {
         return null;
       }
-      var point = pointOnFeature(state.selectedDataset.geometa.bounds);
-      return {
-        _id: state.selectedDataset._id,
-        name: state.selectedDataset.name,
-        x: point.geometry.coordinates[0],
-        y: point.geometry.coordinates[1]
-      }
+      return pointOnFeature(state.selectedDataset.geometa.bounds).geometry;
     }
   }
 };

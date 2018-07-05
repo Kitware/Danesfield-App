@@ -38,21 +38,21 @@ export default new Vuex.Store({
   },
   actions: {
     loadWorkingSets() {
-      girder.rest.get('workingSet')
+      girder.girder.get('workingSet')
         .then(({ data }) => {
           this.state.workingSets = data;
         });
     },
     saveWorkingSet({ commit, state }, workingSet) {
       if (workingSet._id) {
-        return girder.rest.put(`workingSet/${workingSet._id}`, workingSet)
+        return girder.girder.put(`workingSet/${workingSet._id}`, workingSet)
           .then(({ data }) => {
             let existing = state.workingSets.filter(workingSet1 => workingSet1._id === workingSet._id)[0];
             Object.assign(existing, data);
             return data;
           });
       } else {
-        return girder.rest.post('workingSet', workingSet)
+        return girder.girder.post('workingSet', workingSet)
           .then(({ data }) => {
             commit('addWorkingSet', data);
             return data;
@@ -63,27 +63,27 @@ export default new Vuex.Store({
       if (this.state.selectedWorkingSetId === workingSet._id) {
         this.commit("setSelectWorkingSetId", null);
       }
-      return girder.rest.delete(`workingSet/${workingSet._id}`).then(() => {
+      return girder.girder.delete(`workingSet/${workingSet._id}`).then(() => {
         this.state.workingSets.splice(this.state.workingSets.indexOf(workingSet), 1);
         return workingSet;
       });
     },
     loadFilters() {
-      girder.rest.get('filter')
+      girder.girder.get('filter')
         .then(({ data }) => {
           this.state.filters = data;
         });
     },
     saveFilter({ commit, state }, filter) {
       if (filter._id) {
-        return girder.rest.put(`filter/${filter._id}`, filter)
+        return girder.girder.put(`filter/${filter._id}`, filter)
           .then(({ data }) => {
             let existing = state.filters.filter(filter1 => filter1._id === filter._id)[0];
             Object.assign(existing, data);
             return data;
           });
       } else {
-        return girder.rest.post('filter', filter)
+        return girder.girder.post('filter', filter)
           .then(({ data }) => {
             commit('addFilter', data);
             return data;
@@ -91,7 +91,7 @@ export default new Vuex.Store({
       }
     },
     deleteFilter({ commit, state }, filter) {
-      return girder.rest.delete(`filter/${filter._id}`).then(() => {
+      return girder.girder.delete(`filter/${filter._id}`).then(() => {
         this.state.filters.splice(this.state.filters.indexOf(filter), 1);
         return filter;
       });

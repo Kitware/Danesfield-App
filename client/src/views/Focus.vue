@@ -77,7 +77,7 @@
             <v-list>
               <template v-for="(dataset, index) in datasets">
                 <v-divider v-if='index!==0' :key="index"></v-divider>
-                <v-list-tile avatar :key="dataset._id" @click="123">
+                <v-list-tile avatar :key="dataset._id" @click="123" :title='dataset.name'>
                   <v-list-tile-action>
                     <v-checkbox v-model="selectedDatasetIds[dataset._id]"></v-checkbox>
                   </v-list-tile-action>
@@ -102,17 +102,20 @@
 
 <script>
 import { mapState } from "vuex";
-import { geometryCollection } from "@turf/helpers";
+import { geometryCollection, point } from "@turf/helpers";
 import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
+import buffer from "@turf/buffer";
+import distance from "@turf/distance";
 
+import girder from "../girder";
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
-import WorkspaceContainer from "./Workspace/Container";
-import Workspace from "./Workspace/Workspace";
-import WorkspaceAction from "./Workspace/Action";
+import WorkspaceContainer from "../components/Workspace/Container";
+import Workspace from "../components/Workspace/Workspace";
+import WorkspaceAction from "../components/Workspace/Action";
 
 export default {
   name: "Focus",
@@ -212,16 +215,24 @@ export default {
           var bboxOfAllDatasets = bbox(
             geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
           );
-          var something = this.$refs.geojsMapViewport[0].$geojsMap.zoomAndCenterFromBounds(
+          var dist = distance(
+            point([bboxOfAllDatasets[0], bboxOfAllDatasets[1]]),
+            point([bboxOfAllDatasets[2], bboxOfAllDatasets[3]])
+          );
+          var bufferedBbox = bbox(
+            buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
+          );
+
+          var zoomAndCenter = this.$refs.geojsMapViewport[0].$geojsMap.zoomAndCenterFromBounds(
             {
-              left: bboxOfAllDatasets[0],
-              right: bboxOfAllDatasets[2],
-              top: bboxOfAllDatasets[3],
-              bottom: bboxOfAllDatasets[1]
+              left: bufferedBbox[0],
+              right: bufferedBbox[2],
+              top: bufferedBbox[3],
+              bottom: bufferedBbox[1]
             }
           );
-          this.viewport.center = something.center;
-          this.viewport.zoom = something.zoom;
+          this.viewport.center = zoomAndCenter.center;
+          this.viewport.zoom = zoomAndCenter.zoom;
         });
       });
     },
@@ -237,7 +248,7 @@ export default {
       var itemId = Object.entries(this.selectedDatasetIds).filter(
         ([itemId, selected]) => selected
       )[0][0];
-      return rest.post(`/processing/generate_dsm/?itemId=${itemId}`);
+      return girder.girder.post(`/processing/generate_dsm/?itemId=${itemId}`);
     },
     createNewView(type) {
       this.workspaces.push({

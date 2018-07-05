@@ -239,7 +239,6 @@ export default {
 
 <style lang="scss" scoped>
 .edit-filter {
-  height: 100%;
   display: flex;
   flex-direction: column;
 

@@ -1,7 +1,7 @@
 import girder from '../girder';
 
 export default () => {
-    return girder.rest.get('dataset').then(({ data }) => {
+    return girder.girder.get('dataset').then(({ data }) => {
         return data;
     });
 }
@@ -16,21 +16,21 @@ export const loadDatasetByFilterConditions = async (conditions) => {
 
     var result;
     if (geometryCollection.geometries.length) {
-        result = await girder.rest.get('item/geometa', {
+        result = await girder.girder.get('item/geometa', {
             params: {
                 geojson: geometryCollection,
                 relation: 'within'
             }
         });
     } else {
-        result = await girder.rest.get('dataset');
+        result = await girder.girder.get('dataset');
     }
     return result.data;
 }
 
 export const loadDatasetById = (ids) => {
     return Promise.all(ids.map(id => {
-        return girder.rest.get(`dataset/${id}`)
+        return girder.girder.get(`dataset/${id}`)
             .then(({ data }) => data)
             .catch(() => null)
     })).then(datasets => {

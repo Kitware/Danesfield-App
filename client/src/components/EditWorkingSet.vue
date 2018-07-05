@@ -67,61 +67,6 @@
   </div>
 </template>
 
-<style lang="scss" scoped>
-.edit-workingset {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  .main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-
-    .datasets,
-    .filters {
-      flex: 1;
-    }
-
-    .datasets .dataset {
-      display: block;
-    }
-
-    .filters {
-      .filter-delete {
-        float: right;
-      }
-    }
-  }
-
-  .bottom {
-    .btn {
-      min-width: 0;
-    }
-  }
-}
-
-// overwrite
-.expansion-panel {
-  box-shadow: none;
-}
-
-//transition
-
-.dataset-item {
-  transition: all 0.15s;
-}
-.dataset-enter,
-.dataset-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-.dataset-leave-active {
-  position: absolute;
-  width: 100%;
-}
-</style>
-
 <script>
 import { mapState, mapMutations } from "vuex";
 
@@ -235,12 +180,13 @@ export default {
 
 <style lang="scss" scoped>
 .edit-workingset {
-  height: 100%;
   display: flex;
   flex-direction: column;
 
   .main {
     flex: 1;
+    display: flex;
+    flex-direction: column;
 
     .datasets,
     .filters {
