@@ -21,6 +21,61 @@
 </v-app>
 </template>
 
+<script>
+import eventstream from "./utils/eventstream";
+import Prompt from "./components/prompt/Prompt";
+import { mapActions } from "vuex";
+
+export default {
+  name: "App",
+  components: { Prompt },
+  data() {
+    return {
+      title: "Core3D",
+      tabs: [
+        {
+          title: "Explore",
+          route: "/explore",
+          icon: "explore"
+        },
+        {
+          title: "Focus",
+          route: "/focus",
+          icon: "center_focus_strong"
+        }
+      ],
+      userForm: "login",
+      userDialog: false
+    };
+  },
+  created() {
+    function displayJobStatus(statusCode) {
+      switch (statusCode) {
+        case 1:
+          return "queued";
+        case 2:
+          return "running";
+        case 3:
+          return "suceeded";
+      }
+    }
+    eventstream.on("job_created", e => {
+      this.prompt({
+        message: `${e.data.title} is ${displayJobStatus(e.data.status)}`
+      });
+    });
+    eventstream.on("job_status", e => {
+      this.prompt({
+        message: `${e.data.title} is ${displayJobStatus(e.data.status)}`
+      });
+    });
+  },
+  methods: {
+    ...mapActions("prompt", ["prompt"])
+  }
+};
+</script>
+
 <style>
 /* global */
 html,
@@ -61,33 +116,3 @@ body,
   min-width: 0;
 }
 </style>
-
-<script>
-import Prompt from "./components/prompt/Prompt";
-
-export default {
-  name: "App",
-  components: { Prompt },
-  data() {
-    return {
-      title: "Core3D",
-      tabs: [
-        {
-          title: "Explore",
-          route: "/explore",
-          icon: "explore"
-        },
-        {
-          title: "Focus",
-          route: "/focus",
-          icon: "center_focus_strong"
-        }
-      ],
-      userForm: "login",
-      userDialog: false
-    };
-  },
-  methods: {
-  }
-};
-</script>

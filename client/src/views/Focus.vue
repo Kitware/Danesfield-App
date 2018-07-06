@@ -168,20 +168,6 @@ export default {
     },
     ...mapState(["workingSets", "selectedWorkingSetId"])
   },
-  created() {
-    this.datasetDataMap = new WeakMap();
-    this.$store.dispatch("loadWorkingSets").then(() => {
-      if (this.selectedWorkingSetId) {
-        this.load();
-      }
-    });
-
-    eventstream.on("job_status", e => {
-      if (e.data.status === 3) {
-        this.load();
-      }
-    });
-  },
   watch: {
     selectedWorkingSetId(selectedWorkingSetId) {
       if (selectedWorkingSetId) {
@@ -191,6 +177,21 @@ export default {
       this.load();
     }
   },
+  created() {
+    this.datasetDataMap = new WeakMap();
+    this.$store.dispatch("loadWorkingSets").then(() => {
+      if (this.selectedWorkingSetId) {
+        this.load();
+      }
+    });
+
+    eventstream.on("job_status", e => {
+      console.log(e);
+      if (e.data.status === 3) {
+        this.load();
+      }
+    });
+  },
   methods: {
     change(workingSetId) {
       this.$store.commit("setSelectWorkingSetId", workingSetId);
@@ -199,6 +200,9 @@ export default {
       var selectedWorkingSet = this.workingSets.filter(
         workingSet => workingSet._id === this.selectedWorkingSetId
       )[0];
+      if (!selectedWorkingSet) {
+        return;
+      }
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         return Promise.all(
           datasets
