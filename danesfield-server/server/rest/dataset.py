@@ -25,8 +25,7 @@ class DatasetResource(Resource):
         return self._getAll()
 
     def _getAll(self):
-        datasetItems = list(Item().find({'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF']}}))
-        # datasetItems = list(Item().find({'$or': [{'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF']}}, {'meta.type': 'pointcloud'}]}))
+        datasetItems = list(Item().find({'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF', 'OBJ']}}))
         return datasetItems
 
     @autoDescribeRoute(

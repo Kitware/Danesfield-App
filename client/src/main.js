@@ -1,9 +1,10 @@
 import Vue from 'vue'
 import ResonantGeo from 'resonantgeo';
 import { Session } from 'resonantgeo/src/rest';
+import '@fortawesome/fontawesome-free/css/all.css';
+
 import { API_URL } from './constants';
 import eventstream from './utils/eventstream';
-
 import App from './App.vue';
 import router from './router';
 import store from './store';
