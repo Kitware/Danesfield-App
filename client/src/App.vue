@@ -26,6 +26,8 @@ import eventstream from "./utils/eventstream";
 import Prompt from "./components/prompt/Prompt";
 import { mapActions } from "vuex";
 
+import './transitions.scss';
+
 export default {
   name: "App",
   components: { Prompt },
@@ -84,31 +86,6 @@ body,
 .application--wrap {
   height: 100vh;
   overflow: hidden;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s;
-}
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-fade-enter-active {
-  transition: all 0.15s ease;
-}
-.slide-fade-leave-active {
-  transition: all 0.15s ease;
-}
-.slide-fade-enter {
-  transform: translateX(-10px);
-  opacity: 0;
-}
-
-.slide-fade-leave-to {
-  transform: translateX(10px);
-  opacity: 0;
 }
 
 /* overwrite */
