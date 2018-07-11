@@ -3,7 +3,6 @@ import Router from 'vue-router';
 import Explore from './views/Explore.vue';
 import Focus from './views/Focus.vue';
 import Login from './views/Login.vue';
-import ObjPage from './views/ObjPage.vue';
 
 Vue.use(Router);
 import girder from './girder';
@@ -32,11 +31,6 @@ export default new Router({
     name: 'focus',
     component: Focus,
     beforeEnter
-  },
-  {
-    path: '/objviewer',
-    name: 'objviewer',
-    component: ObjPage
   },
   {
     path: '/login',

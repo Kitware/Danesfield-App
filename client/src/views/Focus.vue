@@ -19,7 +19,7 @@
         </template>
         <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
           class='map'
-          :viewport.sync='viewport'
+          :viewport='viewport'
       	  ref='geojsMapViewport'
         >
           <GeojsTileLayer
@@ -44,7 +44,9 @@
           </template>
         </GeojsMapViewport>
         <div v-if="workspace.type==='vtk'">
-          {{focusedWorkspace}}
+          <VTKViewport>
+            <OBJActor v-for="(dataset,i) in workspace.datasets" :key=i :url="`http://localhost:8081/api/v1/item/${dataset._id}/download`" />
+          </VTKViewport>
         </div>
       </Workspace>
     </WorkspaceContainer>
@@ -134,6 +136,8 @@ import WorkspaceContainer from "../components/Workspace/Container";
 import Workspace from "../components/Workspace/Workspace";
 import WorkspaceAction from "../components/Workspace/Action";
 import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
+import VTKViewport from "../components/vtk/VTKViewport";
+import OBJActor from "../components/vtk/OBJActor";
 
 export default {
   name: "Focus",
@@ -141,7 +145,9 @@ export default {
     WorkspaceContainer,
     Workspace,
     WorkspaceAction,
-    GeojsGeojsonDatasetLayer
+    GeojsGeojsonDatasetLayer,
+    VTKViewport,
+    OBJActor
   },
   data() {
     return {
@@ -215,6 +221,10 @@ export default {
       }
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         this.datasets = datasets;
+        var geojsViewport = this.$refs.geojsMapViewport[0];
+        if (!geojsViewport) {
+          return;
+        }
         var bboxOfAllDatasets = bbox(
           geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
         );
@@ -226,7 +236,7 @@ export default {
           buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
         );
 
-        var zoomAndCenter = this.$refs.geojsMapViewport[0].$geojsMap.zoomAndCenterFromBounds(
+        var zoomAndCenter = geojsViewport.$geojsMap.zoomAndCenterFromBounds(
           {
             left: bufferedBbox[0],
             right: bufferedBbox[2],
