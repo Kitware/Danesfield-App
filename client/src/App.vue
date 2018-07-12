@@ -26,7 +26,7 @@ import eventstream from "./utils/eventstream";
 import Prompt from "./components/prompt/Prompt";
 import { mapActions } from "vuex";
 
-import './transitions.scss';
+import "./transitions.scss";
 
 export default {
   name: "App",

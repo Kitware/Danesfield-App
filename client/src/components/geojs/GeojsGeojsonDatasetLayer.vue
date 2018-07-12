@@ -7,13 +7,11 @@
 </template>
 
 <script>
-import girderApi from "resonantgeo/src/mixins/girderApi";
 
 var cache = new WeakMap();
 
 export default {
   name: "GeojsGeojsonDatasetLayer",
-  mixins: [girderApi],
   components: {},
   props: ["dataset", "zIndex"],
   data() {
@@ -26,9 +24,6 @@ export default {
       return [];
     }
   },
-  watch: {
-    // dataset
-  },
   async created() {
     if (cache.has(this.dataset)) {
       this.geojson = cache.get(this.dataset);
@@ -40,7 +35,7 @@ export default {
   },
   methods: {
     async loadDatasetData() {
-      var { data: geojson } = await this.session.get(
+      var { data: geojson } = await this.$girder.get(
         `item/${this.dataset._id}/download`
       );
       return geojson;

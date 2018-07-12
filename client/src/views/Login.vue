@@ -3,7 +3,7 @@
   <v-container>
     <GirderUserDialog
       :form.sync='form'
-      v-model='userDialog'
+      :value='userDialog'
       />
   </v-container>
 </FullScreenViewport>
@@ -11,18 +11,23 @@
 <script>
 export default {
   name: "Login",
-  watch: {
-    userDialog(value) {
-      if (!value) {
-        this.$router.push("/explore");
-      }
-    }
-  },
   data() {
     return {
       form: "login",
       userDialog: true
     };
+  },
+  computed: {
+    user() {
+      return this.$girder.user;
+    }
+  },
+  watch: {
+    user(user) {
+      if (user) {
+        this.$router.push("/explore");
+      }
+    }
   }
 };
 </script>

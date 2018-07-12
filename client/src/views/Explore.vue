@@ -195,7 +195,17 @@ export default {
       "selectedCondition"
     ]),
     ...mapGetters("workingSet", ["datasetBoundsFeature"]),
-    ...mapGetters("filter", ["editingConditionsGeojson", "heatmapData"])
+    ...mapGetters("filter", ["editingConditionsGeojson", "heatmapData"]),
+    user() {
+      return this.$girder.user;
+    }
+  },
+  watch: {
+    user(user) {
+      if (!user) {
+        this.$router.push("/login");
+      }
+    }
   },
   created() {
     this.$store.dispatch("loadWorkingSets");

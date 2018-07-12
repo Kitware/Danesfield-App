@@ -181,9 +181,17 @@ export default {
       "workspaces",
       "focusedWorkspaceKey"
     ]),
-    ...mapGetters(["focusedWorkspace"])
+    ...mapGetters(["focusedWorkspace"]),
+    user() {
+      return this.$girder.user;
+    }
   },
   watch: {
+    user(user) {
+      if (!user) {
+        this.$router.push("/login");
+      }
+    },
     selectedWorkingSetId(selectedWorkingSetId) {
       if (selectedWorkingSetId) {
         this.datasets = [];
