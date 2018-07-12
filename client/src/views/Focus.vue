@@ -1,24 +1,25 @@
 <template>
   <FullScreenViewport>
     <WorkspaceContainer 
-      :focused.sync="focused"
+      :focused="focusedWorkspace"
+      @update:focused="setFocusedWorkspaceKey($event)"
       :autoResize="true"
       :max="2"
       :flex-grow-first="5/4"
     >
       <Workspace
-        :key="workspace.id"
-        :identifier="workspace.id"
-        v-for="workspace in workspaces"
-        @split="createNewView(workspace.type)"
-        @close="close(workspace)">
+        v-for="(workspace, key) in workspaces"
+        :key="key"
+        :identifier="key"
+        @split="addWorkspace(workspace)"
+        @close="removeWorkspace(key)">
         <template slot="actions">
-          <WorkspaceAction @click="changeToMap(workspace)">Map</WorkspaceAction>
-          <WorkspaceAction @click="changeToPointCloud(workspace)">Point Cloud</WorkspaceAction>
+          <WorkspaceAction :disabled="workspace.type==='map'" @click="changeWorkspaceType({workspace,type:'map'})">Map</WorkspaceAction>
+          <WorkspaceAction :disabled="workspace.type==='vtk'" @click="changeWorkspaceType({workspace,type:'vtk'})">VTK</WorkspaceAction>
         </template>
         <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
           class='map'
-          :viewport.sync='viewport'
+          :viewport='viewport'
       	  ref='geojsMapViewport'
         >
           <GeojsTileLayer
@@ -26,18 +27,26 @@
             attribution='© OpenStreetMap contributors, © CARTO'
             :zIndex='0'>
           </GeojsTileLayer>
-          <GeojsTileLayer v-for="(dataset, i) in geotiffDatasets" :key="'tile'+i"
-            :url='getTileURL(dataset)'
-            :keepLower="false"
-            :zIndex='1'>
-          </GeojsTileLayer>
-          <GeojsGeojsonLayer v-for="(dataset, i) in geojsonDatasets" :key='i'
-            :geojson='datasetDataMap.get(dataset)'
-            :zIndex='2'>
-          </GeojsGeojsonLayer>
+          <template v-for="(dataset,i) in workspace.datasets">
+            <GeojsGeojsonDatasetLayer
+              v-if="dataset.geometa.driver==='GeoJSON'"
+              :key="dataset._id"
+              :dataset="dataset"
+              :zIndex="i+1">
+            </GeojsGeojsonDatasetLayer>
+            <GeojsTileLayer
+              v-if="dataset.geometa.driver==='GeoTIFF'"
+              :key="dataset._id"
+              :url='getTileURL(dataset)'
+              :keepLower="false"
+              :zIndex='i+1'>
+            </GeojsTileLayer>
+          </template>
         </GeojsMapViewport>
-        <div v-if="workspace.type==='pc'">
-          {{focused}}
+        <div v-if="workspace.type==='vtk'">
+          <VTKViewport>
+            <OBJActor v-for="(dataset,i) in workspace.datasets" :key=i :url="`http://localhost:8081/api/v1/item/${dataset._id}/download`" />
+          </VTKViewport>
         </div>
       </Workspace>
     </WorkspaceContainer>
@@ -73,23 +82,33 @@
               hide-details
             ></v-select>
           </v-flex>
-          <v-flex xs12>
-            <v-list>
-              <template v-for="(dataset, index) in datasets">
-                <v-divider v-if='index!==0' :key="index"></v-divider>
-                <v-list-tile avatar :key="dataset._id" @click="123" :title='dataset.name'>
-                  <v-list-tile-action>
-                    <v-checkbox v-model="selectedDatasetIds[dataset._id]"></v-checkbox>
-                  </v-list-tile-action>
-                  <v-list-tile-content>
-                    <v-list-tile-title>{{dataset.name}}</v-list-tile-title>
-                  </v-list-tile-content>
-                </v-list-tile>
-              </template>
-            </v-list>
-          </v-flex>
         </v-layout>
       </v-container>
+      <v-list dense expand class="datasets">
+        <transition-group name="fade-group" tag="div">
+          <v-list-tile
+          v-for="dataset in datasets"
+          :key="dataset._id"
+          class="dataset"
+          @click="123"
+          >
+            <v-list-tile-action>
+              <template v-if="workspaceSupportsDataset(focusedWorkspace,dataset)">
+                <v-btn flat icon key="add" v-if="focusedWorkspace.datasets.indexOf(dataset)===-1" color="grey lighten-2" @click="addDatasetToWorkspace({dataset,workspace:focusedWorkspace})">
+                  <v-icon>fa-globe-americas</v-icon>
+                </v-btn>
+                <v-btn flat icon key="remove" v-else color="grey darken-2" @click="removeDatasetFromWorkspace({dataset,workspace:focusedWorkspace})">
+                  <v-icon>fa-globe-americas</v-icon>
+                </v-btn>
+              </template>
+              <v-icon v-else color="grey lighten-3">fa-ban</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-content>
+                <v-list-tile-title v-text="dataset.name"></v-list-tile-title>
+            </v-list-tile-content>
+          </v-list-tile>
+        </transition-group>
+      </v-list>
     </SidePanel>
   </FullScreenViewport>
 </template>
@@ -101,7 +120,7 @@
 </style>
 
 <script>
-import { mapState } from "vuex";
+import { mapState, mapGetters, mapMutations } from "vuex";
 import { geometryCollection, point } from "@turf/helpers";
 import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
@@ -116,13 +135,19 @@ import eventstream from "../utils/eventstream";
 import WorkspaceContainer from "../components/Workspace/Container";
 import Workspace from "../components/Workspace/Workspace";
 import WorkspaceAction from "../components/Workspace/Action";
+import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
+import VTKViewport from "../components/vtk/VTKViewport";
+import OBJActor from "../components/vtk/OBJActor";
 
 export default {
   name: "Focus",
   components: {
     WorkspaceContainer,
     Workspace,
-    WorkspaceAction
+    WorkspaceAction,
+    GeojsGeojsonDatasetLayer,
+    VTKViewport,
+    OBJActor
   },
   data() {
     return {
@@ -135,8 +160,7 @@ export default {
       drawing: false,
       editing: false,
       processes: ["DSM"],
-      focused: null,
-      workspaces: [{ type: "map", id: 0 }]
+      focused: null
     };
   },
   computed: {
@@ -151,22 +175,31 @@ export default {
         }
       ];
     },
-    geojsons() {
-      return this.datasets.map(dataset => {
-        return this.datasetDataMap.get(dataset);
-      });
+    ...mapState([
+      "workingSets",
+      "selectedWorkingSetId",
+      "workspaces",
+      "focusedWorkspaceKey"
+    ]),
+    ...mapGetters(["focusedWorkspace"]),
+    user() {
+      return this.$girder.user;
+    }
+  },
+  watch: {
+    user(user) {
+      if (!user) {
+        this.$router.push("/login");
+      }
     },
-    geojsonDatasets() {
-      return this.datasets.filter(
-        dataset => dataset.geometa && dataset.geometa.driver === "GeoJSON"
-      );
-    },
-    geotiffDatasets() {
-      return this.datasets.filter(
-        dataset => dataset.geometa && dataset.geometa.driver === "GeoTIFF"
-      );
-    },
-    ...mapState(["workingSets", "selectedWorkingSetId"])
+    selectedWorkingSetId(selectedWorkingSetId) {
+      if (selectedWorkingSetId) {
+        this.datasets = [];
+        this.selectedDatasetIds = {};
+        this.removeAllDatasetsFromWorkspaces();
+      }
+      this.load();
+    }
   },
   created() {
     this.datasetDataMap = new WeakMap();
@@ -177,19 +210,11 @@ export default {
     });
 
     eventstream.on("job_status", e => {
+      console.log(e);
       if (e.data.status === 3) {
         this.load();
       }
     });
-  },
-  watch: {
-    selectedWorkingSetId(selectedWorkingSetId) {
-      if (selectedWorkingSetId) {
-        this.datasets = [];
-        this.selectedDatasetIds = {};
-      }
-      this.load();
-    }
   },
   methods: {
     change(workingSetId) {
@@ -199,41 +224,36 @@ export default {
       var selectedWorkingSet = this.workingSets.filter(
         workingSet => workingSet._id === this.selectedWorkingSetId
       )[0];
+      if (!selectedWorkingSet) {
+        return;
+      }
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
-        return Promise.all(
-          datasets
-            .filter(
-              dataset => dataset.geometa && dataset.geometa.driver === "GeoJSON"
-            )
-            .map(dataset => {
-              return loadDatasetData(dataset).then(data => {
-                this.datasetDataMap.set(dataset, data);
-              });
-            })
-        ).then(() => {
-          this.datasets = datasets;
-          var bboxOfAllDatasets = bbox(
-            geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
-          );
-          var dist = distance(
-            point([bboxOfAllDatasets[0], bboxOfAllDatasets[1]]),
-            point([bboxOfAllDatasets[2], bboxOfAllDatasets[3]])
-          );
-          var bufferedBbox = bbox(
-            buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
-          );
+        this.datasets = datasets;
+        var geojsViewport = this.$refs.geojsMapViewport[0];
+        if (!geojsViewport) {
+          return;
+        }
+        var bboxOfAllDatasets = bbox(
+          geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
+        );
+        var dist = distance(
+          point([bboxOfAllDatasets[0], bboxOfAllDatasets[1]]),
+          point([bboxOfAllDatasets[2], bboxOfAllDatasets[3]])
+        );
+        var bufferedBbox = bbox(
+          buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
+        );
 
-          var zoomAndCenter = this.$refs.geojsMapViewport[0].$geojsMap.zoomAndCenterFromBounds(
-            {
-              left: bufferedBbox[0],
-              right: bufferedBbox[2],
-              top: bufferedBbox[3],
-              bottom: bufferedBbox[1]
-            }
-          );
-          this.viewport.center = zoomAndCenter.center;
-          this.viewport.zoom = zoomAndCenter.zoom;
-        });
+        var zoomAndCenter = geojsViewport.$geojsMap.zoomAndCenterFromBounds(
+          {
+            left: bufferedBbox[0],
+            right: bufferedBbox[2],
+            top: bufferedBbox[3],
+            bottom: bufferedBbox[1]
+          }
+        );
+        this.viewport.center = zoomAndCenter.center;
+        this.viewport.zoom = zoomAndCenter.zoom;
       });
     },
     getTileURL(dataset) {
@@ -250,24 +270,43 @@ export default {
       )[0][0];
       return girder.girder.post(`/processing/generate_dsm/?itemId=${itemId}`);
     },
-    createNewView(type) {
-      this.workspaces.push({
-        type,
-        id: Math.random()
-          .toString(36)
-          .substring(7)
-      });
+    workspaceSupportsDataset(workspace, dataset) {
+      if (workspace.type === "map") {
+        if (["GeoTIFF", "GeoJSON"].indexOf(dataset.geometa.driver) !== -1) {
+          return true;
+        }
+      } else if (workspace.type === "vtk") {
+        if (["OBJ"].indexOf(dataset.geometa.driver) !== -1) {
+          return true;
+        }
+      }
+      return false;
     },
-    close(workspace) {
-      var index = this.workspaces.indexOf(workspace);
-      this.workspaces.splice(index, 1);
-    },
-    changeToMap(workspace) {
-      workspace.type = "map";
-    },
-    changeToPointCloud(workspace) {
-      workspace.type = "pc";
-    }
+    ...mapMutations([
+      "addWorkspace",
+      "removeWorkspace",
+      "changeWorkspaceType",
+      "setFocusedWorkspaceKey",
+      "addDatasetToWorkspace",
+      "removeDatasetFromWorkspace",
+      "removeAllDatasetsFromWorkspaces"
+    ])
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.map {
+  z-index: 0;
+}
+</style>
+
+<style lang="scss">
+.datasets {
+  .list__tile__action,
+  .list__tile__avatar {
+    min-width: 40px;
+    padding: 0 9px;
+  }
+}
+</style>

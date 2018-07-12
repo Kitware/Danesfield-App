@@ -1,8 +1,8 @@
 <template>
-  <div class='workspace' @mousedown="focus">
+  <div class='workspace' @mousedown="focus" @click="focus">
     <div class='focus-indicator' v-if='!onlyWorkspace && focused'></div>
     <div class='button-container'>
-      <v-menu offset-y>
+      <v-menu offset-y min-width='120'>
         <v-btn slot="activator" 
           small
           flat
@@ -87,7 +87,9 @@ export default {
   watch: {},
   methods: {
     focus() {
-      this.container.$emit("workspace_focus", this.identifier);
+      if (!this.focused) {
+        this.container.$emit("workspace_focus", this.identifier);
+      }
     },
     sendEvent() {
       this.container.$emit(

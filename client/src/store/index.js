@@ -13,7 +13,14 @@ export default new Vuex.Store({
     workingSets: [],
     filters: [],
     exploreTab: 'workingSet',
-    selectedWorkingSetId: null
+    selectedWorkingSetId: null,
+    workspaces: {
+      '0': {
+        type: 'map',
+        datasets: []
+      }
+    },
+    focusedWorkspaceKey: '0'
   },
   mutations: {
     setExploreTab(state, value) {
@@ -34,6 +41,33 @@ export default new Vuex.Store({
       var workingSet = { name: '', filterId: filter._id, datasetIds: [] };
       state.exploreTab = 'workingSet';
       state.workingSet.editingWorkingSet = workingSet;
+    },
+    addWorkspace(state, workspace) {
+      Vue.set(state.workspaces, Math.random().toString(36).substring(7), {
+        type: workspace.type,
+        datasets: []
+      })
+    },
+    removeWorkspace(state, key) {
+      Vue.delete(state.workspaces, key);
+    },
+    changeWorkspaceType(state, { workspace, type }) {
+      workspace.type = type;
+      workspace.datasets = [];
+    },
+    setFocusedWorkspaceKey(state, key) {
+      state.focusedWorkspaceKey = key;
+    },
+    addDatasetToWorkspace(state, { dataset, workspace }) {
+      workspace.datasets.push(dataset);
+    },
+    removeDatasetFromWorkspace(state, { dataset, workspace }) {
+      workspace.datasets.splice(workspace.datasets.indexOf(dataset), 1);
+    },
+    removeAllDatasetsFromWorkspaces(state) {
+      for (let workspace of Object.values(state.workspaces)) {
+        workspace.datasets = [];
+      }
     }
   },
   actions: {
@@ -95,6 +129,11 @@ export default new Vuex.Store({
         this.state.filters.splice(this.state.filters.indexOf(filter), 1);
         return filter;
       });
+    }
+  },
+  getters: {
+    focusedWorkspace(state) {
+      return state.workspaces[state.focusedWorkspaceKey] || Object.values(state.workspaces)[0];
     }
   },
   modules: {

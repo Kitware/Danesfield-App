@@ -28,8 +28,8 @@
           <transition name='fade'>
             <v-flex xs12 class='datasets' v-if="datasets.length">
               <div class='body-2'>Datasets</div>
-              <transition-group name="dataset" tag="div">
-                <div v-for="dataset in datasets" :key="dataset._id" class="dataset-item">
+              <transition-group name="slide-fade-group" tag="div">
+                <div v-for="dataset in datasets" :key="dataset._id">
                   <v-chip outline close color="primary" class='dataset'
                     @input="removeDataset(dataset)"
                     @mouseenter.native="setSelectedDataset(dataset)"
@@ -208,21 +208,6 @@ export default {
 // overwrite
 .expansion-panel {
   box-shadow: none;
-}
-
-//transition
-
-.dataset-item {
-  transition: all 0.15s;
-}
-.dataset-enter, .dataset-leave-to
-/* .dataset-leave-active below version 2.1.8 */ {
-  opacity: 0;
-  transform: translateX(30px);
-}
-.dataset-leave-active {
-  position: absolute;
-  width: 100%;
 }
 </style>
 
