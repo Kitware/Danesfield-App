@@ -1,7 +1,7 @@
 <template>
 <div>
     <div class="vtk-viewport" ref="container">
-        <div class="progress" v-if='progress'>Loading {{progress}}%</div>
+        <div class="progressMessage" v-if='progressMessage'>{{progressMessage}}</div>
         <slot v-if="ready"></slot>
     </div>
     <div v-if="!$slots.default" class="no-actor"></div>
@@ -9,17 +9,7 @@
 </template>
 
 <script>
-import JSZip from "jszip";
-
-import macro from "vtk.js/Sources/macro";
-
-import HttpDataAccessHelper from "vtk.js/Sources/IO/Core/DataAccessHelper/HttpDataAccessHelper";
 import vtkFullScreenRenderWindow from "vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow";
-
-import vtkOBJReader from "vtk.js/Sources/IO/Misc/OBJReader";
-import vtkMTLReader from "vtk.js/Sources/IO/Misc/MTLReader";
-import vtkMapper from "vtk.js/Sources/Rendering/Core/Mapper";
-import vtkActor from "vtk.js/Sources/Rendering/Core/Actor";
 
 export default {
   name: "VTKViewport",
@@ -29,7 +19,7 @@ export default {
       renderWindow: null,
       renderer: null,
       ready: false,
-      progress: null
+      progressMessage: null
     };
   },
   computed: {},
@@ -46,8 +36,8 @@ export default {
     return provide;
   },
   created() {
-    this.$on("progress", progress => {
-      this.progress = progress;
+    this.$on("progressMessage", progressMessage => {
+      this.progressMessage = progressMessage;
     });
   },
   mounted() {
@@ -66,14 +56,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.progress {
+.progressMessage {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
   text-shadow: 0px 0px 6px rgba(0, 0, 0, 1);
-  font-size: 25px;
+  font-size: 20px;
   color: white;
   user-select: none;
 }

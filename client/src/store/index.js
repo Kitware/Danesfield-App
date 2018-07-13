@@ -9,18 +9,15 @@ import workingSet from './modules/workingSet';
 Vue.use(Vuex);
 
 export default new Vuex.Store({
-  state: {
-    workingSets: [],
-    filters: [],
-    exploreTab: 'workingSet',
-    selectedWorkingSetId: null,
-    workspaces: {
-      '0': {
-        type: 'map',
-        datasets: []
-      }
-    },
-    focusedWorkspaceKey: '0'
+  state() {
+    return {
+      workingSets: [],
+      filters: [],
+      exploreTab: 'workingSet',
+      selectedWorkingSetId: null,
+      workspaces: getInitialWorkspace(),
+      focusedWorkspaceKey: '0'
+    }
   },
   mutations: {
     setExploreTab(state, value) {
@@ -68,6 +65,9 @@ export default new Vuex.Store({
       for (let workspace of Object.values(state.workspaces)) {
         workspace.datasets = [];
       }
+    },
+    resetWorkspace(state) {
+      state.workspaces = getInitialWorkspace();
     }
   },
   actions: {
@@ -142,3 +142,12 @@ export default new Vuex.Store({
     prompt
   }
 });
+
+function getInitialWorkspace() {
+  return {
+    '0': {
+      type: 'map',
+      datasets: []
+    }
+  }
+}
