@@ -45,7 +45,11 @@
         </GeojsMapViewport>
         <div v-if="workspace.type==='vtk'">
           <VTKViewport>
-            <OBJActor v-for="(dataset,i) in workspace.datasets" :key=i :url="`http://localhost:8081/api/v1/item/${dataset._id}/download`" />
+            <OBJMultiItemActor
+              v-for="dataset in workspace.datasets"
+              v-if="dataset.geometa.driver==='OBJ'"
+              :key="dataset._id"
+              :item="dataset" />
           </VTKViewport>
         </div>
       </Workspace>
@@ -137,7 +141,7 @@ import Workspace from "../components/Workspace/Workspace";
 import WorkspaceAction from "../components/Workspace/Action";
 import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
 import VTKViewport from "../components/vtk/VTKViewport";
-import OBJActor from "../components/vtk/OBJActor";
+import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
 
 export default {
   name: "Focus",
@@ -147,7 +151,7 @@ export default {
     WorkspaceAction,
     GeojsGeojsonDatasetLayer,
     VTKViewport,
-    OBJActor
+    OBJMultiItemActor
   },
   data() {
     return {
@@ -216,6 +220,10 @@ export default {
       }
     });
   },
+  beforeRouteLeave(to, from, next) {
+    this.resetWorkspace();
+    next();
+  },
   methods: {
     change(workingSetId) {
       this.$store.commit("setSelectWorkingSetId", workingSetId);
@@ -229,7 +237,9 @@ export default {
       }
       loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
         this.datasets = datasets;
-        var geojsViewport = this.$refs.geojsMapViewport[0];
+        var geojsViewport = this.$refs.geojsMapViewport
+          ? this.$refs.geojsMapViewport[0]
+          : null;
         if (!geojsViewport) {
           return;
         }
@@ -244,14 +254,12 @@ export default {
           buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
         );
 
-        var zoomAndCenter = geojsViewport.$geojsMap.zoomAndCenterFromBounds(
-          {
-            left: bufferedBbox[0],
-            right: bufferedBbox[2],
-            top: bufferedBbox[3],
-            bottom: bufferedBbox[1]
-          }
-        );
+        var zoomAndCenter = geojsViewport.$geojsMap.zoomAndCenterFromBounds({
+          left: bufferedBbox[0],
+          right: bufferedBbox[2],
+          top: bufferedBbox[3],
+          bottom: bufferedBbox[1]
+        });
         this.viewport.center = zoomAndCenter.center;
         this.viewport.zoom = zoomAndCenter.zoom;
       });
@@ -289,7 +297,8 @@ export default {
       "setFocusedWorkspaceKey",
       "addDatasetToWorkspace",
       "removeDatasetFromWorkspace",
-      "removeAllDatasetsFromWorkspaces"
+      "removeAllDatasetsFromWorkspaces",
+      "resetWorkspace"
     ])
   }
 };
