@@ -1,68 +1,64 @@
 <template>
   <div class='edit-workingset'>
-    <div class='main'>
-      <v-container grid-list-md>
-        <v-layout row wrap>
-          <v-flex>
-            <v-text-field
-              class="input"
-              name="Name"
-              label="Name"
-              hint="A unique name for the working set"
-              v-model="name"
-            ></v-text-field>
+    <div class='main ma-2'>
+      <v-layout row wrap>
+        <v-flex>
+          <v-text-field
+            class="input"
+            name="Name"
+            label="Name"
+            hint="A unique name for the working set"
+            v-model="name"
+          ></v-text-field>
+        </v-flex>
+      </v-layout>
+      <v-layout row wrap>
+        <v-flex>
+          <v-select
+            :items="filters"
+            v-model="filterId"
+            label="Filter"
+            item-text="name"
+            item-value='_id'
+          ></v-select>
+        </v-flex>
+      </v-layout>
+      <v-layout row wrap>
+        <transition name='fade'>
+          <v-flex xs12 class='datasets' v-if="datasets.length">
+            <div class='body-2'>Datasets</div>
+            <transition-group name="slide-fade-group" tag="div">
+              <div v-for="dataset in datasets" :key="dataset._id">
+                <v-chip outline close color="primary" class='dataset'
+                  @input="removeDataset(dataset)"
+                  @mouseenter.native="setSelectedDataset(dataset)"
+                  @mouseleave.native="setSelectedDataset(null)"
+                ><span>{{dataset.name}}</span></v-chip>
+              </div>
+            </transition-group>
           </v-flex>
-        </v-layout>
-        <v-layout row wrap>
-          <v-flex>
-            <v-select
-              :items="filters"
-              v-model="filterId"
-              label="Filter"
-              item-text="name"
-              item-value='_id'
-            ></v-select>
-          </v-flex>
-        </v-layout>
-        <v-layout row wrap>
-          <transition name='fade'>
-            <v-flex xs12 class='datasets' v-if="datasets.length">
-              <div class='body-2'>Datasets</div>
-              <transition-group name="slide-fade-group" tag="div">
-                <div v-for="dataset in datasets" :key="dataset._id">
-                  <v-chip outline close color="primary" class='dataset'
-                    @input="removeDataset(dataset)"
-                    @mouseenter.native="setSelectedDataset(dataset)"
-                    @mouseleave.native="setSelectedDataset(null)"
-                  ><span>{{dataset.name}}</span></v-chip>
-                </div>
-              </transition-group>
-            </v-flex>
-          </transition>
-        </v-layout>
-      </v-container>
+        </transition>
+      </v-layout>
     </div>
     <div class='bottom py-3'>
-      <v-container grid-list-xs>
-        <v-layout row wrap>
-          <v-flex xs2 offset-xs1>
-            <v-btn block depressed color='error' class='' @click="deleteRecord">
-              <v-icon>delete</v-icon>
-            </v-btn>
-          </v-flex>
-          <v-flex xs3 offset-xs1>
-            <v-btn block outline color='error' class='' @click="exit">
-              Cancel
-            </v-btn>
-          </v-flex>
-          <v-flex xs3 offset-xs1>
-            <v-btn block depressed color='primary' class='' @click="save">
-              Save
-              <v-icon class='ml-1'>save</v-icon>
-            </v-btn>
-          </v-flex>
-        </v-layout>
-      </v-container>
+      <v-layout row wrap>
+        <v-flex xs2 offset-xs1>
+          <v-btn block depressed color='error' class='' @click="deleteRecord">
+            <v-icon>delete</v-icon>
+          </v-btn>
+        </v-flex>
+        <v-flex xs3 offset-xs1>
+          <v-btn block outline color='error' class='' @click="exit">
+            Cancel
+          </v-btn>
+        </v-flex>
+        <v-flex xs3 offset-xs1>
+          <v-btn block depressed color='primary' class='' @click="save">
+            Save
+            <v-icon class='ml-1'>save</v-icon>
+          </v-btn>
+        </v-flex>
+      </v-layout>
     </div>
   </div>
 </template>
@@ -206,15 +202,15 @@ export default {
 }
 
 // overwrite
-.expansion-panel {
+.v-expansion-panel {
   box-shadow: none;
 }
 </style>
 
 <style lang="scss">
 .datasets {
-  .chip {
-    .chip__content {
+  .v-chip {
+    .v-chip__content {
       span {
         width: calc(100% - 20px);
         overflow-x: hidden;

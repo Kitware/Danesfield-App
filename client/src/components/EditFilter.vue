@@ -1,63 +1,61 @@
 <template>
   <div class='edit-filter'>
-    <div class='main'>
-      <v-container grid-list-md>
-        <v-layout row wrap>
-          <v-flex>
-            <v-text-field
-              class="input"
-              name="Name"
-              label="Name"
-              hint="A unique name for the filter"
-              v-model="name"
-            ></v-text-field>
-          </v-flex>
-        </v-layout>
-        <v-layout row wrap>
-          <transition name='fade'>
-            <v-flex xs12>
-              <div class='datasets' v-if="datasets.length">
-                <div class='body-2'>Datasets</div>
-                <v-chip outline color="primary" 
-                  v-for="(dataset, i) in datasets" 
-                  :key="i"
-                  @mouseenter.native="setSelectedDataset(dataset)"
-                  @mouseleave.native="setSelectedDataset(null)"
-                >{{dataset.name}}</v-chip>
-              </div>
-            </v-flex>
-          </transition>
-        </v-layout>
-      </v-container>
-      <v-expansion-panel class='conditions'>
-        <v-expansion-panel-content :value='true'>
-          <div slot='header'>Conditions</div>
-            <v-expansion-panel>
-              <v-expansion-panel-content
-                expand-icon="arrow_drop_down"
-                v-for="(condition,i) in this.editingConditions"
+    <div class='main ma-2'>
+      <v-layout row wrap>
+        <v-flex>
+          <v-text-field
+            class="input"
+            name="Name"
+            label="Name"
+            hint="A unique name for the filter"
+            v-model="name"
+          ></v-text-field>
+        </v-flex>
+      </v-layout>
+      <v-layout row wrap>
+        <transition name='fade'>
+          <v-flex xs12>
+            <div class='datasets' v-if="datasets.length">
+              <div class='body-2'>Datasets</div>
+              <v-chip outline color="primary" 
+                v-for="(dataset, i) in datasets" 
                 :key="i"
-                @mouseenter.native="setSelectedCondition(condition)"
-                @mouseleave.native="setSelectedCondition(null)">
-                <div slot='header'><v-icon class="mr-2">{{getConditionIcon(condition)}}</v-icon>{{getConditionText(condition.type)}}<v-icon class="condition-delete" @click.stop='deleteCondition(condition)'>delete</v-icon></div>
-                <v-card>
-                  <v-card-text class="text-xs-center p">
-                    <DateRangeControl v-if="condition.type==='daterange'"
-                      :start.sync='condition.start'
-                      :end.sync='condition.end'
-                    />
-                    <div v-else>
-                      Expansion panel content for item {{condition.type}}
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
+                @mouseenter.native="setSelectedDataset(dataset)"
+                @mouseleave.native="setSelectedDataset(null)"
+              >{{dataset.name}}</v-chip>
+            </div>
+          </v-flex>
+        </transition>
+      </v-layout>
     </div>
-    <div class='bottom py-3'>
-      <v-container grid-list-xs>
+    <v-expansion-panel class="conditions" expand :value="[true]">
+      <v-expansion-panel-content>
+        <div slot='header'>Conditions</div>
+          <v-expansion-panel>
+            <v-expansion-panel-content
+              expand-icon="arrow_drop_down"
+              v-for="(condition,i) in this.editingConditions"
+              :key="i"
+              @mouseenter.native="setSelectedCondition(condition)"
+              @mouseleave.native="setSelectedCondition(null)">
+              <div slot='header'><v-icon class="mr-2">{{getConditionIcon(condition)}}</v-icon><span :style="{position:'relative',top:'-3px'}">{{getConditionText(condition.type)}}</span><v-icon class="condition-delete" @click.stop='deleteCondition(condition)'>delete</v-icon></div>
+              <v-card>
+                <v-card-text class="text-xs-center p">
+                  <DateRangeControl v-if="condition.type==='daterange'"
+                    :start.sync='condition.start'
+                    :end.sync='condition.end'
+                  />
+                  <div v-else>
+                    Expansion panel content for item {{condition.type}}
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-content>
+          </v-expansion-panel>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
+    <div class='bottom'>
+      <v-container grid-list-xs class="pa-0">
         <v-layout row wrap>
           <v-flex xs2 offset-xs1>
             <v-btn block depressed color='error' class='' @click="deleteRecord">
@@ -260,17 +258,17 @@ export default {
 }
 
 // overwrite
-.expansion-panel {
+.v-expansion-panel {
   box-shadow: none;
 }
 </style>
 
 <style lang="scss">
 .datasets {
-  .chip {
+  .v-chip {
     max-width: 100%;
 
-    .chip__content {
+    .v-chip__content {
       max-width: 100%;
       overflow-x: hidden;
     }

@@ -94,7 +94,7 @@ body,
 }
 
 /* overwrite */
-.btn {
+.v-btn {
   min-width: 0;
 }
 </style>

@@ -5,7 +5,6 @@
       @update:focused="setFocusedWorkspaceKey($event)"
       :autoResize="true"
       :max="2"
-      :flex-grow-first="5/4"
     >
       <Workspace
         v-for="(workspace, key) in workspaces"
@@ -68,7 +67,8 @@
     </WorkspaceContainer>
 
     <SidePanel
-    :top='64'
+    :top="64"
+    :floating='false'
     :toolbar='{title: "Datasets"}'
     :expanded='true'
     :footer='false'
@@ -85,21 +85,16 @@
           </v-menu>
         </SidePanelAction>
       </template>
-      <v-container grid-list-xs px-2>
-        <v-layout row wrap>
-          <v-flex xs12>
-            <v-select
-              :items="workingSets"
-              :value="selectedWorkingSetId"
-              @change="change"
-              item-text="name"
-              item-value='_id'
-              label="Select"
-              hide-details
-            ></v-select>
-          </v-flex>
-        </v-layout>
-      </v-container>
+      <v-select
+        :items="workingSets"
+        :value="selectedWorkingSetId"
+        @change="change"
+        class="py-1 px-2"
+        item-text="name"
+        item-value='_id'
+        label="Select"
+        hide-details
+      ></v-select>
       <v-list dense expand class="datasets">
         <transition-group name="fade-group" tag="div">
           <v-list-tile
@@ -328,8 +323,8 @@ export default {
 
 <style lang="scss">
 .datasets {
-  .list__tile__action,
-  .list__tile__avatar {
+  .v-list__tile__action,
+  .v-list__tile__avatar {
     min-width: 40px;
     padding: 0 9px;
   }

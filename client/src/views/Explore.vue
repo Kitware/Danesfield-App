@@ -59,7 +59,8 @@
 
     <SidePanel
     class="side-panel"
-    :top="64"
+    :top='0'
+    :bottom='10'
     :toolbar="{title}"
     :expanded="true"
     :footer="false"
@@ -140,7 +141,7 @@ export default {
         return [
           { name: "rectangle", icon: "aspect_ratio" },
           { name: "polygon", icon: "label_outline" },
-          { name: "daterange", icon: "date_range" }
+          // { name: "daterange", icon: "date_range" }
         ];
       }
       return [];

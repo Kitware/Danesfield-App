@@ -10,6 +10,7 @@
           :value="selectedState"
           @input="$emit('stateChange', $event)"
           :items="states"
+          hide-details
           item-text="name"
           item-value='value'
         ></v-select>
@@ -187,11 +188,11 @@ export default {
 
 <style lang="scss">
 .workspace {
-  .btn__content {
+  .v-btn__content {
     padding: 0 2px;
   }
 
-  .bottom-bar .toolbar__content {
+  .bottom-bar .v-toolbar__content {
     height: 45px !important;
   }
 }
