@@ -27,7 +27,9 @@ from girder.models.item import Item
 from girder.models.user import User
 from girder.plugins.jobs.models.job import Job
 
-from ..algorithms import fitDtm, generateDsm, generatePointCloud
+from .. import algorithms
+from ..models import workingSet
+from ..request_info import RequestInfo
 
 
 class ProcessingResource(Resource):
@@ -39,6 +41,7 @@ class ProcessingResource(Resource):
 
         self.resourceName = 'processing'
 
+        self.route('POST', ('process',), self.process)
         self.route('POST', ('fit_dtm',), self.fitDtm)
         self.route('POST', ('generate_dsm',), self.generateDsm)
         self.route('POST', ('generate_point_cloud',), self.generatePointCloud)
@@ -68,6 +71,29 @@ class ProcessingResource(Resource):
         return files[0]
 
     @access.user
+    @autoDescribeRoute(
+        Description('Run the complete processing workflow.')
+        .modelParam('workingSet', 'The ID of the working set.', model=workingSet.WorkingSet,
+                    paramType='query')
+        .jsonParam('options', 'Processing options keyed by step name.', requireObject=True,
+                   required=False)
+        .errorResponse()
+        .errorResponse('Read access was denied on the item.', 403)
+    )
+    def process(self, workingSet, options, params):
+        """
+        Run the complete processing workflow.
+        """
+        user = self.getCurrentUser()
+        apiUrl = getApiUrl()
+        token = getCurrentToken()
+        outputFolder = self._datasetsFolder()
+
+        requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
+        return algorithms.process(
+            requestInfo, workingSet=workingSet, outputFolder=outputFolder, options=options)
+
+    @access.user
     @filtermodel(model=Job)
     @autoDescribeRoute(
         Description('Fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).')
@@ -92,8 +118,9 @@ class ProcessingResource(Resource):
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
-        return fitDtm(
-            user=user, apiUrl=apiUrl, token=token, trigger=trigger, file=file,
+        requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
+        return algorithms.fitDtm(
+            requestInfo=requestInfo, jobId=None, trigger=trigger, file=file,
             outputFolder=outputFolder, iterations=iterations, tension=tension)
 
     @access.user
@@ -119,8 +146,9 @@ class ProcessingResource(Resource):
         file = self._fileFromItem(item)
         outputFolder = self._datasetsFolder()
 
-        return generateDsm(
-            user=user, apiUrl=apiUrl, token=token, trigger=trigger, file=file,
+        requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
+        return algorithms.generateDsm(
+            requestInfo=requestInfo, jobId=None, trigger=trigger, file=file,
             outputFolder=outputFolder)
 
     @access.user
@@ -164,7 +192,8 @@ class ProcessingResource(Resource):
             for itemId in imageItemIds
         ]
 
-        return generatePointCloud(
-            user=user, apiUrl=apiUrl, token=token, trigger=trigger, imageFileIds=imageFileIds,
+        requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
+        return algorithms.generatePointCloud(
+            requestInfo=requestInfo, jobId=None, trigger=trigger, imageFileIds=imageFileIds,
             outputFolder=outputFolder, longitude=longitude, latitude=latitude,
             longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)
