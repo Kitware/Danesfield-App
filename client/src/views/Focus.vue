@@ -12,11 +12,10 @@
         :key="key"
         :identifier="key"
         @split="addWorkspace(workspace)"
-        @close="removeWorkspace(key)">
-        <template slot="actions">
-          <WorkspaceAction :disabled="workspace.type==='map'" @click="changeWorkspaceType({workspace,type:'map'})">Map</WorkspaceAction>
-          <WorkspaceAction :disabled="workspace.type==='vtk'" @click="changeWorkspaceType({workspace,type:'vtk'})">VTK</WorkspaceAction>
-        </template>
+        @close="removeWorkspace(key)"
+        :states="[{name:'Map',value:'map',disabled:workspace.type==='map'},{name:'VTK',value:'vtk',disabled:workspace.type==='vtk'}]"
+        @stateChange="changeWorkspaceType({workspace,type:$event})"
+        >
         <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
           class='map'
           :viewport='viewport'
@@ -43,15 +42,28 @@
             </GeojsTileLayer>
           </template>
         </GeojsMapViewport>
-        <div v-if="workspace.type==='vtk'">
-          <VTKViewport>
+          <VTKViewport v-if="workspace.type==='vtk'"
+            :background="vtkBGColor">
             <OBJMultiItemActor
               v-for="dataset in workspace.datasets"
               v-if="dataset.geometa.driver==='OBJ'"
               :key="dataset._id"
               :item="dataset" />
           </VTKViewport>
-        </div>
+        <template slot='actions' v-if="workspace.type==='vtk'">
+          <WorkspaceAction>
+            <v-menu
+              top offset-y
+              origin="center center">
+              <v-icon
+                slot="activator"
+              >palette</v-icon>
+              <v-card width="130px">
+                <Palette :value="vtkBGColor" @input="changeVTKBGColor($event)" />
+              </v-card>
+            </v-menu>
+          </WorkspaceAction>
+        </template>
       </Workspace>
     </WorkspaceContainer>
 
@@ -142,6 +154,7 @@ import WorkspaceAction from "../components/Workspace/Action";
 import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
 import VTKViewport from "../components/vtk/VTKViewport";
 import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
+import Palette from "../components/vtk/Palette";
 
 export default {
   name: "Focus",
@@ -151,7 +164,8 @@ export default {
     WorkspaceAction,
     GeojsGeojsonDatasetLayer,
     VTKViewport,
-    OBJMultiItemActor
+    OBJMultiItemActor,
+    Palette
   },
   data() {
     return {
@@ -183,7 +197,8 @@ export default {
       "workingSets",
       "selectedWorkingSetId",
       "workspaces",
-      "focusedWorkspaceKey"
+      "focusedWorkspaceKey",
+      "vtkBGColor"
     ]),
     ...mapGetters(["focusedWorkspace"]),
     user() {
@@ -298,7 +313,8 @@ export default {
       "addDatasetToWorkspace",
       "removeDatasetFromWorkspace",
       "removeAllDatasetsFromWorkspaces",
-      "resetWorkspace"
+      "resetWorkspace",
+      "changeVTKBGColor"
     ])
   }
 };

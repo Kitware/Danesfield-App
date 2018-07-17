@@ -1,43 +1,54 @@
 <template>
   <div class='workspace' @mousedown="focus" @click="focus">
-    <div class='focus-indicator' v-if='!onlyWorkspace && focused'></div>
-    <div class='button-container'>
-      <v-menu offset-y min-width='120'>
-        <v-btn slot="activator" 
-          small
-          flat
-          color="primary"
-        ><v-icon>more_vert</v-icon></v-btn>
-        <v-list>
-          <v-list-tile
-            v-if="$listeners.split"
-            :disabled="workspaces.length===max" 
-            @click="split">
-            <v-list-tile-title>Split</v-list-tile-title>
-          </v-list-tile>
-          <v-list-tile
-            v-if="$listeners.close"
-            :disabled="onlyWorkspace" 
-            @click="close">
-            <v-list-tile-title>Close</v-list-tile-title>
-          </v-list-tile>
-          <v-divider v-if='$slots.actions && ($listeners.split || $listeners.close)'></v-divider>
-          <slot name='actions'></slot>
-        </v-list>
-      </v-menu>
-      <v-btn
-        small
-        flat
-        color="primary"
-        @click="sendEvent()"
-        v-if="!onlyWorkspace"
-        :title="!maximized?'Maximize':'Minimize'"
-      >
-        <v-icon v-if="!maximized">maximize</v-icon>
-        <v-icon v-if="maximized">minimize</v-icon>
-      </v-btn>
+    <div class="slot-container">
+      <slot></slot>
     </div>
-    <slot></slot>
+    <div class="bottom-bar">
+      <div class='focus-indicator' v-if='!onlyWorkspace && focused'></div>
+      <v-toolbar dark>
+        <v-select class="state-selector" v-if="states"
+          :value="selectedState"
+          @input="$emit('stateChange', $event)"
+          :items="states"
+          item-text="name"
+          item-value='value'
+        ></v-select>
+        <v-spacer />
+        <slot name="actions"></slot>
+        <v-tooltip top v-if="!onlyWorkspace">
+          <span>{{!maximized?'Maximize':'Minimize'}}</span>
+          <v-btn
+            slot="activator"
+            icon
+            @click="maximizeOrMinimize"
+          >
+            <v-icon v-if="!maximized">maximize</v-icon>
+            <v-icon v-if="maximized">minimize</v-icon>
+          </v-btn>
+        </v-tooltip>
+        <v-tooltip top>
+          <span>Split view</span>
+          <v-btn
+            slot="activator"
+            icon
+            v-if="workspaces.length!==max"
+            @click="split"
+          >
+            <v-icon>flip</v-icon>
+          </v-btn>
+        </v-tooltip>
+        <v-tooltip top v-if="$listeners.close && !onlyWorkspace">
+          <span>Close</span>
+          <v-btn
+            slot="activator"
+            icon
+            @click="close"
+          >
+            <v-icon>close</v-icon>
+          </v-btn>
+        </v-tooltip>
+      </v-toolbar>
+    </div>
   </div>
 </template>
 
@@ -49,7 +60,8 @@ export default {
     identifier: {
       type: [String, Number, Object],
       required: true
-    }
+    },
+    states: Array
   },
   data() {
     return {
@@ -68,6 +80,9 @@ export default {
     },
     focused() {
       return this.focusedWorkspace === this.identifier;
+    },
+    selectedState() {
+      return this.states.filter(state => state.disabled)[0];
     }
   },
   created() {
@@ -91,7 +106,7 @@ export default {
         this.container.$emit("workspace_focus", this.identifier);
       }
     },
-    sendEvent() {
+    maximizeOrMinimize() {
       this.container.$emit(
         this.maximized ? "workspace_minimize" : "workspace_maximize",
         this.identifier
@@ -130,15 +145,35 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
 
-  .focus-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background-color: #2196f3;
-    z-index: 1;
+  .bottom-bar {
+    height: 45px;
+    position: relative;
+
+    .state-selector {
+      max-width: 200px;
+    }
+
+    .focus-indicator {
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: 9px;
+      height: 9px;
+      z-index: 1;
+      background: linear-gradient(
+        135deg,
+        #fff,
+        #fff 50%,
+        hsla(0, 0%, 100%, 0) 51%
+      );
+    }
+  }
+
+  .slot-container {
+    flex: 1;
   }
 
   .button-container {
@@ -151,7 +186,13 @@ export default {
 </style>
 
 <style lang="scss">
-.workspace .btn__content {
-  padding: 0 2px;
+.workspace {
+  .btn__content {
+    padding: 0 2px;
+  }
+
+  .bottom-bar .toolbar__content {
+    height: 45px !important;
+  }
 }
 </style>

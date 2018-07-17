@@ -5,6 +5,7 @@ import girder from '../girder';
 import prompt from "../components/prompt/module";
 import filter from './modules/filter';
 import workingSet from './modules/workingSet';
+import paletteColors from '../components/vtk/paletteColors';
 
 Vue.use(Vuex);
 
@@ -16,7 +17,8 @@ export default new Vuex.Store({
       exploreTab: 'workingSet',
       selectedWorkingSetId: null,
       workspaces: getInitialWorkspace(),
-      focusedWorkspaceKey: '0'
+      focusedWorkspaceKey: '0',
+      vtkBGColor: paletteColors[paletteColors.length - 1]
     }
   },
   mutations: {
@@ -68,6 +70,9 @@ export default new Vuex.Store({
     },
     resetWorkspace(state) {
       state.workspaces = getInitialWorkspace();
+    },
+    changeVTKBGColor(state, color) {
+      state.vtkBGColor = color;
     }
   },
   actions: {

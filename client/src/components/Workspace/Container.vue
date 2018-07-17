@@ -183,6 +183,10 @@ export default {
       overflow: hidden;
       background: #ddd;
       overflow-x: hidden;
+
+      &:not(:first-child) {
+        border-left: 2px solid #ebebeb;
+      }
     }
 
     .view-enter-active,
