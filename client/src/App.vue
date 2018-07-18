@@ -58,6 +58,8 @@ export default {
   created() {
     function displayJobStatus(statusCode) {
       switch (statusCode) {
+        case 0:
+          return "inactive";
         case 1:
           return "queued";
         case 2:
