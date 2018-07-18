@@ -29,25 +29,32 @@ class DanesfieldWorkflowException(RuntimeError):
 class DanesfieldWorkflow(object):
     """
     Class to define the Danesfield workflow.
-    When a job completes, the handler associated with the job source is executed.
+    When a step completes, the handler associated with the step is executed.
     """
     def __init__(self):
         self._steps = {}
 
-    def addHandler(self, source, handler):
+    def addHandler(self, stepName, handler):
         """
-        Add handler to run when a job completes.
+        Add handler to run when a step completes.
 
-        Currently, the handler is a callable object that accepts the following
-        parameters:
-        - user: The user running the job.
-        - apiUrl: The Girder API URL.
-        - token: The user's token.
-        - files: The list of files output from the job source.
+        The handler is a callable object that accepts the following parameters:
+        - requestInfo: HTTP request info.
+        - workingSets: The initial working set and working sets created during the workflow.
+        - outputFolder: The folder in which to store output files.
+
+        :param stepName: The name of the step.
+        :type stepName: str (DanesfieldStep)
+        :param handler: The step handler.
+        :type handler: callable
         """
-        # TODO: Improve handler interface: pack required data into an object
-        self._steps[source] = handler
+        self._steps[stepName] = handler
 
-    def getHandler(self, source):
-        """Get the handler associated with a job source."""
-        return self._steps.get(source)
+    def getHandler(self, stepName):
+        """
+        Get the handler associated with a step.
+
+        :param stepName: The name of the step.
+        :type stepName: str (DanesfieldStep)
+        """
+        return self._steps.get(stepName)

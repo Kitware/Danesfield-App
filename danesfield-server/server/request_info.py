@@ -18,30 +18,11 @@
 ##############################################################################
 
 
-class DanesfieldJobKey(object):
+class RequestInfo:
     """
-    Keys for metadata attached to Danesfield jobs and related objects.
+    Class to store HTTP request and authorization info.
     """
-    API_URL = 'danesfieldJobUrl'
-    ID = 'danesfieldJobId'
-    STEP_NAME = 'danesfieldJobStep'
-    TOKEN = 'danesfieldJobToken'
-    TRIGGER = 'danesfieldJobTrigger'
-
-
-class DanesfieldStep(object):
-    """
-    Names to identify steps in the Danesfield workflow.
-    """
-    INIT = 'init'
-    FIT_DTM = 'fit-dtm'
-    GENERATE_DSM = 'generate-dsm'
-    GENERATE_POINT_CLOUD = 'generate-point-cloud'
-
-
-class DockerImage(object):
-    """
-    Names of Docker images to run Danesfield algorithms.
-    """
-    DANESFIELD = 'core3d/danesfield'
-    P3D = 'p3d_gw'
+    def __init__(self, user, apiUrl, token):
+        self.user = user
+        self.apiUrl = apiUrl
+        self.token = token

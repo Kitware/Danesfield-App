@@ -20,7 +20,6 @@
 import itertools
 import json
 import os
-import uuid
 
 from girder.plugins.jobs.models.job import Job
 
@@ -31,34 +30,61 @@ from girder_worker.docker.transforms import BindMountVolume, VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .constants import DanesfieldJobKey, DockerImage
+from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
+from .workflow_manager import DanesfieldWorkflowManager
 
 
-def _createJobId():
-    """Return new job identifier."""
-    return uuid.uuid4().hex
-
-
-def _createGirderClient(apiUrl, token):
+def _createGirderClient(requestInfo):
     """Return new configured GirderClient instance."""
-    gc = GirderClient(apiUrl=apiUrl)
-    gc.token = token['_id']
+    gc = GirderClient(apiUrl=requestInfo.apiUrl)
+    gc.token = requestInfo.token['_id']
     return gc
 
 
-def fitDtm(user, apiUrl, token, trigger, file, outputFolder, iterations=100, tension=10):
+def process(requestInfo, workingSet, outputFolder, options):
+    """
+    Run the complete processing workflow.
+
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param workingSet: Source image working set.
+    :type workingSet:d dict
+    :param outputFolder: Output folder document.
+    :type outputFolder: dict
+    :param options: Processing options.
+    :type options: dict
+    """
+    workflowManager = DanesfieldWorkflowManager.instance()
+    jobId = workflowManager.initJob(workingSet, outputFolder, options)
+
+    DanesfieldWorkflowManager.instance().advance(
+        requestInfo=requestInfo, jobId=jobId, stepName=DanesfieldStep.INIT)
+
+
+def finalize(requestInfo, jobId):
+    """
+    Finalize the processing workflow after running all steps.
+
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    """
+    workflowManager = DanesfieldWorkflowManager.instance()
+    workflowManager.finalizeJob(jobId)
+
+
+def fitDtm(requestInfo, jobId, trigger, file, outputFolder, iterations=100, tension=10):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
 
     Requirements:
     - core3d/danesfield Docker image is available on host
 
-    :param user: User document.
-    :type user: dict
-    :param apiUrl: API URL.
-    :type apiUrl: str
-    :param token: User's Girder token document.
-    :type token: dict
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
     :param trigger: Whether to trigger the next step in the workflow.
     :type trigger: bool
     :param file: DSM image file document.
@@ -71,13 +97,11 @@ def fitDtm(user, apiUrl, token, trigger, file, outputFolder, iterations=100, ten
     :type tension: int
     :returns: Job document.
     """
-    source = 'fit-dtm'
-    jobId = _createJobId()
-    gc = _createGirderClient(apiUrl, token)
+    stepName = DanesfieldStep.FIT_DTM
+    gc = _createGirderClient(requestInfo)
 
     # Set output file name based on input file name
-    parts = os.path.splitext(file['name'])
-    dsmName = '-dtm'.join(parts)
+    dsmName = file['name'].replace('_dsm.', '_dtm.')
     outputVolumePath = VolumePath(dsmName)
 
     # Docker container arguments
@@ -89,18 +113,26 @@ def fitDtm(user, apiUrl, token, trigger, file, outputFolder, iterations=100, ten
         outputVolumePath
     ]
 
+    # Set upload metadata
+    # - Provide job identifier
+    # - Provide job stepName
+    upload_kwargs = {}
+    if jobId is not None:
+        upload_kwargs.update({
+            'reference': json.dumps({
+                DanesfieldJobKey.ID: jobId,
+                DanesfieldJobKey.STEP_NAME: stepName
+            })
+        })
+
     # Result hooks
     # - Upload output files to output folder
-    # - Provide job identifier
+    # - Provide upload metadata
     resultHooks = [
         GirderUploadVolumePathToFolder(
             outputVolumePath,
             outputFolder['_id'],
-            upload_kwargs={
-                'reference': json.dumps({
-                    DanesfieldJobKey.ID: jobId
-                })
-            },
+            upload_kwargs=upload_kwargs,
             gc=gc)
     ]
 
@@ -110,34 +142,33 @@ def fitDtm(user, apiUrl, token, trigger, file, outputFolder, iterations=100, ten
         container_args=containerArgs,
         girder_job_title='Fit DTM: %s' % file['name'],
         girder_result_hooks=resultHooks,
-        girder_user=user)
+        girder_user=requestInfo.user)
 
     # Provide info for job event listeners
     job = asyncResult.job
-    job.update({
-        DanesfieldJobKey.API_URL: apiUrl,
-        DanesfieldJobKey.ID: jobId,
-        DanesfieldJobKey.SOURCE: source,
-        DanesfieldJobKey.TOKEN: token,
-        DanesfieldJobKey.TRIGGER: trigger
-    })
+    if jobId is not None:
+        job.update({
+            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
+            DanesfieldJobKey.ID: jobId,
+            DanesfieldJobKey.STEP_NAME: stepName,
+            DanesfieldJobKey.TOKEN: requestInfo.token,
+            DanesfieldJobKey.TRIGGER: trigger
+        })
 
     return Job().save(job)
 
 
-def generateDsm(user, apiUrl, token, trigger, file, outputFolder):
+def generateDsm(requestInfo, jobId, trigger, file, outputFolder):
     """
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
     Requirements:
     - core3d/danesfield Docker image is available on host
 
-    :param user: User document.
-    :type user: dict
-    :param apiUrl: API URL.
-    :type apiUrl: str
-    :param token: User's Girder token document.
-    :type token: dict
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
     :param trigger: Whether to trigger the next step in the workflow.
     :type trigger: bool
     :param file: Point cloud file document.
@@ -146,12 +177,11 @@ def generateDsm(user, apiUrl, token, trigger, file, outputFolder):
     :type outputFolder: dict
     :returns: Job document.
     """
-    source = 'generate-dsm'
-    jobId = _createJobId()
-    gc = _createGirderClient(apiUrl, token)
+    stepName = DanesfieldStep.GENERATE_DSM
+    gc = _createGirderClient(requestInfo)
 
     # Set output file name based on point cloud file
-    dsmName = os.path.splitext(file['name'])[0] + '.tif'
+    dsmName = os.path.splitext(file['name'])[0] + '_dsm.tif'
     outputVolumePath = VolumePath(dsmName)
 
     # Docker container arguments
@@ -162,18 +192,26 @@ def generateDsm(user, apiUrl, token, trigger, file, outputFolder):
         GirderFileIdToVolume(file['_id'], gc=gc)
     ]
 
+    # Set upload metadata
+    # - Provide job identifier
+    # - Provide job stepName
+    upload_kwargs = {}
+    if jobId is not None:
+        upload_kwargs.update({
+            'reference': json.dumps({
+                DanesfieldJobKey.ID: jobId,
+                DanesfieldJobKey.STEP_NAME: stepName
+            })
+        })
+
     # Result hooks
     # - Upload output files to output folder
-    # - Provide job identifier
+    # - Provide upload metadata
     resultHooks = [
         GirderUploadVolumePathToFolder(
             outputVolumePath,
             outputFolder['_id'],
-            upload_kwargs={
-                'reference': json.dumps({
-                    DanesfieldJobKey.ID: jobId
-                }),
-            },
+            upload_kwargs=upload_kwargs,
             gc=gc)
     ]
 
@@ -183,22 +221,23 @@ def generateDsm(user, apiUrl, token, trigger, file, outputFolder):
         container_args=containerArgs,
         girder_job_title='Generate DSM: %s' % file['name'],
         girder_result_hooks=resultHooks,
-        girder_user=user)
+        girder_user=requestInfo.user)
 
     # Provide info for job event listeners
     job = asyncResult.job
-    job.update({
-        DanesfieldJobKey.API_URL: apiUrl,
-        DanesfieldJobKey.ID: jobId,
-        DanesfieldJobKey.SOURCE: source,
-        DanesfieldJobKey.TOKEN: token,
-        DanesfieldJobKey.TRIGGER: trigger
-    })
+    if jobId is not None:
+        job.update({
+            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
+            DanesfieldJobKey.ID: jobId,
+            DanesfieldJobKey.STEP_NAME: stepName,
+            DanesfieldJobKey.TOKEN: requestInfo.token,
+            DanesfieldJobKey.TRIGGER: trigger
+        })
 
     return Job().save(job)
 
 
-def generatePointCloud(user, apiUrl, token, trigger, imageFileIds, outputFolder, longitude,
+def generatePointCloud(requestInfo, jobId, trigger, imageFileIds, outputFolder, longitude,
                        latitude, longitudeWidth, latitudeWidth):
     """
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
@@ -207,12 +246,10 @@ def generatePointCloud(user, apiUrl, token, trigger, imageFileIds, outputFolder,
     - p3d_gw Docker image is available on host
     - Host folder /mnt/GTOPO30 contains GTOPO 30 data
 
-    :param user: User document.
-    :type user: dict
-    :param apiUrl: API URL.
-    :type apiUrl: str
-    :param token: User's Girder token document.
-    :type token: dict
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
     :param trigger: Whether to trigger the next step in the workflow.
     :type trigger: bool
     :param imageFileIds: IDs of input image files.
@@ -229,9 +266,8 @@ def generatePointCloud(user, apiUrl, token, trigger, imageFileIds, outputFolder,
     :type latitudeWidth:
     :returns: Job document.
     """
-    source = 'p3d'
-    jobId = _createJobId()
-    gc = _createGirderClient(apiUrl, token)
+    stepName = DanesfieldStep.GENERATE_POINT_CLOUD
+    gc = _createGirderClient(requestInfo)
 
     # Docker volumes
     volumes = [
@@ -258,18 +294,26 @@ def generatePointCloud(user, apiUrl, token, trigger, imageFileIds, outputFolder,
         [GirderFileIdToVolume(fileId, gc=gc) for fileId in imageFileIds],
     ))
 
+    # Set upload metadata
+    # - Provide job identifier
+    # - Provide job stepName
+    upload_kwargs = {}
+    if jobId is not None:
+        upload_kwargs.update({
+            'reference': json.dumps({
+                DanesfieldJobKey.ID: jobId,
+                DanesfieldJobKey.STEP_NAME: stepName
+            })
+        })
+
     # Result hooks
     # - Upload output files to output folder
-    # - Provide job identifier
+    # - Provide upload metadata
     resultHooks = [
         GirderUploadVolumePathToFolder(
             outputVolumePath,
             outputFolder['_id'],
-            upload_kwargs={
-                'reference': json.dumps({
-                    DanesfieldJobKey.ID: jobId
-                })
-            },
+            upload_kwargs=upload_kwargs,
             gc=gc)
     ]
 
@@ -280,16 +324,17 @@ def generatePointCloud(user, apiUrl, token, trigger, imageFileIds, outputFolder,
         container_args=containerArgs,
         girder_job_title='Generate point cloud',
         girder_result_hooks=resultHooks,
-        girder_user=user)
+        girder_user=requestInfo.user)
 
     # Provide info for job event listeners
     job = asyncResult.job
-    job.update({
-        DanesfieldJobKey.API_URL: apiUrl,
-        DanesfieldJobKey.ID: jobId,
-        DanesfieldJobKey.SOURCE: source,
-        DanesfieldJobKey.TOKEN: token,
-        DanesfieldJobKey.TRIGGER: trigger
-    })
+    if jobId is not None:
+        job.update({
+            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
+            DanesfieldJobKey.ID: jobId,
+            DanesfieldJobKey.STEP_NAME: stepName,
+            DanesfieldJobKey.TOKEN: requestInfo.token,
+            DanesfieldJobKey.TRIGGER: trigger
+        })
 
     return Job().save(job)

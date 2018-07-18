@@ -5,9 +5,10 @@ from girder import events
 
 from rest import dataset, workingSet, processing, filter
 
+from .constants import DanesfieldStep
 from .event_handlers import onFinalizeUpload, onJobUpdate
 from .workflow import DanesfieldWorkflow
-from .workflow_handlers import runFitDtm, runGenerateDsm
+from .workflow_handlers import runFitDtm, runFinalize, runGenerateDsm, runGeneratePointCloud
 from .workflow_manager import DanesfieldWorkflowManager
 
 
@@ -18,8 +19,10 @@ def load(info):
 
     # Configure Danesfield workflow
     workflow = DanesfieldWorkflow()
-    workflow.addHandler('p3d', runGenerateDsm)
-    workflow.addHandler('generate-dsm', runFitDtm)
+    workflow.addHandler(DanesfieldStep.INIT, runGeneratePointCloud)
+    workflow.addHandler(DanesfieldStep.GENERATE_POINT_CLOUD, runGenerateDsm)
+    workflow.addHandler(DanesfieldStep.GENERATE_DSM, runFitDtm)
+    workflow.addHandler(DanesfieldStep.FIT_DTM, runFinalize)
     DanesfieldWorkflowManager.instance().workflow = workflow
 
     # Relocate Girder API
