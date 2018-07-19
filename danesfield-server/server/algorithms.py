@@ -117,7 +117,7 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
 
     # Set upload metadata
     # - Provide job identifier
-    # - Provide job stepName
+    # - Provide job step name
     upload_kwargs = {}
     if jobId is not None:
         upload_kwargs.update({
@@ -197,7 +197,7 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
 
     # Set upload metadata
     # - Provide job identifier
-    # - Provide job stepName
+    # - Provide job step name
     upload_kwargs = {}
     if jobId is not None:
         upload_kwargs.update({
@@ -300,7 +300,7 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
 
     # Set upload metadata
     # - Provide job identifier
-    # - Provide job stepName
+    # - Provide job step name
     upload_kwargs = {}
     if jobId is not None:
         upload_kwargs.update({
@@ -400,7 +400,7 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
 
         # Set upload metadata
         # - Provide job identifier
-        # - Provide job stepName
+        # - Provide job step name
         upload_kwargs = {}
         if jobId is not None:
             upload_kwargs.update({
