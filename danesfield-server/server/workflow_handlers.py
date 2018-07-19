@@ -129,7 +129,7 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     # Run algorithm
     algorithms.generatePointCloud(
         requestInfo=requestInfo, jobId=jobId, trigger=True,
-        imageFileIds=panFileIds, outputFolder=outputFolder,
+        outputFolder=outputFolder, imageFileIds=panFileIds,
         longitude=longitude, latitude=latitude,
         longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)
 
@@ -154,8 +154,8 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
 
     # Run algorithm
     algorithms.generateDsm(
-        requestInfo=requestInfo, jobId=jobId, trigger=True,
-        file=pointCloudFile, outputFolder=outputFolder)
+        requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
+        file=pointCloudFile)
 
 
 def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
@@ -186,8 +186,8 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
 
     # Run algorithm
     algorithms.fitDtm(
-        requestInfo=requestInfo, jobId=jobId, trigger=True, file=file,
-        outputFolder=outputFolder, **fitDtmOptions)
+        requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
+        file=file, **fitDtmOptions)
 
 
 def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):

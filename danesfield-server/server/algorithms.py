@@ -76,7 +76,7 @@ def finalize(requestInfo, jobId):
     workflowManager.finalizeJob(jobId)
 
 
-def fitDtm(requestInfo, jobId, trigger, file, outputFolder, iterations=100, tension=10):
+def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tension=10):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
 
@@ -89,10 +89,10 @@ def fitDtm(requestInfo, jobId, trigger, file, outputFolder, iterations=100, tens
     :type jobId: str
     :param trigger: Whether to trigger the next step in the workflow.
     :type trigger: bool
-    :param file: DSM image file document.
-    :type file: dict
     :param outputFolder: Output folder document.
     :type outputFolder: dict
+    :param file: DSM image file document.
+    :type file: dict
     :param iterations: The base number of iterations at the coarsest scale.
     :type iterations: int
     :param tension: Number of inner smoothing iterations.
@@ -160,7 +160,7 @@ def fitDtm(requestInfo, jobId, trigger, file, outputFolder, iterations=100, tens
     return Job().save(job)
 
 
-def generateDsm(requestInfo, jobId, trigger, file, outputFolder):
+def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
     """
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
@@ -173,10 +173,10 @@ def generateDsm(requestInfo, jobId, trigger, file, outputFolder):
     :type jobId: str
     :param trigger: Whether to trigger the next step in the workflow.
     :type trigger: bool
-    :param file: Point cloud file document.
-    :type file: dict
     :param outputFolder: Output folder document.
     :type outputFolder: dict
+    :param file: Point cloud file document.
+    :type file: dict
     :returns: Job document.
     """
     stepName = DanesfieldStep.GENERATE_DSM
@@ -239,7 +239,7 @@ def generateDsm(requestInfo, jobId, trigger, file, outputFolder):
     return Job().save(job)
 
 
-def generatePointCloud(requestInfo, jobId, trigger, imageFileIds, outputFolder, longitude,
+def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, longitude,
                        latitude, longitudeWidth, latitudeWidth):
     """
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
@@ -254,10 +254,10 @@ def generatePointCloud(requestInfo, jobId, trigger, imageFileIds, outputFolder, 
     :type jobId: str
     :param trigger: Whether to trigger the next step in the workflow.
     :type trigger: bool
-    :param imageFileIds: IDs of input image files.
-    :type imageFileIds: list
     :param outputFolder: Output folder document.
     :type outputFolder: dict
+    :param imageFileIds: IDs of input image files.
+    :type imageFileIds: list
     :param longitude:
     :type longitude:
     :param latitude:
