@@ -79,12 +79,19 @@ def onJobUpdate(event):
     except (TypeError, KeyError, ValueError):
         return
 
+    workflowManager = DanesfieldWorkflowManager.instance()
+
+    # For composite steps, skip processing until all jobs have finished
+    groupResult = workflowManager.getGroupResult(jobId, stepName)
+    if groupResult is not None and not groupResult.ready():
+        return
+
     if status == JobStatus.SUCCESS:
-        DanesfieldWorkflowManager.instance().stepSucceeded(jobId=jobId, stepName=stepName)
+        workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
         if trigger:
             user = User().load(job['userId'], force=True, exc=True)
-            DanesfieldWorkflowManager.instance().advance(
+            workflowManager.advance(
                 jobId=jobId, stepName=stepName,
                 requestInfo=RequestInfo(user=user, apiUrl=apiUrl, token=token))
     elif status in (JobStatus.CANCELED, JobStatus.ERROR):
-        DanesfieldWorkflowManager.instance().stepFailed(jobId=jobId, stepName=stepName)
+        workflowManager.stepFailed(jobId=jobId, stepName=stepName)

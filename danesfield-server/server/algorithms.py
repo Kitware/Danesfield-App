@@ -21,6 +21,8 @@ import itertools
 import json
 import os
 
+from celery import group
+
 from girder.plugins.jobs.models.job import Job
 
 from girder_client import GirderClient
@@ -338,3 +340,106 @@ def generatePointCloud(requestInfo, jobId, trigger, imageFileIds, outputFolder, 
         })
 
     return Job().save(job)
+
+
+def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile,
+                 occlusionThreshold=1.0, denoiseRadius=2.0):
+    """
+    Run Girder Worker jobs to orthorectify source images.
+
+    Requirements:
+    - core3d/danesfield Docker image is available on host
+
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    :param trigger: Whether to trigger the next step in the workflow.
+    :type trigger: bool
+    :param outputFolder: Output folder document.
+    :type outputFolder: dict
+    :param imageFiles: List of image files.
+    :type imageFiles: list[dict]
+    :param dsmFile: DSM file document.
+    :type dsmFile: dict
+    :param dtmFile: DTM file document.
+    :type dtmFile: dict
+    :param occlusionThreshold:
+    :type occlusionThreshold: float
+    :param denoiseRadius:
+    :type denoiseRadius: float
+    :returns: None
+    """
+    stepName = DanesfieldStep.ORTHORECTIFY
+    gc = _createGirderClient(requestInfo)
+
+    def createOrthorectifyTask(imageFile):
+        # Set output file name based on input file name
+        base, ext = os.path.splitext(imageFile['name'])
+        orthoName = base + '_ortho' + ext
+        outputVolumePath = VolumePath(orthoName)
+
+        # TODO: --raytheon-rpc
+
+        # Docker container arguments
+        containerArgs = [
+            'danesfield/tools/orthorectify.py',
+            # Source image
+            GirderFileIdToVolume(imageFile['_id'], gc=gc),
+            # DSM
+            GirderFileIdToVolume(dsmFile['_id'], gc=gc),
+            # Destination image
+            outputVolumePath,
+            '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc),
+            '--occlusion-thresh', str(occlusionThreshold),
+            '--denoise-radius', str(denoiseRadius)
+        ]
+
+        # Set upload metadata
+        # - Provide job identifier
+        # - Provide job stepName
+        upload_kwargs = {}
+        if jobId is not None:
+            upload_kwargs.update({
+                'reference': json.dumps({
+                    DanesfieldJobKey.ID: jobId,
+                    DanesfieldJobKey.STEP_NAME: stepName
+                })
+            })
+
+        # Result hooks
+        # - Upload output files to output folder
+        # - Provide upload metadata
+        resultHooks = [
+            GirderUploadVolumePathToFolder(
+                outputVolumePath,
+                outputFolder['_id'],
+                upload_kwargs=upload_kwargs,
+                gc=gc)
+        ]
+
+        return docker_run.s(
+            image=DockerImage.DANESFIELD,
+            pull_image=False,
+            container_args=containerArgs,
+            girder_job_title='Orthorectify: %s' % imageFile['name'],
+            girder_result_hooks=resultHooks,
+            girder_user=requestInfo.user)
+
+    # Run tasks in parallel using a group
+    tasks = [createOrthorectifyTask(imageFile) for imageFile in imageFiles]
+    groupResult = group(tasks).delay()
+
+    DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
+
+    if jobId is not None:
+        for result in groupResult.results:
+            job = result.job
+            job.update({
+                DanesfieldJobKey.API_URL: requestInfo.apiUrl,
+                DanesfieldJobKey.ID: jobId,
+                DanesfieldJobKey.STEP_NAME: stepName,
+                DanesfieldJobKey.TOKEN: requestInfo.token,
+                DanesfieldJobKey.TRIGGER: trigger
+            })
+            Job().save(job)
