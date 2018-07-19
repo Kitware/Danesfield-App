@@ -44,6 +44,11 @@ export default {
           title: "Focus",
           route: "/focus",
           icon: "center_focus_strong"
+        },
+        {
+          title: "Jobs",
+          route: "/job",
+          icon: "fa-tasks"
         }
       ],
       userForm: "login",
