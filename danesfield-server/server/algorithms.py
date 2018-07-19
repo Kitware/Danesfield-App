@@ -156,8 +156,9 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
             DanesfieldJobKey.TOKEN: requestInfo.token,
             DanesfieldJobKey.TRIGGER: trigger
         })
+        job = Job().save(job)
 
-    return Job().save(job)
+    return job
 
 
 def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
@@ -235,8 +236,9 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
             DanesfieldJobKey.TOKEN: requestInfo.token,
             DanesfieldJobKey.TRIGGER: trigger
         })
+        job = Job().save(job)
 
-    return Job().save(job)
+    return job
 
 
 def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, longitude,
@@ -338,8 +340,9 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
             DanesfieldJobKey.TOKEN: requestInfo.token,
             DanesfieldJobKey.TRIGGER: trigger
         })
+        job = Job().save(job)
 
-    return Job().save(job)
+    return job
 
 
 def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile,
