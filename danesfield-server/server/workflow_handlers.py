@@ -190,6 +190,55 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
         outputFolder=outputFolder, **fitDtmOptions)
 
 
+def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
+    """
+    Workflow handler to run orthorectify.
+
+    Supports the following options:
+    - occlusionThreshold
+    - denoiseRadius
+    """
+    # Get working sets
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
+    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
+    dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, workingSets)
+
+    # TODO: Get updated RPC files from P3D
+
+    # Get IDs of MSI and PAN source image files
+    items = [Item().load(itemId, force=True, exc=True) for itemId in initWorkingSet['datasetIds']]
+    imageItems = [item for item in items if (_isMsiImage(item) or _isPanImage(item))]
+    imageFiles = [_fileFromItem(item) for item in imageItems]
+
+    # Get DSM
+    items = [Item().load(itemId, force=True, exc=True) for itemId in dsmWorkingSet['datasetIds']]
+    if not items:
+        raise DanesfieldWorkflowException('Unable to find DSM')
+    if len(items) > 1:
+        raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
+    dsmFile = _fileFromItem(items[0])
+
+    # Get DTM
+    items = [Item().load(itemId, force=True, exc=True) for itemId in dtmWorkingSet['datasetIds']]
+    if not items:
+        raise DanesfieldWorkflowException('Unable to find DTM')
+    if len(items) > 1:
+        raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
+    dtmFile = _fileFromItem(items[0])
+
+    # Get options
+    orthorectifyOptions = options.get(DanesfieldStep.ORTHORECTIFY, {})
+    if not isinstance(orthorectifyOptions, dict):
+        raise DanesfieldWorkflowException('Invalid options provided for step: {}'.format(
+            DanesfieldStep.ORTHORECTIFY
+        ))
+
+    # Run algorithm
+    algorithms.orthorectify(
+        requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
+        imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile, **orthorectifyOptions)
+
+
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run finalize step.
