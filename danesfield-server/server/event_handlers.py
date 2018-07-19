@@ -81,6 +81,11 @@ def onJobUpdate(event):
 
     workflowManager = DanesfieldWorkflowManager.instance()
 
+    # For composite steps, skip processing until all jobs have finished
+    groupResult = workflowManager.getGroupResult(jobId, stepName)
+    if groupResult is not None and not groupResult.ready():
+        return
+
     if status == JobStatus.SUCCESS:
         workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
         if trigger:

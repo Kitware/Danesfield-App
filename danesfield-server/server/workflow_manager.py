@@ -99,7 +99,9 @@ class DanesfieldWorkflowManager(object):
             # Output folder
             'outputFolder': outputFolder,
             # Options
-            'options': options if options is not None else {}
+            'options': options if options is not None else {},
+            # For composite steps, Celery GroupResult indexed by step name
+            'groupResult': {}
         }
 
         logprint.info('DanesfieldWorkflowManager.initJob Job={} WorkingSet={}'.format(
@@ -134,6 +136,32 @@ class DanesfieldWorkflowManager(object):
 
         jobInfo = self._getJobInfo(jobId)
         jobInfo['files'].setdefault(stepName, []).append(file)
+
+    def setGroupResult(self, jobId, stepName, groupResult):
+        """
+        Set the Celery GroupResult for a composite step.
+
+        Composite steps run multiple Girder Worker jobs in parallel using a Celery group.
+        When a single job completes, the GroupResult can be queried to check whether all
+        jobs in the step have completed.
+
+        :param jobId: Identifier of job that created the file.
+        :type jobId: str
+        :param stepName: The name of the step that created the file.
+        :type stepName: str (DanesfieldStep)
+        :param groupResult: Celery GroupResult.
+        :type groupResult: celery.result.GroupResult
+        """
+        jobInfo = self._getJobInfo(jobId)
+        jobInfo['groupResult'][stepName] = groupResult
+
+    def getGroupResult(self, jobId, stepName):
+        """
+        Look up a Celery GroupResult for a composite step. Return None if no GroupResult is set
+        for the step.
+        """
+        jobInfo = self._getJobInfo(jobId)
+        return jobInfo['groupResult'].get(stepName)
 
     def advance(self, jobId, stepName, requestInfo):
         """
@@ -175,7 +203,10 @@ class DanesfieldWorkflowManager(object):
             'datasetIds': [file['itemId'] for file in files]
         })
         jobInfo['workingSets'][stepName] = workingSet
-        del jobInfo['files'][stepName]
+
+        # Remove data applicable only while step is running
+        jobInfo['files'].pop(stepName, None)
+        jobInfo['groupResult'].pop(stepName, None)
 
         logprint.info(
             'DanesfieldWorkflowManager.createdWorkingSet Job={} StepName={} WorkingSet={}'.format(
@@ -188,4 +219,4 @@ class DanesfieldWorkflowManager(object):
         logprint.info('DanesfieldWorkflowManager.stepFailed Job={} StepName={}'.format(
             jobId, stepName))
 
-        del self._jobInfo[jobId]
+        self._jobInfo.pop(jobId, None)
