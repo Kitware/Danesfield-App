@@ -178,8 +178,8 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     file = _fileFromItem(items[0])
 
     # Get options
-    fitDtmOptions = options.get(DanesfieldStep.FIT_DTM)
-    if fitDtmOptions is not None and not isinstance(fitDtmOptions, dict):
+    fitDtmOptions = options.get(DanesfieldStep.FIT_DTM, {})
+    if not isinstance(fitDtmOptions, dict):
         raise DanesfieldWorkflowException('Invalid options provided for step: {}'.format(
             DanesfieldStep.FIT_DTM
         ))
