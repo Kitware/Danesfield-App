@@ -73,6 +73,27 @@ class ProcessingResource(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Run the complete processing workflow.')
+        .notes('Call this endpoint to run the complete processing workflow.\n\n'
+               'Options may be provided for individual steps by passing a JSON object '
+               'in the **options** parameter. For example:\n\n'
+               '```\n'
+               '{\n'
+               '    "generate-point-cloud": {\n'
+               '        "longitude": -84.084032161833051,\n'
+               '        "latitude": 39.780404255857590,\n'
+               '        "longitudeWidth": 0.008880209782049,\n'
+               '        "latitudeWidth": 0.007791684155826\n'
+               '    },\n'
+               '    "fit-dtm": {\n'
+               '        "iterations": 100,\n'
+               '        "tension": 10\n'
+               '    },\n'
+               '    "orthorectify": {\n'
+               '        "occlusionThreshold": 1.0,\n'
+               '        "denoiseRadius": 2.0\n'
+               '    }\n'
+               '}\n'
+               '```\n')
         .modelParam('workingSet', 'The ID of the working set.', model=workingSet.WorkingSet,
                     paramType='query')
         .jsonParam('options', 'Processing options keyed by step name.', requireObject=True,
