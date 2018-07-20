@@ -46,6 +46,19 @@ def _removeDuplicateCount(name):
     return re.sub(r' \(\d+\)$', '', name)
 
 
+def _hasExtension(item, extension):
+    """
+    Return true if the item's name has the specified extension.
+    Ignores duplicate count suffixes.
+
+    :param item: Item document.
+    :type item: dict
+    :param extension: The file extension, including a leading period.
+    :type extension: str
+    """
+    return _removeDuplicateCount(item['name']).lower().endswith(extension)
+
+
 def _isPointCloud(item):
     """
     Return true if the item refers to a point cloud.
@@ -53,7 +66,7 @@ def _isPointCloud(item):
     :param item: Item document.
     :type item: dict
     """
-    return _removeDuplicateCount(item['name']).lower().endswith('.las')
+    return _hasExtension(item, '.las')
 
 
 def _isMsiImage(item):
