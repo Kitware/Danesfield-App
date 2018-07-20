@@ -67,6 +67,16 @@ def _isPanImage(item):
     return '-p' in item['name'].lower()
 
 
+def _isRpc(item):
+    """
+    Return true if the item refers to an RPC file.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    return hasExtension(item, '.rpc')
+
+
 def _getWorkingSet(name, workingSets):
     """
     Get a specific working set by name. Raise an error if the working set is not found.
@@ -204,8 +214,7 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
     dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
     dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, workingSets)
-
-    # TODO: Get updated RPC files from P3D
+    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
 
     # Get IDs of MSI and PAN source image files
     imageFiles = [
@@ -235,6 +244,16 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
         raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
     dtmFile = _fileFromItem(items[0])
 
+    # Get updated RPC files
+    rpcFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in pointCloudWorkingSet['datasetIds']
+        )
+        if _isRpc(item)
+    ]
+
     # Get options
     orthorectifyOptions = options.get(DanesfieldStep.ORTHORECTIFY, {})
     if not isinstance(orthorectifyOptions, dict):
@@ -245,7 +264,8 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     # Run algorithm
     algorithms.orthorectify(
         requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
-        imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile, **orthorectifyOptions)
+        imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile, rpcFiles=rpcFiles,
+        **orthorectifyOptions)
 
 
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
