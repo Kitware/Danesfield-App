@@ -114,5 +114,8 @@ find "${OUT}" -maxdepth 1 -type f -delete
 # Move primary point cloud file to root output directory
 mv --target-directory "${OUT}" "${OUT}"/tp_manual_*/tp_manual_*_flt.las
 
+# Move updated RPCs to the root output directory
+mv --target-directory "${OUT}" "${OUT}"/tp_manual_*/GRA_*.up.rpc
+
 # Remove subdirectories for clarity, even though they won't be uploaded
 find "${OUT}" -mindepth 1 -type d -print0 | xargs -0 rm -rf

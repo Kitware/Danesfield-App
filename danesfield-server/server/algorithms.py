@@ -33,6 +33,7 @@ from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
+from .utilities import removeDuplicateCount
 from .workflow_manager import DanesfieldWorkflowManager
 
 
@@ -41,6 +42,21 @@ def _createGirderClient(requestInfo):
     gc = GirderClient(apiUrl=requestInfo.apiUrl)
     gc.token = requestInfo.token['_id']
     return gc
+
+
+def _rpcFileMatchesImageFile(rpcFile, imageFile):
+    """
+    Return true if the RPC file corresponds to the image file.
+    Matches are determined by file names.
+
+    :param rpcFile: RPC file document.
+    :type rpcFile: dict
+    :param imageFile: Image file document.
+    :type imageFile: dict
+    """
+    rpcBaseName = removeDuplicateCount(rpcFile['name']).split('.')[0]
+    imageBaseName = imageFile['name'].split('.')[0]
+    return rpcBaseName.endswith(imageBaseName)
 
 
 def process(requestInfo, workingSet, outputFolder, options):
@@ -292,7 +308,7 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
             '--longitudeWidth', str(longitudeWidth),
             '--latitudeWidth', str(latitudeWidth),
             '--firstProc', '0',
-            '--threads', '1',
+            '--threads', '2',
             '--images'
         ],
         [GirderFileIdToVolume(fileId, gc=gc) for fileId in imageFileIds],
@@ -345,7 +361,7 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
     return job
 
 
-def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile,
+def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile, rpcFiles,
                  occlusionThreshold=1.0, denoiseRadius=2.0):
     """
     Run Girder Worker jobs to orthorectify source images.
@@ -367,6 +383,8 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
     :type dsmFile: dict
     :param dtmFile: DTM file document.
     :type dtmFile: dict
+    :param rpcFiles: List of RPC files.
+    :type rpcFiles: list[dict]
     :param occlusionThreshold:
     :type occlusionThreshold: float
     :param denoiseRadius:
@@ -376,13 +394,11 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
     stepName = DanesfieldStep.ORTHORECTIFY
     gc = _createGirderClient(requestInfo)
 
-    def createOrthorectifyTask(imageFile):
+    def createOrthorectifyTask(imageFile, rpcFile):
         # Set output file name based on input file name
         base, ext = os.path.splitext(imageFile['name'])
         orthoName = base + '_ortho' + ext
         outputVolumePath = VolumePath(orthoName)
-
-        # TODO: --raytheon-rpc
 
         # Docker container arguments
         containerArgs = [
@@ -397,6 +413,10 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
             '--occlusion-thresh', str(occlusionThreshold),
             '--denoise-radius', str(denoiseRadius)
         ]
+        if rpcFile is not None:
+            containerArgs.extend([
+                '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc)
+            ])
 
         # Set upload metadata
         # - Provide job identifier
@@ -429,8 +449,24 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
             girder_result_hooks=resultHooks,
             girder_user=requestInfo.user)
 
+    # Find RPC file corresponding to each image, or None
+    correspondingRpcFiles = (
+        next(
+            (
+                rpcFile
+                for rpcFile in rpcFiles
+                if _rpcFileMatchesImageFile(rpcFile, imageFile)
+            ), None)
+        for imageFile
+        in imageFiles
+    )
+
     # Run tasks in parallel using a group
-    tasks = [createOrthorectifyTask(imageFile) for imageFile in imageFiles]
+    tasks = [
+        createOrthorectifyTask(imageFile, rpcFile)
+        for imageFile, rpcFile
+        in itertools.izip(imageFiles, correspondingRpcFiles)
+    ]
     groupResult = group(tasks).delay()
 
     DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)

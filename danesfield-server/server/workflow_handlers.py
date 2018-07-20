@@ -17,12 +17,11 @@
 #  limitations under the License.
 ##############################################################################
 
-import re
-
 from girder.models.item import Item
 
 from . import algorithms
 from .constants import DanesfieldStep
+from .utilities import hasExtension
 from .workflow import DanesfieldWorkflowException
 
 
@@ -38,14 +37,6 @@ def _fileFromItem(item):
     return files[0]
 
 
-def _removeDuplicateCount(name):
-    """
-    Remove duplicate count suffix from a name.
-    For example, 'my_file (1).txt' becomes 'my_file.txt'.
-    """
-    return re.sub(r' \(\d+\)$', '', name)
-
-
 def _isPointCloud(item):
     """
     Return true if the item refers to a point cloud.
@@ -53,7 +44,7 @@ def _isPointCloud(item):
     :param item: Item document.
     :type item: dict
     """
-    return _removeDuplicateCount(item['name']).lower().endswith('.las')
+    return hasExtension(item, '.las')
 
 
 def _isMsiImage(item):
@@ -74,6 +65,16 @@ def _isPanImage(item):
     :type item: dict
     """
     return '-p' in item['name'].lower()
+
+
+def _isRpc(item):
+    """
+    Return true if the item refers to an RPC file.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    return hasExtension(item, '.rpc')
 
 
 def _getWorkingSet(name, workingSets):
@@ -105,9 +106,14 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     workingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
 
     # Get IDs of PAN image files
-    items = [Item().load(itemId, force=True, exc=True) for itemId in workingSet['datasetIds']]
-    panItems = [item for item in items if _isPanImage(item)]
-    panFileIds = [_fileFromItem(item)['_id'] for item in panItems]
+    panFileIds = [
+        _fileFromItem(item)['_id']
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in workingSet['datasetIds']
+        )
+        if _isPanImage(item)
+    ]
 
     # Get required options
     generatePointCloudOptions = options.get(DanesfieldStep.GENERATE_POINT_CLOUD)
@@ -142,15 +148,20 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     workingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
 
     # Get point cloud file
-    items = [Item().load(itemId, force=True, exc=True) for itemId in workingSet['datasetIds']]
-    pointCloudItems = [item for item in items if _isPointCloud(item)]
+    pointCloudItems = [
+        item
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in workingSet['datasetIds']
+        )
+        if _isPointCloud(item)
+    ]
     if not pointCloudItems:
         raise DanesfieldWorkflowException('Unable to find point cloud')
     if len(pointCloudItems) > 1:
         raise DanesfieldWorkflowException(
             'Expected only one point cloud, got {}'.format(len(pointCloudItems)))
-    pointCloudItem = pointCloudItems[0]
-    pointCloudFile = _fileFromItem(pointCloudItem)
+    pointCloudFile = _fileFromItem(pointCloudItems[0])
 
     # Run algorithm
     algorithms.generateDsm(
@@ -170,7 +181,8 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     workingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
 
     # Get DSM
-    items = [Item().load(itemId, force=True, exc=True) for itemId in workingSet['datasetIds']]
+    items = [Item().load(itemId, force=True, exc=True)
+             for itemId in workingSet['datasetIds']]
     if not items:
         raise DanesfieldWorkflowException('Unable to find DSM')
     if len(items) > 1:
@@ -202,16 +214,21 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
     dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
     dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, workingSets)
-
-    # TODO: Get updated RPC files from P3D
+    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
 
     # Get IDs of MSI and PAN source image files
-    items = [Item().load(itemId, force=True, exc=True) for itemId in initWorkingSet['datasetIds']]
-    imageItems = [item for item in items if (_isMsiImage(item) or _isPanImage(item))]
-    imageFiles = [_fileFromItem(item) for item in imageItems]
+    imageFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in initWorkingSet['datasetIds']
+        )
+        if (_isMsiImage(item) or _isPanImage(item))
+    ]
 
     # Get DSM
-    items = [Item().load(itemId, force=True, exc=True) for itemId in dsmWorkingSet['datasetIds']]
+    items = [Item().load(itemId, force=True, exc=True)
+             for itemId in dsmWorkingSet['datasetIds']]
     if not items:
         raise DanesfieldWorkflowException('Unable to find DSM')
     if len(items) > 1:
@@ -219,12 +236,23 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     dsmFile = _fileFromItem(items[0])
 
     # Get DTM
-    items = [Item().load(itemId, force=True, exc=True) for itemId in dtmWorkingSet['datasetIds']]
+    items = [Item().load(itemId, force=True, exc=True)
+             for itemId in dtmWorkingSet['datasetIds']]
     if not items:
         raise DanesfieldWorkflowException('Unable to find DTM')
     if len(items) > 1:
         raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
     dtmFile = _fileFromItem(items[0])
+
+    # Get updated RPC files
+    rpcFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in pointCloudWorkingSet['datasetIds']
+        )
+        if _isRpc(item)
+    ]
 
     # Get options
     orthorectifyOptions = options.get(DanesfieldStep.ORTHORECTIFY, {})
@@ -236,7 +264,8 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     # Run algorithm
     algorithms.orthorectify(
         requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
-        imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile, **orthorectifyOptions)
+        imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile, rpcFiles=rpcFiles,
+        **orthorectifyOptions)
 
 
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
