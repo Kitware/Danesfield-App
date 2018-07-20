@@ -44,6 +44,59 @@ def _createGirderClient(requestInfo):
     return gc
 
 
+def _createUploadMetadata(jobId, stepName):
+    """
+    Return metadata to supply with uploaded files, including:
+    - Job identifier
+    - Step name
+
+    :param jobId: Job ID.
+    :type jobId: str
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    """
+    upload_kwargs = {}
+    if jobId is not None:
+        upload_kwargs.update({
+            'reference': json.dumps({
+                DanesfieldJobKey.ID: jobId,
+                DanesfieldJobKey.STEP_NAME: stepName
+            })
+        })
+    return upload_kwargs
+
+
+def _addJobInfo(job, requestInfo, jobId, stepName, trigger):
+    """
+    Add common information to a job for use by job event listeners.
+    This information allows the job event handler/workflow manager to
+    process the job and continue running the workflow.
+
+    :param job: Job document.
+    :type job: dict
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param trigger: Whether to trigger the next step in the workflow.
+    :type trigger: bool
+    :returns: Updated job document.
+    """
+    if jobId is not None:
+        job.update({
+            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
+            DanesfieldJobKey.ID: jobId,
+            DanesfieldJobKey.STEP_NAME: stepName,
+            DanesfieldJobKey.TOKEN: requestInfo.token,
+            DanesfieldJobKey.TRIGGER: trigger
+        })
+        job = Job().save(job)
+
+    return job
+
+
 def _rpcFileMatchesImageFile(rpcFile, imageFile):
     """
     Return true if the RPC file corresponds to the image file.
@@ -131,21 +184,10 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
         outputVolumePath
     ]
 
-    # Set upload metadata
-    # - Provide job identifier
-    # - Provide job step name
-    upload_kwargs = {}
-    if jobId is not None:
-        upload_kwargs.update({
-            'reference': json.dumps({
-                DanesfieldJobKey.ID: jobId,
-                DanesfieldJobKey.STEP_NAME: stepName
-            })
-        })
-
     # Result hooks
     # - Upload output files to output folder
     # - Provide upload metadata
+    upload_kwargs = _createUploadMetadata(jobId, stepName)
     resultHooks = [
         GirderUploadVolumePathToFolder(
             outputVolumePath,
@@ -163,17 +205,9 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
 
-    # Provide info for job event listeners
+    # Add info for job event listeners
     job = asyncResult.job
-    if jobId is not None:
-        job.update({
-            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
-            DanesfieldJobKey.ID: jobId,
-            DanesfieldJobKey.STEP_NAME: stepName,
-            DanesfieldJobKey.TOKEN: requestInfo.token,
-            DanesfieldJobKey.TRIGGER: trigger
-        })
-        job = Job().save(job)
+    job = _addJobInfo(job, requestInfo=requestInfo, jobId=jobId, stepName=stepName, trigger=trigger)
 
     return job
 
@@ -212,21 +246,10 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
         GirderFileIdToVolume(file['_id'], gc=gc)
     ]
 
-    # Set upload metadata
-    # - Provide job identifier
-    # - Provide job step name
-    upload_kwargs = {}
-    if jobId is not None:
-        upload_kwargs.update({
-            'reference': json.dumps({
-                DanesfieldJobKey.ID: jobId,
-                DanesfieldJobKey.STEP_NAME: stepName
-            })
-        })
-
     # Result hooks
     # - Upload output files to output folder
     # - Provide upload metadata
+    upload_kwargs = _createUploadMetadata(jobId, stepName)
     resultHooks = [
         GirderUploadVolumePathToFolder(
             outputVolumePath,
@@ -244,17 +267,9 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
 
-    # Provide info for job event listeners
+    # Add info for job event listeners
     job = asyncResult.job
-    if jobId is not None:
-        job.update({
-            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
-            DanesfieldJobKey.ID: jobId,
-            DanesfieldJobKey.STEP_NAME: stepName,
-            DanesfieldJobKey.TOKEN: requestInfo.token,
-            DanesfieldJobKey.TRIGGER: trigger
-        })
-        job = Job().save(job)
+    job = _addJobInfo(job, requestInfo=requestInfo, jobId=jobId, stepName=stepName, trigger=trigger)
 
     return job
 
@@ -316,21 +331,10 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
         [GirderFileIdToVolume(fileId, gc=gc) for fileId in imageFileIds],
     ))
 
-    # Set upload metadata
-    # - Provide job identifier
-    # - Provide job step name
-    upload_kwargs = {}
-    if jobId is not None:
-        upload_kwargs.update({
-            'reference': json.dumps({
-                DanesfieldJobKey.ID: jobId,
-                DanesfieldJobKey.STEP_NAME: stepName
-            })
-        })
-
     # Result hooks
     # - Upload output files to output folder
     # - Provide upload metadata
+    upload_kwargs = _createUploadMetadata(jobId, stepName)
     resultHooks = [
         GirderUploadVolumePathToFolder(
             outputVolumePath,
@@ -349,17 +353,9 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
 
-    # Provide info for job event listeners
+    # Add info for job event listeners
     job = asyncResult.job
-    if jobId is not None:
-        job.update({
-            DanesfieldJobKey.API_URL: requestInfo.apiUrl,
-            DanesfieldJobKey.ID: jobId,
-            DanesfieldJobKey.STEP_NAME: stepName,
-            DanesfieldJobKey.TOKEN: requestInfo.token,
-            DanesfieldJobKey.TRIGGER: trigger
-        })
-        job = Job().save(job)
+    job = _addJobInfo(job, requestInfo=requestInfo, jobId=jobId, stepName=stepName, trigger=trigger)
 
     return job
 
@@ -421,21 +417,10 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
                 '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc)
             ])
 
-        # Set upload metadata
-        # - Provide job identifier
-        # - Provide job step name
-        upload_kwargs = {}
-        if jobId is not None:
-            upload_kwargs.update({
-                'reference': json.dumps({
-                    DanesfieldJobKey.ID: jobId,
-                    DanesfieldJobKey.STEP_NAME: stepName
-                })
-            })
-
         # Result hooks
         # - Upload output files to output folder
         # - Provide upload metadata
+        upload_kwargs = _createUploadMetadata(jobId, stepName)
         resultHooks = [
             GirderUploadVolumePathToFolder(
                 outputVolumePath,
@@ -475,14 +460,7 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
 
     DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
 
-    if jobId is not None:
-        for result in groupResult.results:
-            job = result.job
-            job.update({
-                DanesfieldJobKey.API_URL: requestInfo.apiUrl,
-                DanesfieldJobKey.ID: jobId,
-                DanesfieldJobKey.STEP_NAME: stepName,
-                DanesfieldJobKey.TOKEN: requestInfo.token,
-                DanesfieldJobKey.TRIGGER: trigger
-            })
-            Job().save(job)
+    # Add info for job event listeners
+    for result in groupResult.results:
+        _addJobInfo(result.job, requestInfo=requestInfo, jobId=jobId, stepName=stepName,
+                    trigger=trigger)
