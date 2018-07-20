@@ -308,7 +308,7 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
             '--longitudeWidth', str(longitudeWidth),
             '--latitudeWidth', str(latitudeWidth),
             '--firstProc', '0',
-            '--threads', '1',
+            '--threads', '2',
             '--images'
         ],
         [GirderFileIdToVolume(fileId, gc=gc) for fileId in imageFileIds],
