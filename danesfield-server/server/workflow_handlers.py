@@ -17,12 +17,11 @@
 #  limitations under the License.
 ##############################################################################
 
-import re
-
 from girder.models.item import Item
 
 from . import algorithms
 from .constants import DanesfieldStep
+from .utilities import hasExtension
 from .workflow import DanesfieldWorkflowException
 
 
@@ -38,27 +37,6 @@ def _fileFromItem(item):
     return files[0]
 
 
-def _removeDuplicateCount(name):
-    """
-    Remove duplicate count suffix from a name.
-    For example, 'my_file (1).txt' becomes 'my_file.txt'.
-    """
-    return re.sub(r' \(\d+\)$', '', name)
-
-
-def _hasExtension(item, extension):
-    """
-    Return true if the item's name has the specified extension.
-    Ignores duplicate count suffixes.
-
-    :param item: Item document.
-    :type item: dict
-    :param extension: The file extension, including a leading period.
-    :type extension: str
-    """
-    return _removeDuplicateCount(item['name']).lower().endswith(extension)
-
-
 def _isPointCloud(item):
     """
     Return true if the item refers to a point cloud.
@@ -66,7 +44,7 @@ def _isPointCloud(item):
     :param item: Item document.
     :type item: dict
     """
-    return _hasExtension(item, '.las')
+    return hasExtension(item, '.las')
 
 
 def _isMsiImage(item):
