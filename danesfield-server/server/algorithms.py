@@ -159,6 +159,7 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
         pull_image=False,
         container_args=containerArgs,
         girder_job_title='Fit DTM: %s' % file['name'],
+        girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
 
@@ -239,6 +240,7 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
         pull_image=False,
         container_args=containerArgs,
         girder_job_title='Generate DSM: %s' % file['name'],
+        girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
 
@@ -343,6 +345,7 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
         volumes=volumes,
         container_args=containerArgs,
         girder_job_title='Generate point cloud',
+        girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
 
@@ -446,6 +449,7 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
             pull_image=False,
             container_args=containerArgs,
             girder_job_title='Orthorectify: %s' % imageFile['name'],
+            girder_job_type=stepName,
             girder_result_hooks=resultHooks,
             girder_user=requestInfo.user)
 
