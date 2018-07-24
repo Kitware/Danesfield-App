@@ -1,71 +1,16 @@
 <template>
   <FullScreenViewport>
-    <WorkspaceContainer 
-      :focused="focusedWorkspace"
-      @update:focused="setFocusedWorkspaceKey($event)"
-      :autoResize="true"
-      :max="2"
-    >
-      <Workspace
-        v-for="(workspace, key) in workspaces"
-        :key="key"
-        :identifier="key"
-        @split="addWorkspace(workspace)"
-        @close="removeWorkspace(key)"
-        :states="[{name:'Map',value:'map',disabled:workspace.type==='map'},{name:'VTK',value:'vtk',disabled:workspace.type==='vtk'}]"
-        @stateChange="changeWorkspaceType({workspace,type:$event})"
-        >
-        <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
-          class='map'
-          :viewport='viewport'
-      	  ref='geojsMapViewport'
-        >
-          <GeojsTileLayer
-            url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
-            attribution='© OpenStreetMap contributors, © CARTO'
-            :zIndex='0'>
-          </GeojsTileLayer>
-          <template v-for="(dataset,i) in workspace.datasets">
-            <GeojsGeojsonDatasetLayer
-              v-if="dataset.geometa.driver==='GeoJSON'"
-              :key="dataset._id"
-              :dataset="dataset"
-              :zIndex="i+1">
-            </GeojsGeojsonDatasetLayer>
-            <GeojsTileLayer
-              v-if="dataset.geometa.driver==='GeoTIFF'"
-              :key="dataset._id"
-              :url='getTileURL(dataset)'
-              :keepLower="false"
-              :zIndex='i+1'>
-            </GeojsTileLayer>
-          </template>
-        </GeojsMapViewport>
-          <VTKViewport v-if="workspace.type==='vtk'"
-            :background="vtkBGColor">
-            <OBJMultiItemActor
-              v-for="dataset in workspace.datasets"
-              v-if="dataset.geometa.driver==='OBJ'"
-              :key="dataset._id"
-              :item="dataset" />
-          </VTKViewport>
-        <template slot='actions' v-if="workspace.type==='vtk'">
-          <WorkspaceAction>
-            <v-menu
-              top offset-y
-              origin="center center">
-              <v-icon
-                slot="activator"
-              >palette</v-icon>
-              <v-card width="130px">
-                <Palette :value="vtkBGColor" @input="changeVTKBGColor($event)" />
-              </v-card>
-            </v-menu>
-          </WorkspaceAction>
-        </template>
-      </Workspace>
-    </WorkspaceContainer>
-
+    <FocusWorkspace
+      :workspaces="workspaces"
+      :boundDatasets="boundDatasets"
+      :focusedWorkspace="focusedWorkspace"
+      :setFocusedWorkspaceKey="setFocusedWorkspaceKey"
+      :addWorkspace="addWorkspace"
+      :removeWorkspace="removeWorkspace"
+      :changeWorkspaceType="changeWorkspaceType"
+      :vtkBGColor="vtkBGColor"
+      ref="focusWorkspace"
+      />
     <SidePanel
     :top="64"
     :floating='false'
@@ -98,7 +43,7 @@
         <v-list dense two-line class="datasets">
           <transition-group name="fade-group" tag="div">
             <v-list-tile
-              v-for="datasetIdAndWorkingSet in shownDatasetIdAndWorkingSets"
+              v-for="datasetIdAndWorkingSet in listingDatasetIdAndWorkingSets"
               v-if="datasets[datasetIdAndWorkingSet.datasetId]"
               :key="datasetIdAndWorkingSet.datasetId"
               class="dataset"
@@ -149,7 +94,7 @@
                       slot="activator"
                       :input-value="includedChildrenWorkingSets.indexOf(workingSet)!==-1"
                       @change="childrenWorkingSetChecked($event,workingSet)"></v-checkbox>
-                    <span>{{includedChildrenWorkingSets.indexOf(workingSet)===-1?'Include the datasets':'Exclude the datasets'}}</span>
+                    <span>{{includedChildrenWorkingSets.indexOf(workingSet)===-1?'Include':'Exclude'}}</span>
                   </v-tooltip>
                 </v-list-tile-action>
               </v-list-tile>
@@ -178,55 +123,33 @@
 <script>
 import Vue from "vue";
 import { mapState, mapGetters, mapMutations, mapActions } from "vuex";
-import { geometryCollection, point } from "@turf/helpers";
-import bbox from "@turf/bbox";
-import bboxPolygon from "@turf/bbox-polygon";
-import buffer from "@turf/buffer";
-import distance from "@turf/distance";
-import difference from "lodash-es/difference";
 import findIndex from "lodash-es/findIndex";
 
 import girder from "../girder";
 import { loadDatasetById } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
-import { API_URL } from "../constants";
 import eventstream from "../utils/eventstream";
-import WorkspaceContainer from "../components/Workspace/Container";
-import Workspace from "../components/Workspace/Workspace";
-import WorkspaceAction from "../components/Workspace/Action";
-import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
-import VTKViewport from "../components/vtk/VTKViewport";
-import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
-import Palette from "../components/vtk/Palette";
+import FocusWorkspace from "./FocusWorkspace";
 
 export default {
   name: "Focus",
   components: {
-    WorkspaceContainer,
-    Workspace,
-    WorkspaceAction,
-    GeojsGeojsonDatasetLayer,
-    VTKViewport,
-    OBJMultiItemActor,
-    Palette
+    FocusWorkspace
   },
   data() {
     return {
-      viewport: {
-        center: [-100, 30],
-        zoom: 4
-      },
       datasets: {},
-      shownDatasetIdAndWorkingSets: [],
+      boundDatasets: null,
+      listingDatasetIdAndWorkingSets: [],
       selectedDatasetIds: {},
       includedChildrenWorkingSets: [],
-      drawing: false,
-      editing: false,
       processes: ["DSM"],
-      focused: null
     };
   },
   computed: {
+    user() {
+      return this.$girder.user;
+    },
     actions() {
       return [
         {
@@ -238,6 +161,12 @@ export default {
         }
       ];
     },
+    childrenWorkingSets() {
+      return this.workingSets.filter(
+        workingSet =>
+          workingSet.parentWorkingSetId === this.selectedWorkingSetId
+      );
+    },
     ...mapState([
       "workingSets",
       "selectedWorkingSetId",
@@ -245,16 +174,7 @@ export default {
       "focusedWorkspaceKey",
       "vtkBGColor"
     ]),
-    ...mapGetters(["focusedWorkspace"]),
-    user() {
-      return this.$girder.user;
-    },
-    childrenWorkingSets() {
-      return this.workingSets.filter(
-        workingSet =>
-          workingSet.parentWorkingSetId === this.selectedWorkingSetId
-      );
-    }
+    ...mapGetters(["focusedWorkspace"])
   },
   watch: {
     user(user) {
@@ -264,31 +184,12 @@ export default {
     },
     selectedWorkingSetId(selectedWorkingSetId) {
       if (selectedWorkingSetId) {
-        this.shownDatasetIdAndWorkingSets = [];
+        this.listingDatasetIdAndWorkingSets = [];
         this.selectedDatasetIds = {};
         this.removeAllDatasetsFromWorkspaces();
       }
       this.load();
     }
-    // includedChildrenWorkingSets(workingSets, oldWorkingSets) {
-    //   var added = difference(workingSets, oldWorkingSets);
-    //   var removed = difference(oldWorkingSets, workingSets);
-    //   added.forEach(workingSet => {
-    //     workingSet.datasetIds.forEach(datasetId => {
-    //       this.shownDatasetIdAndWorkingSets.push({ datasetId, workingSet });
-    //     });
-    //   });
-    //   removed.forEach(workingSet => {
-    //     workingSet.datasetIds.forEach(datasetId => {
-    //       let index = findIndex(
-    //         this.shownDatasetIdAndWorkingSets,
-    //         datasetIdAndWorkingSet =>
-    //           datasetIdAndWorkingSet.datasetId === datasetId
-    //       );
-    //       this.shownDatasetIdAndWorkingSets.splice(index, 1);
-    //     });
-    //   });
-    // }
   },
   created() {
     this.load();
@@ -319,50 +220,20 @@ export default {
       if (!selectedWorkingSet) {
         return;
       }
-      var ps = this.childrenWorkingSets.map(async workingSet => {
-        var datasets = await loadDatasetById(workingSet.datasetIds);
-        this.addDatasets(datasets);
-      });
-      loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
-        this.addDatasets(datasets);
-        this.shownDatasetIdAndWorkingSets = datasets.map(dataset => ({
-          datasetId: dataset._id,
-          workingSet: selectedWorkingSet
-        }));
-        var geojsViewport = this.$refs.geojsMapViewport
-          ? this.$refs.geojsMapViewport[0]
-          : null;
-        if (!geojsViewport) {
-          return;
-        }
-        var bboxOfAllDatasets = bbox(
-          geometryCollection(datasets.map(dataset => dataset.geometa.bounds))
-        );
-        var dist = distance(
-          point([bboxOfAllDatasets[0], bboxOfAllDatasets[1]]),
-          point([bboxOfAllDatasets[2], bboxOfAllDatasets[3]])
-        );
-        var bufferedBbox = bbox(
-          buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
-        );
-
-        var zoomAndCenter = geojsViewport.$geojsMap.zoomAndCenterFromBounds({
-          left: bufferedBbox[0],
-          right: bufferedBbox[2],
-          top: bufferedBbox[3],
-          bottom: bufferedBbox[1]
-        });
-        this.viewport.center = zoomAndCenter.center;
-        this.viewport.zoom = zoomAndCenter.zoom;
-      });
-    },
-    getTileURL(dataset) {
-      var url = `${API_URL}/item/${
-        dataset._id
-      }/tiles/zxy/{z}/{x}/{y}?${encodeURI(
-        "encoding=PNG&projection=EPSG:3857"
-      )}`;
-      return url;
+      return Promise.all([
+        ...this.childrenWorkingSets.map(async workingSet => {
+          var datasets = await loadDatasetById(workingSet.datasetIds);
+          this.addDatasets(datasets);
+        }),
+        loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
+          this.addDatasets(datasets);
+          this.boundDatasets = datasets;
+          this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
+            datasetId: dataset._id,
+            workingSet: selectedWorkingSet
+          }));
+        })
+      ]);
     },
     processClicked(process) {
       var itemId = Object.entries(this.selectedDatasetIds).filter(
@@ -389,20 +260,22 @@ export default {
     },
     childrenWorkingSetChecked(value, workingSet) {
       if (value) {
+        // Add
         this.includedChildrenWorkingSets.push(workingSet);
         workingSet.datasetIds.forEach(datasetId => {
-          this.shownDatasetIdAndWorkingSets.push({ datasetId, workingSet });
+          this.listingDatasetIdAndWorkingSets.push({ datasetId, workingSet });
         });
       } else {
+        // Remove
         let index = this.includedChildrenWorkingSets.indexOf(workingSet);
         this.includedChildrenWorkingSets.splice(index, 1);
         workingSet.datasetIds.forEach(datasetId => {
           let index = findIndex(
-            this.shownDatasetIdAndWorkingSets,
+            this.listingDatasetIdAndWorkingSets,
             datasetIdAndWorkingSet =>
               datasetIdAndWorkingSet.datasetId === datasetId
           );
-          this.shownDatasetIdAndWorkingSets.splice(index, 1);
+          this.listingDatasetIdAndWorkingSets.splice(index, 1);
         });
       }
     },
