@@ -16,36 +16,37 @@
     <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
       class='map'
       :viewport='viewport'
-      ref='geojsMapViewport'
-    >
+      ref='geojsMapViewport'>
       <GeojsTileLayer
         url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
         attribution='© OpenStreetMap contributors, © CARTO'
         :zIndex='0'>
       </GeojsTileLayer>
-      <template v-for="(dataset,i) in workspace.datasets">
+      <template v-for="(layer,i) in orderLayer(workspace.layers)">
         <GeojsGeojsonDatasetLayer
-          v-if="dataset.geometa.driver==='GeoJSON'"
-          :key="dataset._id"
-          :dataset="dataset"
+          v-if="layer.dataset.geometa.driver==='GeoJSON'"
+          :key="layer.dataset._id"
+          :dataset="layer.dataset"
+          :opacity="layer.opacity"
           :zIndex="i+1">
         </GeojsGeojsonDatasetLayer>
         <GeojsTileLayer
-          v-if="dataset.geometa.driver==='GeoTIFF'"
-          :key="dataset._id"
-          :url='getTileURL(dataset)'
+          v-if="layer.dataset.geometa.driver==='GeoTIFF'"
+          :key="layer.dataset._id"
+          :url="getTileURL(layer.dataset)"
+          :opacity="layer.opacity"
           :keepLower="false"
-          :zIndex='i+1'>
+          :zIndex="i+1">
         </GeojsTileLayer>
       </template>
     </GeojsMapViewport>
       <VTKViewport v-if="workspace.type==='vtk'"
         :background="vtkBGColor">
         <OBJMultiItemActor
-          v-for="dataset in workspace.datasets"
-          v-if="dataset.geometa.driver==='OBJ'"
-          :key="dataset._id"
-          :item="dataset" />
+          v-for="layer in workspace.layers"
+          v-if="layer.dataset.geometa.driver==='OBJ'"
+          :key="layer.dataset._id"
+          :item="layer.dataset" />
       </VTKViewport>
     <template slot='actions' v-if="workspace.type==='vtk'">
       <WorkspaceAction>
@@ -71,6 +72,7 @@ import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
 import buffer from "@turf/buffer";
 import distance from "@turf/distance";
+import sortBy from "lodash-es/sortBy";
 
 import { API_URL } from "../constants";
 import WorkspaceContainer from "../components/Workspace/Container";
@@ -136,12 +138,14 @@ export default {
   props: [
     "boundDatasets",
     "workspaces",
+    "listingDatasetIdAndWorkingSets",
     "focusedWorkspace",
     "setFocusedWorkspaceKey",
     "addWorkspace",
     "removeWorkspace",
     "changeWorkspaceType",
-    "vtkBGColor"
+    "vtkBGColor",
+    "changeVTKBGColor"
   ],
   methods: {
     getTileURL(dataset) {
@@ -151,6 +155,14 @@ export default {
         "encoding=PNG&projection=EPSG:3857"
       )}`;
       return url;
+    },
+    orderLayer(layers) {
+      var orderedDatasetIds = this.listingDatasetIdAndWorkingSets.map(
+        datasetIdAndWorkingSet => datasetIdAndWorkingSet.datasetId
+      );
+      return sortBy(layers, layer => {
+        return -orderedDatasetIds.indexOf(layer.dataset._id);
+      });
     }
   }
 };

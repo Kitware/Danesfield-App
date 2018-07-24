@@ -4,11 +4,13 @@
       :workspaces="workspaces"
       :boundDatasets="boundDatasets"
       :focusedWorkspace="focusedWorkspace"
+      :listingDatasetIdAndWorkingSets="listingDatasetIdAndWorkingSets"
       :setFocusedWorkspaceKey="setFocusedWorkspaceKey"
       :addWorkspace="addWorkspace"
       :removeWorkspace="removeWorkspace"
       :changeWorkspaceType="changeWorkspaceType"
       :vtkBGColor="vtkBGColor"
+      :changeVTKBGColor="changeVTKBGColor"
       ref="focusWorkspace"
       />
     <SidePanel
@@ -40,31 +42,87 @@
           item-value='_id'
           label="Select"
           hide-details></v-select>
-        <v-list dense two-line class="datasets">
-          <transition-group name="fade-group" tag="div">
-            <v-list-tile
-              v-for="datasetIdAndWorkingSet in listingDatasetIdAndWorkingSets"
-              v-if="datasets[datasetIdAndWorkingSet.datasetId]"
-              :key="datasetIdAndWorkingSet.datasetId"
-              class="dataset"
-              @click="123">
-              <v-list-tile-content>
-                  <v-list-tile-title v-text="datasets[datasetIdAndWorkingSet.datasetId].name"></v-list-tile-title>
-                  <v-list-tile-sub-title>{{ datasetIdAndWorkingSet.workingSet._id!==selectedWorkingSetId? datasetIdAndWorkingSet.workingSet.name:'' }}</v-list-tile-sub-title>
-              </v-list-tile-content>
-              <v-list-tile-action>
-                <template v-if="workspaceSupportsDataset(focusedWorkspace,datasets[datasetIdAndWorkingSet.datasetId])">
-                  <v-btn flat icon key="add" v-if="focusedWorkspace.datasets.indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="addDatasetToWorkspace({dataset:datasets[datasetIdAndWorkingSet.datasetId],workspace:focusedWorkspace})">
-                    <v-icon>fa-globe-americas</v-icon>
-                  </v-btn>
-                  <v-btn flat icon key="remove" v-else color="grey darken-2" @click="removeDatasetFromWorkspace({dataset:datasets[datasetIdAndWorkingSet.datasetId],workspace:focusedWorkspace})">
-                    <v-icon>fa-globe-americas</v-icon>
-                  </v-btn>
-                </template>
-                <v-icon v-else color="grey lighten-3">fa-ban</v-icon>
-              </v-list-tile-action>
-            </v-list-tile>
-          </transition-group>
+        <v-list dense class="datasets">
+          <draggable v-model="listingDatasetIdAndWorkingSets" :options="{
+              draggable:'.dataset',
+              handle:'.handle',
+              forceFallback:true,
+              fallbackOnBody: false
+            }"
+            @start="transitionName=''"
+            @end="transitionName='fade-group'">
+            <transition-group :name="transitionName" tag="div">
+              <v-list-group
+                v-for="datasetIdAndWorkingSet in listingDatasetIdAndWorkingSets"
+                :key="datasetIdAndWorkingSet.datasetId+datasetIdAndWorkingSet.workingSet._id"
+                v-if="datasets[datasetIdAndWorkingSet.datasetId]"
+                class="dataset hover-show-parent"
+                append-icon="">
+                <v-list-tile
+                  slot="activator"
+                  class="width-fix">
+                  <v-list-tile-action @click.stop>
+                    <template v-if="workspaceSupportsDataset(focusedWorkspace,datasets[datasetIdAndWorkingSet.datasetId])">
+                      <v-btn flat icon key="add" v-if="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="addDatasetToWorkspace({dataset:datasets[datasetIdAndWorkingSet.datasetId],workspace:focusedWorkspace})">
+                        <v-icon>fa-globe-americas</v-icon>
+                      </v-btn>
+                      <v-btn flat icon key="remove" v-else color="grey darken-2" @click="removeDatasetFromWorkspace({dataset:datasets[datasetIdAndWorkingSet.datasetId],workspace:focusedWorkspace})">
+                        <v-icon>fa-globe-americas</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-icon v-else color="grey lighten-3">fa-ban</v-icon>
+                  </v-list-tile-action>
+                  <v-list-tile-action class="hover-show-child" @click.stop :class="{show:selectedDatasetIds[datasetIdAndWorkingSet.datasetId]}">
+                    <v-checkbox
+                       v-model="selectedDatasetIds[datasetIdAndWorkingSet.datasetId]"></v-checkbox>
+                  </v-list-tile-action>
+                  <v-list-tile-content>
+                      <v-list-tile-title v-text="datasets[datasetIdAndWorkingSet.datasetId].name"></v-list-tile-title>
+                      <v-list-tile-sub-title>{{ datasetIdAndWorkingSet.workingSet._id!==selectedWorkingSetId? datasetIdAndWorkingSet.workingSet.name:'' }}</v-list-tile-sub-title>
+                  </v-list-tile-content>
+                  <!-- <v-list-tile-action class="hover-show-child" @click.stop>
+                    <v-menu offset-y absolute :nudge-bottom="20" :nudge-left="20">
+                      <v-btn class="group-menu-button" slot="activator" flat icon color="grey darken-2">
+                        <v-icon>more_vert</v-icon>
+                      </v-btn>
+                      <v-list>
+                        <v-list-tile @click="$emit('zoomToDataset',layer.dataset)">
+                          <v-list-tile-title>zoom to</v-list-tile-title>
+                        </v-list-tile>
+                      </v-list>
+                    </v-menu>
+                  </v-list-tile-action> -->
+                  <v-list-tile-action class="handle hover-show-child" @click.stop>
+                    <v-icon>drag_indicator</v-icon>
+                  </v-list-tile-action>
+                </v-list-tile>
+                <v-list-tile>
+                  <v-list-tile-content>
+                    <v-list-tile-title>
+                      <v-layout>
+                        <v-flex>
+                          Opacity
+                        </v-flex>
+                        <v-flex>
+                          <v-slider class="opacity-slider pr-3"
+                            hide-details
+                            :min="0"
+                            :max="1"
+                            :step="0.01"
+                            :disabled="!currentLayer(datasetIdAndWorkingSet.datasetId)"
+                            :value="currentLayer(datasetIdAndWorkingSet.datasetId)?currentLayer(datasetIdAndWorkingSet.datasetId).opacity:1"
+                            @input="setWorkspaceLayerOpacity({layer:currentLayer(datasetIdAndWorkingSet.datasetId),opacity:$event})"></v-slider>
+                        </v-flex>
+                        <v-flex>
+                          {{(currentLayer(datasetIdAndWorkingSet.datasetId)?currentLayer(datasetIdAndWorkingSet.datasetId).opacity:1).toFixed(2)}}
+                        </v-flex>
+                      </v-layout>
+                    </v-list-tile-title>
+                  </v-list-tile-content>
+                </v-list-tile>
+              </v-list-group>
+            </transition-group>
+          </draggable>
         </v-list>
         <div v-if="childrenWorkingSets.length" class="results">
           <v-subheader>Results</v-subheader>
@@ -73,6 +131,15 @@
               v-for="workingSet in childrenWorkingSets"
               :key="workingSet._id">
               <v-list-tile slot="activator" class="hover-show-parent">
+                <v-list-tile-action class="hover-show-child" @click.stop :class="{show:includedChildrenWorkingSets.indexOf(workingSet)!==-1}">
+                  <v-tooltip top open-delay="500">
+                    <v-checkbox
+                      slot="activator"
+                      :input-value="includedChildrenWorkingSets.indexOf(workingSet)!==-1"
+                      @change="childrenWorkingSetChecked($event,workingSet)"></v-checkbox>
+                    <span>{{includedChildrenWorkingSets.indexOf(workingSet)===-1?'Include':'Exclude'}}</span>
+                  </v-tooltip>
+                </v-list-tile-action>
                 <v-list-tile-content>
                   <v-list-tile-title>{{workingSet.name}}</v-list-tile-title>
                 </v-list-tile-content>
@@ -87,15 +154,6 @@
                       </v-list-tile>
                     </v-list>
                   </v-menu>
-                </v-list-tile-action>
-                <v-list-tile-action class="hover-show-child" @click.stop :class="{show:includedChildrenWorkingSets.indexOf(workingSet)!==-1}">
-                  <v-tooltip top open-delay="500">
-                    <v-checkbox
-                      slot="activator"
-                      :input-value="includedChildrenWorkingSets.indexOf(workingSet)!==-1"
-                      @change="childrenWorkingSetChecked($event,workingSet)"></v-checkbox>
-                    <span>{{includedChildrenWorkingSets.indexOf(workingSet)===-1?'Include':'Exclude'}}</span>
-                  </v-tooltip>
                 </v-list-tile-action>
               </v-list-tile>
               <v-list-tile
@@ -124,6 +182,7 @@
 import Vue from "vue";
 import { mapState, mapGetters, mapMutations, mapActions } from "vuex";
 import findIndex from "lodash-es/findIndex";
+import draggable from "vuedraggable";
 
 import girder from "../girder";
 import { loadDatasetById } from "../utils/loadDataset";
@@ -134,7 +193,8 @@ import FocusWorkspace from "./FocusWorkspace";
 export default {
   name: "Focus",
   components: {
-    FocusWorkspace
+    FocusWorkspace,
+    draggable
   },
   data() {
     return {
@@ -144,6 +204,7 @@ export default {
       selectedDatasetIds: {},
       includedChildrenWorkingSets: [],
       processes: ["DSM"],
+      transitionName: "fade-group"
     };
   },
   computed: {
@@ -166,6 +227,17 @@ export default {
         workingSet =>
           workingSet.parentWorkingSetId === this.selectedWorkingSetId
       );
+    },
+    layers: {
+      get() {
+        return this.focusedWorkspace.layers;
+      },
+      set(layers) {
+        this.setWorkspaceLayers({
+          workspace: this.focusedWorkspace,
+          layers
+        });
+      }
     },
     ...mapState([
       "workingSets",
@@ -263,7 +335,16 @@ export default {
         // Add
         this.includedChildrenWorkingSets.push(workingSet);
         workingSet.datasetIds.forEach(datasetId => {
-          this.listingDatasetIdAndWorkingSets.push({ datasetId, workingSet });
+          // Add if the dataset is not already in current workingset
+          if (
+            findIndex(
+              this.listingDatasetIdAndWorkingSets,
+              datasetIdAndWorkingSet =>
+                datasetIdAndWorkingSet.datasetId === datasetId
+            ) === -1
+          ) {
+            this.listingDatasetIdAndWorkingSets.push({ datasetId, workingSet });
+          }
         });
       } else {
         // Remove
@@ -273,11 +354,20 @@ export default {
           let index = findIndex(
             this.listingDatasetIdAndWorkingSets,
             datasetIdAndWorkingSet =>
-              datasetIdAndWorkingSet.datasetId === datasetId
+              datasetIdAndWorkingSet.datasetId === datasetId &&
+              datasetIdAndWorkingSet.workingSet._id === workingSet._id
           );
-          this.listingDatasetIdAndWorkingSets.splice(index, 1);
+          if (index !== -1) {
+            this.listingDatasetIdAndWorkingSets.splice(index, 1);
+          }
         });
       }
+    },
+    currentLayer(datasetId) {
+      var index = this.focusedWorkspace.layers
+        .map(layer => layer.dataset)
+        .indexOf(this.datasets[datasetId]);
+      return this.focusedWorkspace.layers[index];
     },
     ...mapMutations([
       "addWorkspace",
@@ -285,6 +375,7 @@ export default {
       "changeWorkspaceType",
       "setFocusedWorkspaceKey",
       "addDatasetToWorkspace",
+      "setWorkspaceLayerOpacity",
       "removeDatasetFromWorkspace",
       "removeAllDatasetsFromWorkspaces",
       "resetWorkspace",
@@ -310,27 +401,41 @@ export default {
   flex-direction: column;
 
   .working-set-selector {
-    flex-grow: 0;
+    flex: 0 0 auto;
   }
   .datasets {
     flex: 1;
+    overflow-y: auto;
+
+    .opacity-slider {
+      margin-top: -4px;
+    }
+  }
+}
+
+.hover-show-child {
+  display: none;
+
+  &.show {
+    display: flex;
   }
 }
 
 .hover-show-parent {
-  .hover-show-child {
-    display: none;
-
-    &.show {
-      display: flex;
-    }
-  }
-
   &:hover {
     .hover-show-child {
       display: inherit;
     }
   }
+}
+
+.width-fix {
+  width: 100%;
+}
+
+// Hide sortable fallback ghost element
+.sortable-fallback {
+  display: none;
 }
 </style>
 
@@ -340,11 +445,19 @@ export default {
     .v-list__tile {
       padding: 0 5px 0 12px;
     }
+
+    // A fix that when v-list-group is not an immediate child of v-list its transition is not working correctly
+    .expand-transition-leave-to {
+      display: none !important;
+    }
+
+    .expand-transition-enter-to {
+      height: auto !important;
+    }
   }
-  .v-list__tile__action,
-  .v-list__tile__avatar {
-    min-width: 40px;
-    padding: 0 9px;
+  .v-list__tile__action {
+    min-width: inherit;
+    flex: 0 0 32px;
   }
 }
 
@@ -352,8 +465,9 @@ export default {
   .v-list__tile {
     padding-right: 0;
 
-    .v-list__tile__action:last-child {
-      min-width: 40px;
+    .v-list__tile__action {
+      min-width: inherit;
+      flex: 0 0 32px;
     }
   }
   .v-list__group__header__append-icon {

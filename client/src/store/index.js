@@ -44,7 +44,7 @@ export default new Vuex.Store({
     addWorkspace(state, workspace) {
       Vue.set(state.workspaces, Math.random().toString(36).substring(7), {
         type: workspace.type,
-        datasets: []
+        layers: []
       })
     },
     removeWorkspace(state, key) {
@@ -52,20 +52,20 @@ export default new Vuex.Store({
     },
     changeWorkspaceType(state, { workspace, type }) {
       workspace.type = type;
-      workspace.datasets = [];
+      workspace.layers = [];
     },
     setFocusedWorkspaceKey(state, key) {
       state.focusedWorkspaceKey = key;
     },
     addDatasetToWorkspace(state, { dataset, workspace }) {
-      workspace.datasets.push(dataset);
+      workspace.layers.push({ dataset, opacity: 1 });
     },
     removeDatasetFromWorkspace(state, { dataset, workspace }) {
-      workspace.datasets.splice(workspace.datasets.indexOf(dataset), 1);
+      workspace.layers.splice(workspace.layers.map(layers => layers.dataset).indexOf(dataset), 1);
     },
     removeAllDatasetsFromWorkspaces(state) {
       for (let workspace of Object.values(state.workspaces)) {
-        workspace.datasets = [];
+        workspace.layers = [];
       }
     },
     resetWorkspace(state) {
@@ -73,6 +73,12 @@ export default new Vuex.Store({
     },
     changeVTKBGColor(state, color) {
       state.vtkBGColor = color;
+    },
+    setWorkspaceLayers(state, { workspace, layers }) {
+      workspace.layers = layers;
+    },
+    setWorkspaceLayerOpacity(state, { layer, opacity }) {
+      layer.opacity = opacity;
     }
   },
   actions: {
@@ -152,7 +158,7 @@ function getInitialWorkspace() {
   return {
     '0': {
       type: 'map',
-      datasets: []
+      layers: []
     }
   }
 }
