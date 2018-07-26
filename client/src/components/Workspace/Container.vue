@@ -191,7 +191,7 @@ export default {
 
     .view-enter-active,
     .view-leave-active {
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
     .view-leave-to,
     .view-enter {

@@ -10,7 +10,7 @@
     :identifier="key"
     @split="addWorkspace(workspace)"
     @close="removeWorkspace(key)"
-    :states="[{name:'Map',value:'map',disabled:workspace.type==='map'},{name:'VTK',value:'vtk',disabled:workspace.type==='vtk'}]"
+    :states="[{name:'Map',value:'map',disabled:workspace.type==='map'},{name:'3D View',value:'vtk',disabled:workspace.type==='vtk'}]"
     @stateChange="changeWorkspaceType({workspace,type:$event})"
     >
     <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"

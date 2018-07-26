@@ -84,7 +84,7 @@ export default {
   background: white;
 
   &::after {
-    content: "Add actors";
+    content: "Add data";
     position: absolute;
     top: 50%;
     left: 50%;

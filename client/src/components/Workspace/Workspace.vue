@@ -4,8 +4,8 @@
       <slot></slot>
     </div>
     <div class="bottom-bar">
-      <div class='focus-indicator' v-if='!onlyWorkspace && focused'></div>
-      <v-toolbar dark>
+      <div class="focus-indicator" v-if="!onlyWorkspace && focused"></div>
+      <v-toolbar dark :class="{unfocused:!onlyWorkspace && !focused}">
         <v-select class="state-selector" v-if="states"
           :value="selectedState"
           @input="$emit('stateChange', $event)"
@@ -170,6 +170,10 @@ export default {
         #fff 50%,
         hsla(0, 0%, 100%, 0) 51%
       );
+    }
+
+    .unfocused{
+      background:#555;
     }
   }
 

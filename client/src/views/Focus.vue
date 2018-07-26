@@ -77,7 +77,12 @@
                        v-model="selectedDatasetIds[datasetIdAndWorkingSet.datasetId]"></v-checkbox>
                   </v-list-tile-action>
                   <v-list-tile-content>
-                      <v-list-tile-title v-text="datasets[datasetIdAndWorkingSet.datasetId].name"></v-list-tile-title>
+                      <v-list-tile-title>
+                        <v-tooltip top open-delay="1000">
+                          <span slot="activator">{{datasets[datasetIdAndWorkingSet.datasetId].name}}</span>
+                          {{datasets[datasetIdAndWorkingSet.datasetId].name}}
+                        </v-tooltip>
+                      </v-list-tile-title>
                       <v-list-tile-sub-title>{{ datasetIdAndWorkingSet.workingSet._id!==selectedWorkingSetId? datasetIdAndWorkingSet.workingSet.name:'' }}</v-list-tile-sub-title>
                   </v-list-tile-content>
                   <!-- <v-list-tile-action class="hover-show-child" @click.stop>
@@ -125,7 +130,8 @@
           </draggable>
         </v-list>
         <div v-if="childrenWorkingSets.length" class="results">
-          <v-subheader>Results</v-subheader>
+          <v-divider></v-divider>
+          <v-subheader>Derived working sets</v-subheader>
           <v-list dense expand>
             <v-list-group
               v-for="workingSet in childrenWorkingSets"
@@ -137,11 +143,16 @@
                       slot="activator"
                       :input-value="includedChildrenWorkingSets.indexOf(workingSet)!==-1"
                       @change="childrenWorkingSetChecked($event,workingSet)"></v-checkbox>
-                    <span>{{includedChildrenWorkingSets.indexOf(workingSet)===-1?'Include':'Exclude'}}</span>
+                    {{includedChildrenWorkingSets.indexOf(workingSet)===-1?'Include':'Exclude'}}
                   </v-tooltip>
                 </v-list-tile-action>
                 <v-list-tile-content>
-                  <v-list-tile-title>{{workingSet.name}}</v-list-tile-title>
+                  <v-list-tile-title>
+                    <v-tooltip top open-delay="1000">
+                      <span slot="activator">{{workingSet.name}}</span>
+                      {{workingSet.name}}
+                    </v-tooltip>
+                  </v-list-tile-title>
                 </v-list-tile-content>
                 <v-list-tile-action class="hover-show-child" @click.stop>
                   <v-menu offset-y absolute :nudge-bottom="20" :nudge-left="20">
@@ -161,7 +172,12 @@
                 v-if="datasetId in datasets"
                 :key="datasetId">
                 <v-list-tile-content>
-                  <v-list-tile-title>{{datasets[datasetId].name}}</v-list-tile-title>
+                  <v-list-tile-title>
+                    <v-tooltip top open-delay="1000">
+                      <span slot="activator">{{datasets[datasetId].name}}</span>
+                      {{datasets[datasetId].name}}
+                    </v-tooltip>
+                  </v-list-tile-title>
                 </v-list-tile-content>
               </v-list-tile>
             </v-list-group>
@@ -462,9 +478,13 @@ export default {
 }
 
 .results {
-  .v-list__tile {
-    padding-right: 0;
+  .v-list__group__header {
+    .v-list__tile {
+      padding-right: 0;
+    }
+  }
 
+  .v-list__tile {
     .v-list__tile__action {
       min-width: inherit;
       flex: 0 0 32px;
