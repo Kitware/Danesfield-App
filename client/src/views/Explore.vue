@@ -59,10 +59,10 @@
 
     <SidePanel
     class="side-panel"
-    :top='0'
-    :bottom='10'
+    :top="64"
+    :floating='false'
     :toolbar="{title}"
-    :expanded="true"
+    :expanded='sidePanelExpanded'
     :footer="false"
     >
       <template slot="actions">
@@ -140,7 +140,7 @@ export default {
       if (this.editingFilter) {
         return [
           { name: "rectangle", icon: "aspect_ratio" },
-          { name: "polygon", icon: "label_outline" },
+          { name: "polygon", icon: "label_outline" }
           // { name: "daterange", icon: "date_range" }
         ];
       }
@@ -188,7 +188,7 @@ export default {
         this.$store.getters["filter/selectedDatasetPoint"]
       );
     },
-    ...mapState(["exploreTab"]),
+    ...mapState(["sidePanelExpanded", "exploreTab"]),
     ...mapState("workingSet", ["editingWorkingSet"]),
     ...mapState("filter", [
       "editingFilter",

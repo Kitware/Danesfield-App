@@ -17,9 +17,8 @@
     :top="64"
     :floating='false'
     :toolbar='{title: "Working Set"}'
-    :expanded='true'
-    :footer='false'
-    >
+    :expanded='sidePanelExpanded'
+    :footer='false'>
       <template slot="actions">
         <SidePanelAction v-for="action of actions" :key='action.name' :disabled='action.disabled'>
           <v-menu offset-y v-if="action.name==='process'">
@@ -256,6 +255,7 @@ export default {
       }
     },
     ...mapState([
+      "sidePanelExpanded",
       "workingSets",
       "selectedWorkingSetId",
       "workspaces",

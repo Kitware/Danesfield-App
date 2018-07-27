@@ -12,6 +12,7 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state() {
     return {
+      sidePanelExpanded: true,
       workingSets: [],
       filters: [],
       exploreTab: 'workingSet',
@@ -22,6 +23,9 @@ export default new Vuex.Store({
     }
   },
   mutations: {
+    toggleSidePanel(state) {
+      state.sidePanelExpanded = !state.sidePanelExpanded;
+    },
     setExploreTab(state, value) {
       state.exploreTab = value;
       this.commit("filter/setEditingFilter", null);

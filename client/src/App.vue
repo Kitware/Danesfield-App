@@ -2,7 +2,9 @@
 <v-app>
     <AppToolbar
     :title="title"
-    :tabs='tabs'>
+    :tabs="tabs"
+    :panelButton="true"
+    @click-panel="$store.commit('toggleSidePanel')">
       <template slot="right">
         <GirderUserButton 
           @login="userForm='login';userDialog=true;"
@@ -10,7 +12,7 @@
       </template>
     </AppToolbar>
 
-    <transition name="fade" mode='out-in'>
+    <transition name="fade" mode="out-in">
       <router-view></router-view>
     </transition>
     <GirderUserDialog
