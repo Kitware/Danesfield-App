@@ -1,10 +1,8 @@
 <template>
-<div>
-    <div class="vtk-viewport" ref="container">
-        <div class="progressMessage" v-if='progressMessage'>{{progressMessage}}</div>
-        <slot v-if="ready"></slot>
-    </div>
-    <div v-if="!$slots.default" class="no-actor"></div>
+<div class="vtk-viewport" ref="container" :style="{background}">
+  <div class="progressMessage" v-if='progressMessage'>{{progressMessage}}</div>
+  <slot v-if="ready"></slot>
+  <div v-if="!$slots.default" class="no-actor"></div>
 </div>
 </template>
 
@@ -14,6 +12,12 @@ import vtkFullScreenRenderWindow from "vtk.js/Sources/Rendering/Misc/FullScreenR
 export default {
   name: "VTKViewport",
   components: {},
+  props: {
+    background: {
+      type: String,
+      default: "#bdbdbd"
+    }
+  },
   data() {
     return {
       renderWindow: null,
@@ -41,9 +45,8 @@ export default {
     });
   },
   mounted() {
-    console.log("VTKViewport mounted");
     const fullScreenRenderer = vtkFullScreenRenderWindow.newInstance({
-      background: [0.44, 0.44, 0.44],
+      background: [0, 0, 0, 0],
       rootContainer: this.$refs.container,
       containerStyle: { height: "100%", width: "100%", position: "absolute" }
     });
@@ -56,6 +59,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.vtk-viewport {
+  height: 100%;
+}
+
 .progressMessage {
   position: absolute;
   top: 50%;
@@ -74,10 +81,10 @@ export default {
   left: 0;
   bottom: 0;
   right: 0;
-  background: #bdbdbd;
+  background: white;
 
   &::after {
-    content: "Add actors";
+    content: "Add data";
     position: absolute;
     top: 50%;
     left: 50%;

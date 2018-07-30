@@ -183,11 +183,15 @@ export default {
       overflow: hidden;
       background: #ddd;
       overflow-x: hidden;
+
+      &:not(:first-child) {
+        border-left: 2px solid #ebebeb;
+      }
     }
 
     .view-enter-active,
     .view-leave-active {
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
     .view-leave-to,
     .view-enter {

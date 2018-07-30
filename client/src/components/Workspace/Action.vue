@@ -1,15 +1,32 @@
 <template>
-<v-list-tile :disabled="disabled" @click="$listeners.click">
-  <v-list-tile-title><slot></slot></v-list-tile-title>
-</v-list-tile>
+<v-btn icon @click="look" ref="button">
+  <slot></slot>
+</v-btn>
 </template>
 
 <script>
 export default {
+  name: "WorkspaceAction",
   props: {
     disabled: {
       type: Boolean,
       default: false
+    }
+  },
+  methods: {
+    look(e) {
+      if (
+        e.target !== this.$refs.button.$el &&
+        e.target !== this.$refs.button.$el.firstChild
+      ) {
+        return;
+      }
+      var innerActivator = this.$refs.button.$el.querySelector(
+        "[class$='__activator']"
+      );
+      if (innerActivator) {
+        innerActivator.click();
+      }
     }
   }
 };

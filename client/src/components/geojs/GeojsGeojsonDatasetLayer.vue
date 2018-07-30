@@ -2,7 +2,8 @@
 <GeojsGeojsonLayer
   v-if="geojson"
   :geojson="geojson"
-  :zIndex="zIndex">
+  :zIndex="zIndex"
+  :opacity="opacity">
 </GeojsGeojsonLayer>
 </template>
 
@@ -13,7 +14,7 @@ var cache = new WeakMap();
 export default {
   name: "GeojsGeojsonDatasetLayer",
   components: {},
-  props: ["dataset", "zIndex"],
+  props: ["dataset", "zIndex", "opacity"],
   data() {
     return {
       geojson: null

@@ -2,7 +2,9 @@
 <v-app>
     <AppToolbar
     :title="title"
-    :tabs='tabs'>
+    :tabs="tabs"
+    :panelButton="true"
+    @click-panel="$store.commit('toggleSidePanel')">
       <template slot="right">
         <GirderUserButton 
           @login="userForm='login';userDialog=true;"
@@ -10,7 +12,7 @@
       </template>
     </AppToolbar>
 
-    <transition name="fade" mode='out-in'>
+    <transition name="fade" mode="out-in">
       <router-view></router-view>
     </transition>
     <GirderUserDialog
@@ -44,6 +46,11 @@ export default {
           title: "Focus",
           route: "/focus",
           icon: "center_focus_strong"
+        },
+        {
+          title: "Jobs",
+          route: "/job",
+          icon: "fa-tasks"
         }
       ],
       userForm: "login",
@@ -53,6 +60,8 @@ export default {
   created() {
     function displayJobStatus(statusCode) {
       switch (statusCode) {
+        case 0:
+          return "inactive";
         case 1:
           return "queued";
         case 2:
@@ -89,7 +98,7 @@ body,
 }
 
 /* overwrite */
-.btn {
+.v-btn {
   min-width: 0;
 }
 </style>

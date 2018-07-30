@@ -2,7 +2,7 @@
 // fade
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.15s;
+  transition: opacity 0.2s;
 }
 .fade-enter,
 .fade-leave-to {
@@ -11,10 +11,10 @@
 
 // slide fade
 .slide-fade-enter-active {
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 .slide-fade-leave-active {
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 .slide-fade-enter {
   transform: translateX(-10px);
@@ -34,14 +34,15 @@
 
 .fade-group-enter-active,
 .fade-group-leave-active {
-    transition: opacity 0.15s;
+    transition: opacity 0.2s;
 }
 
 .fade-group-leave-active {
   position: absolute;
+  width: 100%;
 }
 .fade-group-move {
-  transition: transform 0.15s;
+  transition: transform 0.2s;
 }
 
 // slide-fade-group
@@ -52,7 +53,7 @@
 
 .slide-fade-group-enter-active,
 .slide-fade-group-leave-active {
-    transition-duration: 0.15s;
+    transition-duration: 0.2s;
     transition-property: opacity, transform;
     transform: translateX(30px);
 }
@@ -62,5 +63,5 @@
   width: 100%;
 }
 .slide-fade-group-move {
-  transition: transform 0.15s;
+  transition: transform 0.2s;
 }

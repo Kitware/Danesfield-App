@@ -10,16 +10,16 @@
         New {{name}}
       </v-btn>
       <v-text-field
-        class="input"
+        class="mx-2"
         v-if="adding"
         name="Name"
         label="Name"
         v-model="value"
         hide-details
         append-icon="add_circle"
-        :append-icon-cb="confirm"
+        @click:append="confirm"
         prepend-icon="cancel"
-        :prepend-icon-cb="()=>{adding=false}"
+        @click:prepend="adding=false"
       ></v-text-field>
     </transition>
   </div>

@@ -2,6 +2,7 @@ import Vue from 'vue';
 import Router from 'vue-router';
 import Explore from './views/Explore.vue';
 import Focus from './views/Focus.vue';
+import Job from './views/Job.vue';
 import Login from './views/Login.vue';
 
 Vue.use(Router);
@@ -30,6 +31,12 @@ export default new Router({
     path: '/focus',
     name: 'focus',
     component: Focus,
+    beforeEnter
+  },
+  {
+    path: '/job',
+    name: 'job',
+    component: Job,
     beforeEnter
   },
   {

@@ -3,10 +3,9 @@
     <div v-if='!editingWorkingSet'>
       <v-expansion-panel>
         <v-expansion-panel-content
-          v-for="workingSet in workingSets" 
+          v-for="workingSet in workingSets"
           :key="workingSet._id">
           <div slot='header'>{{workingSet.name}}</div>
-          <v-container grid-list-xs>
             <v-layout row wrap>
               <v-flex xs2 offset-xs1>
                 <v-btn block color='grey lighten-3' depressed @click="$store.commit('workingSet/setEditingWorkingSet',workingSet)">
@@ -20,7 +19,6 @@
                 </v-btn>
               </v-flex>
             </v-layout>
-          </v-container>
         </v-expansion-panel-content>
       </v-expansion-panel>
       <NewWithName name="working set" default='working-set-1' @confirm='addNewWorkingSet' />
