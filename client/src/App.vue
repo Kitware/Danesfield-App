@@ -97,6 +97,10 @@ body,
   overflow: hidden;
 }
 
+.flex1 {
+  flex: 1 1 auto;
+}
+
 /* overwrite */
 .v-btn {
   min-width: 0;

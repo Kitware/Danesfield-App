@@ -6,7 +6,7 @@
           v-for="workingSet in workingSets"
           :key="workingSet._id">
           <div slot='header'>{{workingSet.name}}</div>
-            <v-layout row wrap>
+            <v-layout>
               <v-flex xs2 offset-xs1>
                 <v-btn block color='grey lighten-3' depressed @click="$store.commit('workingSet/setEditingWorkingSet',workingSet)">
                   <v-icon>edit</v-icon>

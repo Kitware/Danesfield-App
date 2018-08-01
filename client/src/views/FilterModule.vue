@@ -6,7 +6,7 @@
           v-for="filter in filters"
           :key="filter._id">
           <div slot='header'>{{filter.name}}</div>
-          <v-layout row wrap>
+          <v-layout>
             <v-flex xs2 offset-xs1>
               <v-btn block color='grey lighten-3' depressed @click="setEditingFilter(filter)">
                 <v-icon>edit</v-icon>
