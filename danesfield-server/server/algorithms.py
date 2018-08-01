@@ -395,8 +395,7 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
 
     def createOrthorectifyTask(imageFile, rpcFile):
         # Set output file name based on input file name
-        base, ext = os.path.splitext(imageFile['name'])
-        orthoName = base + '_ortho' + ext
+        orthoName = os.path.splitext(imageFile['name'])[0] + '_ortho.tif'
         outputVolumePath = VolumePath(orthoName)
 
         # Docker container arguments
