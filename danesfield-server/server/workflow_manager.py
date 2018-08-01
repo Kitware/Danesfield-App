@@ -199,9 +199,14 @@ class DanesfieldWorkflowManager(object):
             return
 
         # Create working set containing files created by step
-        workingSet = WorkingSet().save({
-            'datasetIds': [file['itemId'] for file in files]
-        })
+        initialWorkingSet = jobInfo['workingSets'][DanesfieldStep.INIT]
+        workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
+        datasetIds = [file['itemId'] for file in files]
+        workingSet = WorkingSet().createWorkingSet(
+            name=workingSetName,
+            parentWorkingSet=initialWorkingSet,
+            datasetIds=datasetIds
+        )
         jobInfo['workingSets'][stepName] = workingSet
 
         # Remove data applicable only while step is running
