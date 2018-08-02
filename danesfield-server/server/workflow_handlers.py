@@ -234,7 +234,7 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
             Item().load(itemId, force=True, exc=True)
             for itemId in initWorkingSet['datasetIds']
         )
-        if (_isMsiImage(item) or _isPanImage(item))
+        if _isMsiImage(item) or _isPanImage(item)
     ]
 
     # Get DSM
