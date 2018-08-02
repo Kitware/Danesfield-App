@@ -35,6 +35,7 @@ from girder_worker.docker.transforms.girder import (
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
 from .utilities import removeDuplicateCount
+from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
 
@@ -417,13 +418,10 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             # Destination image
             outputVolumePath,
             '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc),
+            '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc),
             '--occlusion-thresh', str(occlusionThreshold),
             '--denoise-radius', str(denoiseRadius)
         ]
-        if rpcFile is not None:
-            containerArgs.extend([
-                '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc)
-            ])
 
         # Result hooks
         # - Upload output files to output folder
@@ -447,7 +445,7 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             girder_user=requestInfo.user)
 
     # Find RPC file corresponding to each image, or None
-    correspondingRpcFiles = (
+    correspondingRpcFiles = [
         next(
             (
                 rpcFile
@@ -456,7 +454,16 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             ), None)
         for imageFile
         in imageFiles
-    )
+    ]
+    imagesMissingRpcFiles = [
+        imageFile['name']
+        for imageFile, rpcFile
+        in itertools.izip(imageFiles, correspondingRpcFiles)
+        if not rpcFile
+    ]
+    if imagesMissingRpcFiles:
+        raise DanesfieldWorkflowException('Missing RPC files for images: {}'.format(
+            imagesMissingRpcFiles), step=stepName)
 
     # Run tasks in parallel using a group
     tasks = [
