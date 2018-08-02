@@ -27,7 +27,7 @@ from .workflow import DanesfieldWorkflowException
 
 def _fileFromItem(item):
     """
-    Return the file contained in an item. Raise an exeception if the item doesn't contain
+    Return the file contained in an item. Raise an exception if the item doesn't contain
     exactly one file.
     """
     files = Item().childFiles(item, limit=2)
@@ -102,6 +102,8 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     - longitudeWidth (required)
     - latitudeWidth (required)
     """
+    stepName = DanesfieldStep.GENERATE_POINT_CLOUD
+
     # Get working set
     workingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
 
@@ -116,11 +118,9 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     ]
 
     # Get required options
-    generatePointCloudOptions = options.get(DanesfieldStep.GENERATE_POINT_CLOUD)
+    generatePointCloudOptions = options.get(stepName)
     if generatePointCloudOptions is None or not isinstance(generatePointCloudOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options provided for step: {}'.format(
-            DanesfieldStep.GENERATE_POINT_CLOUD
-        ))
+        raise DanesfieldWorkflowException('Invalid options', step=stepName)
 
     try:
         longitude = generatePointCloudOptions['longitude']
@@ -129,12 +129,12 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
         latitudeWidth = generatePointCloudOptions['latitudeWidth']
     except KeyError:
         raise DanesfieldWorkflowException(
-            'The {} step requires the following options: longtitude, latitude, longitudewith, '
-            'latitudeWidth'.format(DanesfieldStep.GENERATE_POINT_CLOUD))
+            'The following options are required: longtitude, latitude, longitudewith, '
+            'latitudeWidth', step=stepName)
 
     # Run algorithm
     algorithms.generatePointCloud(
-        requestInfo=requestInfo, jobId=jobId, trigger=True,
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
         outputFolder=outputFolder, imageFileIds=panFileIds,
         longitude=longitude, latitude=latitude,
         longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)
@@ -144,6 +144,8 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run generate_dsm.
     """
+    stepName = DanesfieldStep.GENERATE_DSM
+
     # Get working set
     workingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
 
@@ -157,16 +159,16 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
         if _isPointCloud(item)
     ]
     if not pointCloudItems:
-        raise DanesfieldWorkflowException('Unable to find point cloud')
+        raise DanesfieldWorkflowException('Unable to find point cloud', step=stepName)
     if len(pointCloudItems) > 1:
         raise DanesfieldWorkflowException(
-            'Expected only one point cloud, got {}'.format(len(pointCloudItems)))
+            'Expected only one point cloud, got {}'.format(len(pointCloudItems)), step=stepName)
     pointCloudFile = _fileFromItem(pointCloudItems[0])
 
     # Run algorithm
     algorithms.generateDsm(
-        requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
-        file=pointCloudFile)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, file=pointCloudFile)
 
 
 def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
@@ -177,6 +179,8 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     - iterations
     - tension
     """
+    stepName = DanesfieldStep.FIT_DTM
+
     # Get working set
     workingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
 
@@ -184,22 +188,21 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     items = [Item().load(itemId, force=True, exc=True)
              for itemId in workingSet['datasetIds']]
     if not items:
-        raise DanesfieldWorkflowException('Unable to find DSM')
+        raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
     if len(items) > 1:
-        raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
+        raise DanesfieldWorkflowException(
+            'Expected only one input file, got {}'.format(len(items)), step=stepName)
     file = _fileFromItem(items[0])
 
     # Get options
-    fitDtmOptions = options.get(DanesfieldStep.FIT_DTM, {})
+    fitDtmOptions = options.get(stepName, {})
     if not isinstance(fitDtmOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options provided for step: {}'.format(
-            DanesfieldStep.FIT_DTM
-        ))
+        raise DanesfieldWorkflowException('Invalid options', step=stepName)
 
     # Run algorithm
     algorithms.fitDtm(
-        requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
-        file=file, **fitDtmOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, file=file, **fitDtmOptions)
 
 
 def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
@@ -210,6 +213,8 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     - occlusionThreshold
     - denoiseRadius
     """
+    stepName = DanesfieldStep.ORTHORECTIFY
+
     # Get working sets
     initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
     dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
@@ -230,18 +235,20 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     items = [Item().load(itemId, force=True, exc=True)
              for itemId in dsmWorkingSet['datasetIds']]
     if not items:
-        raise DanesfieldWorkflowException('Unable to find DSM')
+        raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
     if len(items) > 1:
-        raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
+        raise DanesfieldWorkflowException(
+            'Expected only one input file, got {}'.format(len(items)), step=stepName)
     dsmFile = _fileFromItem(items[0])
 
     # Get DTM
     items = [Item().load(itemId, force=True, exc=True)
              for itemId in dtmWorkingSet['datasetIds']]
     if not items:
-        raise DanesfieldWorkflowException('Unable to find DTM')
+        raise DanesfieldWorkflowException('Unable to find DTM', step=stepName)
     if len(items) > 1:
-        raise DanesfieldWorkflowException('Expected only one input file, got {}'.format(len(items)))
+        raise DanesfieldWorkflowException(
+            'Expected only one input file, got {}'.format(len(items)), step=stepName)
     dtmFile = _fileFromItem(items[0])
 
     # Get updated RPC files
@@ -257,15 +264,13 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     # Get options
     orthorectifyOptions = options.get(DanesfieldStep.ORTHORECTIFY, {})
     if not isinstance(orthorectifyOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options provided for step: {}'.format(
-            DanesfieldStep.ORTHORECTIFY
-        ))
+        raise DanesfieldWorkflowException('Invalid options', step=stepName)
 
     # Run algorithm
     algorithms.orthorectify(
-        requestInfo=requestInfo, jobId=jobId, trigger=True, outputFolder=outputFolder,
-        imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile, rpcFiles=rpcFiles,
-        **orthorectifyOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile,
+        rpcFiles=rpcFiles, **orthorectifyOptions)
 
 
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):

@@ -17,13 +17,17 @@
 #  limitations under the License.
 ##############################################################################
 
+import datetime
 import json
 
+from girder import events, logprint
+from girder.models.notification import Notification
 from girder.models.user import User
 from girder.plugins.jobs.constants import JobStatus
 
 from .constants import DanesfieldJobKey
 from .request_info import RequestInfo
+from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
 
@@ -88,10 +92,48 @@ def onJobUpdate(event):
 
     if status == JobStatus.SUCCESS:
         workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
+
+        # Advance workflow asynchronously to avoid affecting finished job in case of error
         if trigger:
-            user = User().load(job['userId'], force=True, exc=True)
-            workflowManager.advance(
-                jobId=jobId, stepName=stepName,
-                requestInfo=RequestInfo(user=user, apiUrl=apiUrl, token=token))
+            events.daemon.trigger(info={
+                'jobId': jobId,
+                'stepName': stepName,
+                'userId': job['userId'],
+                'apiUrl': apiUrl,
+                'token': token
+            }, callback=advanceWorkflow)
     elif status in (JobStatus.CANCELED, JobStatus.ERROR):
         workflowManager.stepFailed(jobId=jobId, stepName=stepName)
+
+
+def advanceWorkflow(event):
+    """
+    Advance to next step in workflow. Send a notification on error.
+    """
+    jobId = event.info['jobId']
+    stepName = event.info['stepName']
+    userId = event.info['userId']
+    apiUrl = event.info['apiUrl']
+    token = event.info['token']
+
+    user = User().load(userId, force=True, exc=True)
+
+    try:
+        DanesfieldWorkflowManager.instance().advance(
+            jobId=jobId, stepName=stepName,
+            requestInfo=RequestInfo(user=user, apiUrl=apiUrl, token=token))
+    except DanesfieldWorkflowException as e:
+        logprint.warning(
+            'advanceWorkflow: Error advancing workflow Job={} Step={} Message=\'{}\''.format(
+                jobId, stepName, e.message))
+
+        # Create notification for workflow error
+        Notification().createNotification(
+            type='danesfield_workflow_error',
+            data={
+                'step': e.step or '',
+                'previousStep': stepName,
+                'message': e.message
+            },
+            user=user,
+            expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=30))
