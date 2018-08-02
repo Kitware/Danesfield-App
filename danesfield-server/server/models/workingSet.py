@@ -1,3 +1,5 @@
+from bson.objectid import ObjectId
+
 from girder.exceptions import ValidationException
 from girder.models.model_base import Model
 
@@ -27,7 +29,7 @@ class WorkingSet(Model):
         doc = {
             'name': name,
             'parentWorkingSetId': parentWorkingSet['_id'],
-            'datasetIds': datasetIds
+            'datasetIds': [ObjectId(datasetId) for datasetId in datasetIds]
         }
 
         if filterId:
