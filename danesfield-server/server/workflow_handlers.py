@@ -120,7 +120,7 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
             Item().load(itemId, force=True, exc=True)
             for itemId in workingSet['datasetIds']
         )
-        if _isPanImage(item)
+        if _isMsiImage(item) or _isPanImage(item)
     ]
 
     # Get required options

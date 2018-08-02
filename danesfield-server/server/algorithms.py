@@ -20,6 +20,7 @@
 import itertools
 import json
 import os
+import re
 
 from celery import group
 
@@ -108,6 +109,10 @@ def _rpcFileMatchesImageFile(rpcFile, imageFile):
     :type imageFile: dict
     """
     rpcBaseName = removeDuplicateCount(rpcFile['name']).split('.')[0]
+    # Remove suffix added to RPC files generated for MSI images
+    result = re.match(r'^(?P<basename>.+)_\d+$', rpcBaseName)
+    if result:
+        rpcBaseName = result.group('basename')
     imageBaseName = imageFile['name'].split('.')[0]
     return rpcBaseName.endswith(imageBaseName)
 
