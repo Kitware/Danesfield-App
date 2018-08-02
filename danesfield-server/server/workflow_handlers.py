@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import os
+
 from girder.models.item import Item
 
 from . import algorithms
@@ -54,7 +56,9 @@ def _isMsiImage(item):
     :param item: Item document.
     :type item: dict
     """
-    return '-m' in item['name'].lower()
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '-m1bs-' in name and ext.startswith(('.ntf', '.tif'))
 
 
 def _isPanImage(item):
@@ -64,7 +68,9 @@ def _isPanImage(item):
     :param item: Item document.
     :type item: dict
     """
-    return '-p' in item['name'].lower()
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '-p1bs-' in name and ext.startswith(('.ntf', '.tif'))
 
 
 def _isRpc(item):
