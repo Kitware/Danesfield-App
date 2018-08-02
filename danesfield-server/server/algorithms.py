@@ -145,13 +145,15 @@ def finalize(requestInfo, jobId):
     workflowManager.finalizeJob(jobId)
 
 
-def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tension=10):
+def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations=100, tension=10):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
 
     Requirements:
     - core3d/danesfield Docker image is available on host
 
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
     :type requestInfo: RequestInfo
     :param jobId: Job ID.
@@ -168,7 +170,6 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
     :type tension: int
     :returns: Job document.
     """
-    stepName = DanesfieldStep.FIT_DTM
     gc = _createGirderClient(requestInfo)
 
     # Set output file name based on input file name
@@ -212,13 +213,15 @@ def fitDtm(requestInfo, jobId, trigger, outputFolder, file, iterations=100, tens
     return job
 
 
-def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
+def generateDsm(stepName, requestInfo, jobId, trigger, outputFolder, file):
     """
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
     Requirements:
     - core3d/danesfield Docker image is available on host
 
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
     :type requestInfo: RequestInfo
     :param jobId: Job ID.
@@ -231,7 +234,6 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
     :type file: dict
     :returns: Job document.
     """
-    stepName = DanesfieldStep.GENERATE_DSM
     gc = _createGirderClient(requestInfo)
 
     # Set output file name based on point cloud file
@@ -274,8 +276,8 @@ def generateDsm(requestInfo, jobId, trigger, outputFolder, file):
     return job
 
 
-def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, longitude,
-                       latitude, longitudeWidth, latitudeWidth):
+def generatePointCloud(stepName, requestInfo, jobId, trigger, outputFolder, imageFileIds,
+                       longitude, latitude, longitudeWidth, latitudeWidth):
     """
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
 
@@ -283,6 +285,8 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
     - p3d_gw Docker image is available on host
     - Host folder /mnt/GTOPO30 contains GTOPO 30 data
 
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
     :type requestInfo: RequestInfo
     :param jobId: Job ID.
@@ -303,7 +307,6 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
     :type latitudeWidth:
     :returns: Job document.
     """
-    stepName = DanesfieldStep.GENERATE_POINT_CLOUD
     gc = _createGirderClient(requestInfo)
 
     # Docker volumes
@@ -360,14 +363,16 @@ def generatePointCloud(requestInfo, jobId, trigger, outputFolder, imageFileIds, 
     return job
 
 
-def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile, rpcFiles,
-                 occlusionThreshold=1.0, denoiseRadius=2.0):
+def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile,
+                 rpcFiles, occlusionThreshold=1.0, denoiseRadius=2.0):
     """
     Run Girder Worker jobs to orthorectify source images.
 
     Requirements:
     - core3d/danesfield Docker image is available on host
 
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
     :type requestInfo: RequestInfo
     :param jobId: Job ID.
@@ -390,7 +395,6 @@ def orthorectify(requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile,
     :type denoiseRadius: float
     :returns: None
     """
-    stepName = DanesfieldStep.ORTHORECTIFY
     gc = _createGirderClient(requestInfo)
 
     def createOrthorectifyTask(imageFile, rpcFile):

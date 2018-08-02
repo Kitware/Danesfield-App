@@ -23,7 +23,9 @@ class DanesfieldWorkflowException(RuntimeError):
     Exception raised when the workflow can't run as expected due to
     unexpected output from a job or from a misconfigured workflow.
     """
-    pass
+    def __init__(self, message, step=None):
+        self.step = step
+        super(DanesfieldWorkflowException, self).__init__(message)
 
 
 class DanesfieldWorkflow(object):
