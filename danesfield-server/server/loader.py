@@ -10,6 +10,7 @@ from .constants import DanesfieldStep
 from .event_handlers import onFinalizeUpload, onJobUpdate
 from .workflow import DanesfieldWorkflow
 from .workflow_manager import DanesfieldWorkflowManager
+from .client_webroot import ClientWebroot
 
 
 def load(info):
@@ -26,8 +27,10 @@ def load(info):
     workflow.addHandler(DanesfieldStep.ORTHORECTIFY, workflow_handlers.runFinalize)
     DanesfieldWorkflowManager.instance().workflow = workflow
 
+    # Relocate Girder
+    info['serverRoot'], info['serverRoot'].girder = (ClientWebroot(),
+                                                     info['serverRoot'])
     # Relocate Girder API
-    info['serverRoot'].girder = info['serverRoot']
     info['serverRoot'].api = info['serverRoot'].girder.api
 
     # Add API routes

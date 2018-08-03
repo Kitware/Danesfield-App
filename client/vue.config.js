@@ -3,6 +3,9 @@ module.exports = {
     proxy: process.env.API_PROXY,
     public: "localhost:8080"
   },
+  baseUrl: process.env.NODE_ENV === 'production'
+    ? '/static/core3d/'
+    : '/',
   chainWebpack: config => {
     config.module
       .rule('js')
