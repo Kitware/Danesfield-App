@@ -23,7 +23,8 @@ def load(info):
     workflow.addHandler(DanesfieldStep.GENERATE_POINT_CLOUD, workflow_handlers.runGenerateDsm)
     workflow.addHandler(DanesfieldStep.GENERATE_DSM, workflow_handlers.runFitDtm)
     workflow.addHandler(DanesfieldStep.FIT_DTM, workflow_handlers.runOrthorectify)
-    workflow.addHandler(DanesfieldStep.ORTHORECTIFY, workflow_handlers.runFinalize)
+    workflow.addHandler(DanesfieldStep.ORTHORECTIFY, workflow_handlers.runPansharpen)
+    workflow.addHandler(DanesfieldStep.PANSHARPEN, workflow_handlers.runFinalize)
     DanesfieldWorkflowManager.instance().workflow = workflow
 
     # Relocate Girder API

@@ -34,7 +34,7 @@ from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
-from .utilities import removeDuplicateCount
+from .utilities import isMsiImage, isPanImage, removeDuplicateCount
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
@@ -470,6 +470,106 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
         createOrthorectifyTask(imageFile, rpcFile)
         for imageFile, rpcFile
         in itertools.izip(imageFiles, correspondingRpcFiles)
+    ]
+    groupResult = group(tasks).delay()
+
+    DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
+
+    # Add info for job event listeners
+    for result in groupResult.results:
+        _addJobInfo(result.job, requestInfo=requestInfo, jobId=jobId, stepName=stepName,
+                    trigger=trigger)
+
+
+def pansharpen(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles):
+    """
+    Run Girder Worker jobs to pansharpen orthorectified images.
+
+    Requirements:
+    - core3d/danesfield Docker image is available on host
+
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    :param trigger: Whether to trigger the next step in the workflow.
+    :type trigger: bool
+    :param outputFolder: Output folder document.
+    :type outputFolder: dict
+    :param imageFiles: List of orthorectified image files.
+    :type imageFiles: list[dict]
+    :returns: None
+    """
+    gc = _createGirderClient(requestInfo)
+
+    def createPansharpenTask(prefix, panImageFile, msiImageFile):
+        # Set output file name based on prefix
+        outputName = prefix + '_ortho_pansharpened.tif'
+        outputVolumePath = VolumePath(outputName)
+
+        # Docker container arguments
+        containerArgs = [
+            'gdal_pansharpen.py',
+            # PAN image
+            GirderFileIdToVolume(panImageFile['_id'], gc=gc),
+            # MSI image
+            GirderFileIdToVolume(msiImageFile['_id'], gc=gc),
+            # Output image
+            outputVolumePath
+        ]
+
+        # Result hooks
+        # - Upload output files to output folder
+        # - Provide upload metadata
+        upload_kwargs = _createUploadMetadata(jobId, stepName)
+        resultHooks = [
+            GirderUploadVolumePathToFolder(
+                outputVolumePath,
+                outputFolder['_id'],
+                upload_kwargs=upload_kwargs,
+                gc=gc)
+        ]
+
+        return docker_run.s(
+            image=DockerImage.DANESFIELD,
+            pull_image=False,
+            container_args=containerArgs,
+            girder_job_title='Pansharpen: %s' % prefix,
+            girder_job_type=stepName,
+            girder_result_hooks=resultHooks,
+            girder_user=requestInfo.user)
+
+    # Group pairs of PAN and MSI images by prefix
+    pairs = {}
+    for imageFile in imageFiles:
+        result = re.search(r'([0-9]{2}[A-Z]{3}[0-9]{8})-', imageFile['name'])
+        if not result:
+            raise DanesfieldWorkflowException(
+                'Invalid orthorectified image file name: {}'.format(imageFile['name']))
+        prefix = result.group(1)
+        pairs.setdefault(prefix, {'pan': None, 'msi': None})
+        if isPanImage(imageFile):
+            pairs[prefix]['pan'] = imageFile
+        elif isMsiImage(imageFile):
+            pairs[prefix]['msi'] = imageFile
+        else:
+            raise DanesfieldWorkflowException('Unrecognized image: {}'.format(imageFile['name']))
+
+    # Ensure that both types of images exist for each prefix
+    for files in pairs.values():
+        panFile = files['pan']
+        msiFile = files['msi']
+        if not panFile or not msiFile:
+            raise DanesfieldWorkflowException(
+                'Corresponding PAN and MSI orthorectified images not found')
+
+    # Run tasks in parallel using a group
+    tasks = [
+        createPansharpenTask(imagePrefix, files['pan'], files['msi'])
+        for imagePrefix, files
+        in pairs.items()
     ]
     groupResult = group(tasks).delay()
 
