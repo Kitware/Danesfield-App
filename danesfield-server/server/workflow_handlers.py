@@ -268,7 +268,7 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    orthorectifyOptions = options.get(DanesfieldStep.ORTHORECTIFY, {})
+    orthorectifyOptions = options.get(stepName, {})
     if not isinstance(orthorectifyOptions, dict):
         raise DanesfieldWorkflowException('Invalid options', step=stepName)
 
