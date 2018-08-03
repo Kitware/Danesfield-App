@@ -87,8 +87,11 @@ def onJobUpdate(event):
 
     # For composite steps, skip processing until all jobs have finished
     groupResult = workflowManager.getGroupResult(jobId, stepName)
-    if groupResult is not None and not groupResult.ready():
-        return
+    if groupResult is not None:
+        if not groupResult.ready():
+            return
+        # Set status from group result
+        status = JobStatus.SUCCESS if groupResult.successful() else JobStatus.ERROR
 
     if status == JobStatus.SUCCESS:
         workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
