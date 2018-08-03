@@ -253,6 +253,39 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
         rpcFiles=rpcFiles, **orthorectifyOptions)
 
 
+def runPansharpen(requestInfo, jobId, workingSets, outputFolder, options):
+    """
+    Workflow handler to run pansharpen.
+
+    Supports the following options:
+    - <none>
+    """
+    stepName = DanesfieldStep.PANSHARPEN
+
+    # Get working set
+    workingSet = _getWorkingSet(DanesfieldStep.ORTHORECTIFY, workingSets)
+
+    # Get IDs of MSI and PAN source image files
+    imageFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in workingSet['datasetIds']
+        )
+        if isMsiImage(item) or isPanImage(item)
+    ]
+
+    # Get options
+    pansharpenOptions = options.get(stepName, {})
+    if not isinstance(pansharpenOptions, dict):
+        raise DanesfieldWorkflowException('Invalid options', step=stepName)
+
+    # Run algorithm
+    algorithms.pansharpen(
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, imageFiles=imageFiles, **pansharpenOptions)
+
+
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run finalize step.

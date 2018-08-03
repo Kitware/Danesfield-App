@@ -38,6 +38,7 @@ class DanesfieldStep(object):
     GENERATE_DSM = 'generate-dsm'
     GENERATE_POINT_CLOUD = 'generate-point-cloud'
     ORTHORECTIFY = 'orthorectify'
+    PANSHARPEN = 'pansharpen'
 
 
 class DockerImage(object):
