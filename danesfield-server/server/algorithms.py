@@ -20,6 +20,7 @@
 import itertools
 import json
 import os
+import re
 
 from celery import group
 
@@ -34,6 +35,7 @@ from girder_worker.docker.transforms.girder import (
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
 from .utilities import removeDuplicateCount
+from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
 
@@ -108,6 +110,10 @@ def _rpcFileMatchesImageFile(rpcFile, imageFile):
     :type imageFile: dict
     """
     rpcBaseName = removeDuplicateCount(rpcFile['name']).split('.')[0]
+    # Remove suffix added to RPC files generated for MSI images
+    result = re.match(r'^(?P<basename>.+)_\d+$', rpcBaseName)
+    if result:
+        rpcBaseName = result.group('basename')
     imageBaseName = imageFile['name'].split('.')[0]
     return rpcBaseName.endswith(imageBaseName)
 
@@ -412,13 +418,10 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             # Destination image
             outputVolumePath,
             '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc),
+            '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc),
             '--occlusion-thresh', str(occlusionThreshold),
             '--denoise-radius', str(denoiseRadius)
         ]
-        if rpcFile is not None:
-            containerArgs.extend([
-                '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc)
-            ])
 
         # Result hooks
         # - Upload output files to output folder
@@ -442,7 +445,7 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             girder_user=requestInfo.user)
 
     # Find RPC file corresponding to each image, or None
-    correspondingRpcFiles = (
+    correspondingRpcFiles = [
         next(
             (
                 rpcFile
@@ -451,7 +454,16 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             ), None)
         for imageFile
         in imageFiles
-    )
+    ]
+    imagesMissingRpcFiles = [
+        imageFile['name']
+        for imageFile, rpcFile
+        in itertools.izip(imageFiles, correspondingRpcFiles)
+        if not rpcFile
+    ]
+    if imagesMissingRpcFiles:
+        raise DanesfieldWorkflowException('Missing RPC files for images: {}'.format(
+            imagesMissingRpcFiles), step=stepName)
 
     # Run tasks in parallel using a group
     tasks = [

@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import os
+
 from girder.models.item import Item
 
 from . import algorithms
@@ -54,7 +56,9 @@ def _isMsiImage(item):
     :param item: Item document.
     :type item: dict
     """
-    return '-m' in item['name'].lower()
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '-m1bs-' in name and ext.startswith(('.ntf', '.tif'))
 
 
 def _isPanImage(item):
@@ -64,7 +68,9 @@ def _isPanImage(item):
     :param item: Item document.
     :type item: dict
     """
-    return '-p' in item['name'].lower()
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '-p1bs-' in name and ext.startswith(('.ntf', '.tif'))
 
 
 def _isRpc(item):
@@ -114,7 +120,7 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
             Item().load(itemId, force=True, exc=True)
             for itemId in workingSet['datasetIds']
         )
-        if _isPanImage(item)
+        if _isMsiImage(item) or _isPanImage(item)
     ]
 
     # Get required options
@@ -228,7 +234,7 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
             Item().load(itemId, force=True, exc=True)
             for itemId in initWorkingSet['datasetIds']
         )
-        if (_isMsiImage(item) or _isPanImage(item))
+        if _isMsiImage(item) or _isPanImage(item)
     ]
 
     # Get DSM
@@ -262,7 +268,7 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    orthorectifyOptions = options.get(DanesfieldStep.ORTHORECTIFY, {})
+    orthorectifyOptions = options.get(stepName, {})
     if not isinstance(orthorectifyOptions, dict):
         raise DanesfieldWorkflowException('Invalid options', step=stepName)
 
