@@ -123,9 +123,9 @@ def advanceWorkflow(event):
             jobId=jobId, stepName=stepName,
             requestInfo=RequestInfo(user=user, apiUrl=apiUrl, token=token))
     except DanesfieldWorkflowException as e:
-        logprint.warning(
-            'advanceWorkflow: Error advancing workflow Job={} Step={} Message=\'{}\''.format(
-                jobId, stepName, e.message))
+        logprint.warning('advanceWorkflow: Error advancing workflow '
+                         'Job={} Step={} PreviousStep={} Message=\'{}\''.format(
+                             jobId, e.step, stepName, e.message))
 
         # Create notification for workflow error
         Notification().createNotification(
