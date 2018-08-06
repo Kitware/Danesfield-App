@@ -585,3 +585,101 @@ def pansharpen(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles):
     for result in groupResult.results:
         _addJobInfo(result.job, requestInfo=requestInfo, jobId=jobId, stepName=stepName,
                     trigger=trigger)
+
+
+def convertMsiToRgb(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles, byte=None,
+                    alpha=None, rangePercentile=None):
+    """
+    Run Girder Worker jobs to convert multispectral (MSI) images to RGB.
+
+    Requirements:
+    - core3d/danesfield Docker image is available on host
+
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    :param trigger: Whether to trigger the next step in the workflow.
+    :type trigger: bool
+    :param outputFolder: Output folder document.
+    :type outputFolder: dict
+    :param imageFiles: List of pansharpened MSI image files.
+    :type imageFiles: list[dict]
+    :param byte: Stretch intensity range and convert to a byte image.
+    :type byte: bool
+    :param alpha: Create an alpha channel instead of using zero as a no-value marker.
+    :type alpha: bool
+    :param rangePercentile: The percent of largest and smallest intensities to ignore when
+        computing range for intensity scaling.
+    :type rangePercentile: float
+    :returns: None
+    """
+    gc = _createGirderClient(requestInfo)
+
+    def createConvertMsiToRgbTask(prefix, imageFile):
+        # Set output file name based on prefix
+        outputName = prefix + '_rgb_byte_image.tif'
+        outputVolumePath = VolumePath(outputName)
+
+        # Docker container arguments
+        containerArgs = [
+            'danesfield/tools/msi_to_rgb.py',
+            # Pansharpened MSI image
+            GirderFileIdToVolume(imageFile['_id'], gc=gc),
+            # Output image
+            outputVolumePath
+        ]
+        # Enable byte option by default
+        if byte or byte is None:
+            containerArgs.append('--byte')
+        if alpha:
+            containerArgs.append('--alpha')
+        if rangePercentile is not None:
+            containerArgs.extend(['--range-percentile', str(rangePercentile)])
+        # TODO: Handle --big option (i.e. BIGTIFF)
+
+        # Result hooks
+        # - Upload output files to output folder
+        # - Provide upload metadata
+        upload_kwargs = _createUploadMetadata(jobId, stepName)
+        resultHooks = [
+            GirderUploadVolumePathToFolder(
+                outputVolumePath,
+                outputFolder['_id'],
+                upload_kwargs=upload_kwargs,
+                gc=gc)
+        ]
+
+        return docker_run.s(
+            image=DockerImage.DANESFIELD,
+            pull_image=False,
+            container_args=containerArgs,
+            girder_job_title='Convert MSI to RGB: %s' % prefix,
+            girder_job_type=stepName,
+            girder_result_hooks=resultHooks,
+            girder_user=requestInfo.user)
+
+    # Get image file name prefixes for output file names
+    prefixes = [
+        getPrefix(imageFile['name'])
+        for imageFile in imageFiles
+    ]
+    if not all(prefixes):
+        raise DanesfieldWorkflowException('Invalid pansharpened image file name.', step=stepName)
+
+    # Run tasks in parallel using a group
+    tasks = [
+        createConvertMsiToRgbTask(prefix, imageFile)
+        for prefix, imageFile
+        in itertools.izip(prefixes, imageFiles)
+    ]
+    groupResult = group(tasks).delay()
+
+    DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
+
+    # Add info for job event listeners
+    for result in groupResult.results:
+        _addJobInfo(result.job, requestInfo=requestInfo, jobId=jobId, stepName=stepName,
+                    trigger=trigger)

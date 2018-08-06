@@ -37,6 +37,7 @@ class DanesfieldStep(object):
     FIT_DTM = 'fit-dtm'
     GENERATE_DSM = 'generate-dsm'
     GENERATE_POINT_CLOUD = 'generate-point-cloud'
+    MSI_TO_RGB = 'msi-to-rgb'
     ORTHORECTIFY = 'orthorectify'
     PANSHARPEN = 'pansharpen'
 

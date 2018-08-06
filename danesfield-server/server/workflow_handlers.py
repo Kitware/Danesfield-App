@@ -301,6 +301,38 @@ def runPansharpen(requestInfo, jobId, workingSets, outputFolder, options):
         outputFolder=outputFolder, imageFiles=imageFiles, **pansharpenOptions)
 
 
+def runMsiToRgb(requestInfo, jobId, workingSets, outputFolder, options):
+    """
+    Workflow handler to run multispectral image (MSI) to RGB conversion.
+
+    Supports the following options:
+    - byte
+    - alpha
+    - rangePercentile
+    """
+    stepName = DanesfieldStep.MSI_TO_RGB
+
+    # Get working set
+    workingSet = _getWorkingSet(DanesfieldStep.PANSHARPEN, workingSets)
+
+    # Get IDs of pansharpened MSI images
+    imageFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in workingSet['datasetIds']
+        )
+    ]
+
+    # Get options
+    msiToRgbOptions = _getOptions(options, stepName)
+
+    # Run algorithm
+    algorithms.convertMsiToRgb(
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
+
+
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run finalize step.
