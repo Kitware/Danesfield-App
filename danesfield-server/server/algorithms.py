@@ -552,14 +552,16 @@ def pansharpen(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles):
         prefix = getPrefix(imageFile['name'])
         if prefix is None:
             raise DanesfieldWorkflowException(
-                'Invalid orthorectified image file name: {}'.format(imageFile['name']))
+                'Invalid orthorectified image file name: {}'.format(imageFile['name']),
+                step=stepName)
         pairs.setdefault(prefix, {'pan': None, 'msi': None})
         if isPanImage(imageFile):
             pairs[prefix]['pan'] = imageFile
         elif isMsiImage(imageFile):
             pairs[prefix]['msi'] = imageFile
         else:
-            raise DanesfieldWorkflowException('Unrecognized image: {}'.format(imageFile['name']))
+            raise DanesfieldWorkflowException(
+                'Unrecognized image: {}'.format(imageFile['name']), step=stepName)
 
     # Ensure that both types of images exist for each prefix
     for files in pairs.values():
