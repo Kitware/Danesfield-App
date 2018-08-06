@@ -151,8 +151,8 @@ def finalize(requestInfo, jobId):
     workflowManager.finalizeJob(jobId)
 
 
-def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations=None,
-           tension=None):
+def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, outputPrefix,
+           iterations=None, tension=None):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
 
@@ -171,6 +171,8 @@ def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations
     :type outputFolder: dict
     :param file: DSM image file document.
     :type file: dict
+    :param outputPrefix: The prefix of the output file name.
+    :type outputPrefix: str
     :param iterations: The base number of iterations at the coarsest scale.
     :type iterations: int
     :param tension: Number of inner smoothing iterations.
@@ -180,8 +182,8 @@ def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations
     gc = _createGirderClient(requestInfo)
 
     # Set output file name based on input file name
-    dsmName = file['name'].replace('_dsm.', '_dtm.')
-    outputVolumePath = VolumePath(dsmName)
+    dtmName = outputPrefix + '_DTM.tif'
+    outputVolumePath = VolumePath(dtmName)
 
     # Docker container arguments
     containerArgs = [
@@ -222,7 +224,7 @@ def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations
     return job
 
 
-def generateDsm(stepName, requestInfo, jobId, trigger, outputFolder, file):
+def generateDsm(stepName, requestInfo, jobId, trigger, outputFolder, file, outputPrefix):
     """
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
@@ -241,12 +243,14 @@ def generateDsm(stepName, requestInfo, jobId, trigger, outputFolder, file):
     :type outputFolder: dict
     :param file: Point cloud file document.
     :type file: dict
+    :param outputPrefix: The prefix of the output file name.
+    :type outputPrefix: str
     :returns: Job document.
     """
     gc = _createGirderClient(requestInfo)
 
     # Set output file name based on point cloud file
-    dsmName = os.path.splitext(file['name'])[0] + '_dsm.tif'
+    dsmName = outputPrefix + '_P3D_DSM.tif'
     outputVolumePath = VolumePath(dsmName)
 
     # Docker container arguments

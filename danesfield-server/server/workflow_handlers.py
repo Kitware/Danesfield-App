@@ -144,15 +144,16 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     """
     stepName = DanesfieldStep.GENERATE_DSM
 
-    # Get working set
-    workingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
+    # Get working sets
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
+    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
 
     # Get point cloud file
     pointCloudItems = [
         item
         for item in (
             Item().load(itemId, force=True, exc=True)
-            for itemId in workingSet['datasetIds']
+            for itemId in pointCloudWorkingSet['datasetIds']
         )
         if _isPointCloud(item)
     ]
@@ -169,7 +170,8 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     # Run algorithm
     algorithms.generateDsm(
         stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, file=pointCloudFile, **generateDsmOptions)
+        outputFolder=outputFolder, file=pointCloudFile, outputPrefix=initWorkingSet['name'],
+        **generateDsmOptions)
 
 
 def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
@@ -182,12 +184,13 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     """
     stepName = DanesfieldStep.FIT_DTM
 
-    # Get working set
-    workingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
+    # Get working sets
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
+    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
 
     # Get DSM
     items = [Item().load(itemId, force=True, exc=True)
-             for itemId in workingSet['datasetIds']]
+             for itemId in dsmWorkingSet['datasetIds']]
     if not items:
         raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
     if len(items) > 1:
@@ -201,7 +204,8 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     # Run algorithm
     algorithms.fitDtm(
         stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, file=file, **fitDtmOptions)
+        outputFolder=outputFolder, file=file, outputPrefix=initWorkingSet['name'],
+        **fitDtmOptions)
 
 
 def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
