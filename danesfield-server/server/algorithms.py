@@ -34,7 +34,7 @@ from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
-from .utilities import isMsiImage, isPanImage, removeDuplicateCount
+from .utilities import getPrefix, isMsiImage, isPanImage, removeDuplicateCount
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
@@ -151,7 +151,8 @@ def finalize(requestInfo, jobId):
     workflowManager.finalizeJob(jobId)
 
 
-def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations=100, tension=10):
+def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations=None,
+           tension=None):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
 
@@ -185,11 +186,13 @@ def fitDtm(stepName, requestInfo, jobId, trigger, outputFolder, file, iterations
     # Docker container arguments
     containerArgs = [
         'danesfield/tools/fit_dtm.py',
-        '--num-iterations', str(iterations),
-        '--tension', str(tension),
         GirderFileIdToVolume(file['_id'], gc=gc),
         outputVolumePath
     ]
+    if iterations is not None:
+        containerArgs.extend(['--num-iterations', str(iterations)])
+    if tension is not None:
+        containerArgs.extend(['--tension', str(tension)])
 
     # Result hooks
     # - Upload output files to output folder
@@ -370,7 +373,7 @@ def generatePointCloud(stepName, requestInfo, jobId, trigger, outputFolder, imag
 
 
 def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles, dsmFile, dtmFile,
-                 rpcFiles, occlusionThreshold=1.0, denoiseRadius=2.0):
+                 rpcFiles, occlusionThreshold=None, denoiseRadius=None):
     """
     Run Girder Worker jobs to orthorectify source images.
 
@@ -419,9 +422,11 @@ def orthorectify(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles
             outputVolumePath,
             '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc),
             '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc),
-            '--occlusion-thresh', str(occlusionThreshold),
-            '--denoise-radius', str(denoiseRadius)
         ]
+        if occlusionThreshold is not None:
+            containerArgs.extend(['--occlusion-thresh', str(occlusionThreshold)])
+        if denoiseRadius is not None:
+            containerArgs.extend(['--denoise-radius', str(denoiseRadius)])
 
         # Result hooks
         # - Upload output files to output folder
@@ -544,18 +549,19 @@ def pansharpen(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles):
     # Group pairs of PAN and MSI images by prefix
     pairs = {}
     for imageFile in imageFiles:
-        result = re.search(r'([0-9]{2}[A-Z]{3}[0-9]{8})-', imageFile['name'])
-        if not result:
+        prefix = getPrefix(imageFile['name'])
+        if prefix is None:
             raise DanesfieldWorkflowException(
-                'Invalid orthorectified image file name: {}'.format(imageFile['name']))
-        prefix = result.group(1)
+                'Invalid orthorectified image file name: {}'.format(imageFile['name']),
+                step=stepName)
         pairs.setdefault(prefix, {'pan': None, 'msi': None})
         if isPanImage(imageFile):
             pairs[prefix]['pan'] = imageFile
         elif isMsiImage(imageFile):
             pairs[prefix]['msi'] = imageFile
         else:
-            raise DanesfieldWorkflowException('Unrecognized image: {}'.format(imageFile['name']))
+            raise DanesfieldWorkflowException(
+                'Unrecognized image: {}'.format(imageFile['name']), step=stepName)
 
     # Ensure that both types of images exist for each prefix
     for files in pairs.values():

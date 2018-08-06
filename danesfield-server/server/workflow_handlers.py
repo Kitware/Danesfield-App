@@ -72,6 +72,23 @@ def _getWorkingSet(name, workingSets):
     return workingSet
 
 
+def _getOptions(globalOptions, stepName):
+    """
+    Get the options for a particular step from the global options and perform basic
+    validation. Returns a dictionary that may be empty.
+
+    :param globalOptions: Global workflow options.
+    :type globalOptions: dict
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :returns: Options for the specified step.
+    """
+    options = globalOptions.get(stepName, {})
+    if not isinstance(options, dict):
+        raise DanesfieldWorkflowException('Invalid options', step=stepName)
+    return options
+
+
 def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run p3d to generate a point cloud.
@@ -98,9 +115,7 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     ]
 
     # Get required options
-    generatePointCloudOptions = options.get(stepName)
-    if generatePointCloudOptions is None or not isinstance(generatePointCloudOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options', step=stepName)
+    generatePointCloudOptions = _getOptions(options, stepName)
 
     try:
         longitude = generatePointCloudOptions['longitude']
@@ -123,6 +138,9 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
 def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run generate_dsm.
+
+    Supports the following options:
+    - <none>
     """
     stepName = DanesfieldStep.GENERATE_DSM
 
@@ -145,10 +163,13 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
             'Expected only one point cloud, got {}'.format(len(pointCloudItems)), step=stepName)
     pointCloudFile = _fileFromItem(pointCloudItems[0])
 
+    # Get options
+    generateDsmOptions = _getOptions(options, stepName)
+
     # Run algorithm
     algorithms.generateDsm(
         stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, file=pointCloudFile)
+        outputFolder=outputFolder, file=pointCloudFile, **generateDsmOptions)
 
 
 def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
@@ -175,9 +196,7 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     file = _fileFromItem(items[0])
 
     # Get options
-    fitDtmOptions = options.get(stepName, {})
-    if not isinstance(fitDtmOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options', step=stepName)
+    fitDtmOptions = _getOptions(options, stepName)
 
     # Run algorithm
     algorithms.fitDtm(
@@ -242,9 +261,7 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    orthorectifyOptions = options.get(stepName, {})
-    if not isinstance(orthorectifyOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options', step=stepName)
+    orthorectifyOptions = _getOptions(options, stepName)
 
     # Run algorithm
     algorithms.orthorectify(
@@ -276,9 +293,7 @@ def runPansharpen(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    pansharpenOptions = options.get(stepName, {})
-    if not isinstance(pansharpenOptions, dict):
-        raise DanesfieldWorkflowException('Invalid options', step=stepName)
+    pansharpenOptions = _getOptions(options, stepName)
 
     # Run algorithm
     algorithms.pansharpen(
