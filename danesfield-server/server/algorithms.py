@@ -34,7 +34,7 @@ from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
-from .utilities import isMsiImage, isPanImage, removeDuplicateCount
+from .utilities import getPrefix, isMsiImage, isPanImage, removeDuplicateCount
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
@@ -549,11 +549,10 @@ def pansharpen(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles):
     # Group pairs of PAN and MSI images by prefix
     pairs = {}
     for imageFile in imageFiles:
-        result = re.search(r'([0-9]{2}[A-Z]{3}[0-9]{8})-', imageFile['name'])
-        if not result:
+        prefix = getPrefix(imageFile['name'])
+        if prefix is None:
             raise DanesfieldWorkflowException(
                 'Invalid orthorectified image file name: {}'.format(imageFile['name']))
-        prefix = result.group(1)
         pairs.setdefault(prefix, {'pan': None, 'msi': None})
         if isPanImage(imageFile):
             pairs[prefix]['pan'] = imageFile

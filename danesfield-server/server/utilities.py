@@ -29,6 +29,14 @@ def removeDuplicateCount(name):
     return re.sub(r' \(\d+\)$', '', name)
 
 
+def getPrefix(name):
+    """
+    Get common prefix from source image file name.
+    """
+    result = re.search(r'([0-9]{2}[A-Z]{3}[0-9]{8})[-_]', name)
+    return None if not result else result.group(1)
+
+
 def hasExtension(item, extension):
     """
     Return true if the item's name has the specified extension.
