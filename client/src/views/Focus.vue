@@ -20,15 +20,8 @@
     :expanded='sidePanelExpanded'
     :footer='false'>
       <template slot="actions">
-        <SidePanelAction v-for="action of actions" :key='action.name' :disabled='action.disabled'>
-          <v-menu offset-y v-if="action.name==='process'">
-            <v-icon slot="activator">{{action.icon}}</v-icon>
-            <v-list>
-              <v-list-tile v-for="process in processes" :key="process" @click="processClicked(process)">
-                <v-list-tile-title>{{process}}</v-list-tile-title>
-              </v-list-tile>
-            </v-list>
-          </v-menu>
+        <SidePanelAction @click.stop="processConfirmDialog = true">
+          <v-icon>developer_board</v-icon>
         </SidePanelAction>
       </template>
       <template slot="toolbar">
@@ -208,6 +201,30 @@
         </transition>
       </div>
     </SidePanel>
+    <v-dialog
+      v-model="processConfirmDialog"
+      max-width="290">
+      <v-card>
+        <v-card-title class="headline">Start a pipeline?</v-card-title>
+        <v-card-text>
+          A pipeline will be started with datasets within the current working set as input data. Multiple result working sets will be created.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+
+          <v-btn
+            flat
+            @click="processConfirmDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            @click="processConfirmDialog = false; startPipeline()">
+            Confirm
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </FullScreenViewport>
 </template>
 
@@ -249,7 +266,7 @@ export default {
       listingDatasetIdAndWorkingSets: [],
       selectedDatasetIds: {},
       includedChildrenWorkingSets: [],
-      processes: ["DSM"],
+      processConfirmDialog: false,
       transitionName: "fade-group",
       customVizDatasetId: null,
       preserveCustomViz: false
@@ -258,17 +275,6 @@ export default {
   computed: {
     user() {
       return this.$girder.user;
-    },
-    actions() {
-      return [
-        {
-          name: "process",
-          icon: "developer_board",
-          disabled: !Object.values(this.selectedDatasetIds).filter(
-            value => value
-          ).length
-        }
-      ];
     },
     childrenWorkingSets() {
       return this.workingSets.filter(
@@ -356,11 +362,12 @@ export default {
         })
       ]);
     },
-    processClicked(process) {
-      var itemId = Object.entries(this.selectedDatasetIds).filter(
-        ([itemId, selected]) => selected
-      )[0][0];
-      return girder.girder.post(`/processing/generate_dsm/?itemId=${itemId}`);
+    async startPipeline() {
+      var { data: job } = await girder.girder.post(
+        `/processing/process/?workingSet=${
+          this.selectedWorkingSetId
+        }&options={"generate-point-cloud":{"longitude":-84.084032161833051,"latitude":39.780404255857590,"longitudeWidth":0.008880209782049,"latitudeWidth":0.007791684155826}}`
+      );
     },
     workspaceSupportsDataset(workspace, dataset) {
       if (workspace.type === "map") {
