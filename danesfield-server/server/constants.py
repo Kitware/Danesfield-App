@@ -47,5 +47,5 @@ class DockerImage(object):
     """
     Names of Docker images to run Danesfield algorithms.
     """
-    DANESFIELD = 'core3d/danesfield'
-    P3D = 'p3d_gw'
+    DANESFIELD = 'gitlab.kitware.com:4567/core3d/danesfield-app/danesfield'
+    P3D = 'gitlab.kitware.com:4567/core3d/danesfield-app/p3d_gw'
