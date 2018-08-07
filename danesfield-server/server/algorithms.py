@@ -687,3 +687,83 @@ def convertMsiToRgb(stepName, requestInfo, jobId, trigger, outputFolder, imageFi
     for result in groupResult.results:
         _addJobInfo(result.job, requestInfo=requestInfo, jobId=jobId, stepName=stepName,
                     trigger=trigger)
+
+
+def segmentByHeight(stepName, requestInfo, jobId, trigger, outputFolder, dsmFile, dtmFile,
+                    msiImageFile):
+    """
+    Run a Girder Worker job to segment buildings by comparing a DSM to a DTM.
+
+    Requirements:
+    - core3d/danesfield Docker image is available on host
+
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    :param trigger: Whether to trigger the next step in the workflow.
+    :type trigger: bool
+    :param outputFolder: Output folder document.
+    :type outputFolder: dict
+    :param dsmFile: DSM file document.
+    :type dsmFile: dict
+    :param dtmFile: DTM file document.
+    :type dtmFile: dict
+    :param msiImageFile: Pansharpened MSI image file document.
+    :type msiImageFile: dict
+    :returns: Job document.
+    """
+    gc = _createGirderClient(requestInfo)
+
+    # Set output file names
+    # TODO: Danesfield master script hardcodes these without any prefix; do the same here
+    thresholdOutputVolumePath = VolumePath('threshold_CLS.tif')
+    ndviOutputVolumePath = VolumePath('ndvi.tif')
+
+    # Docker container arguments
+    containerArgs = [
+        'danesfield/tools/segment_by_height.py',
+        # DSM
+        GirderFileIdToVolume(dsmFile['_id'], gc=gc),
+        # DTM
+        GirderFileIdToVolume(dtmFile['_id'], gc=gc),
+        # Threshold output image
+        thresholdOutputVolumePath,
+        # MSI image
+        '--msi', GirderFileIdToVolume(msiImageFile['_id'], gc=gc),
+        # Normalized Difference Vegetation Index output image
+        '--ndvi', ndviOutputVolumePath
+    ]
+
+    # Result hooks
+    # - Upload output files to output folder
+    # - Provide upload metadata
+    upload_kwargs = _createUploadMetadata(jobId, stepName)
+    resultHooks = [
+        GirderUploadVolumePathToFolder(
+            outputVolumePath,
+            outputFolder['_id'],
+            upload_kwargs=upload_kwargs,
+            gc=gc)
+        for outputVolumePath in [
+            thresholdOutputVolumePath,
+            ndviOutputVolumePath
+        ]
+    ]
+
+    asyncResult = docker_run.delay(
+        image=DockerImage.DANESFIELD,
+        pull_image=False,
+        container_args=containerArgs,
+        girder_job_title='Segment by height: %s' % dsmFile['name'],
+        girder_job_type=stepName,
+        girder_result_hooks=resultHooks,
+        girder_user=requestInfo.user)
+
+    # Add info for job event listeners
+    job = asyncResult.job
+    job = _addJobInfo(job, requestInfo=requestInfo, jobId=jobId, stepName=stepName, trigger=trigger)
+
+    return job

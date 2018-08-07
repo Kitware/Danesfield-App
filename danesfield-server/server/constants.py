@@ -40,6 +40,7 @@ class DanesfieldStep(object):
     MSI_TO_RGB = 'msi-to-rgb'
     ORTHORECTIFY = 'orthorectify'
     PANSHARPEN = 'pansharpen'
+    SEGMENT_BY_HEIGHT = 'segment-by-height'
 
 
 class DockerImage(object):

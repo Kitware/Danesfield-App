@@ -337,6 +337,59 @@ def runMsiToRgb(requestInfo, jobId, workingSets, outputFolder, options):
         outputFolder=outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
 
 
+def runSegmentByHeight(requestInfo, jobId, workingSets, outputFolder, options):
+    """
+    Workflow handler to run segment by height.
+
+    Supports the following options:
+    - <none>
+    """
+    stepName = DanesfieldStep.SEGMENT_BY_HEIGHT
+
+    # Get working sets
+    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
+    dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, workingSets)
+    pansharpenWorkingSet = _getWorkingSet(DanesfieldStep.PANSHARPEN, workingSets)
+
+    # Get DSM
+    items = [Item().load(itemId, force=True, exc=True)
+             for itemId in dsmWorkingSet['datasetIds']]
+    if not items:
+        raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
+    if len(items) > 1:
+        raise DanesfieldWorkflowException(
+            'Expected only one input file, got {}'.format(len(items)), step=stepName)
+    dsmFile = _fileFromItem(items[0])
+
+    # Get DTM
+    items = [Item().load(itemId, force=True, exc=True)
+             for itemId in dtmWorkingSet['datasetIds']]
+    if not items:
+        raise DanesfieldWorkflowException('Unable to find DTM', step=stepName)
+    if len(items) > 1:
+        raise DanesfieldWorkflowException(
+            'Expected only one input file, got {}'.format(len(items)), step=stepName)
+    dtmFile = _fileFromItem(items[0])
+
+    # Get the ID of the first pansharpened MSI image
+    # TODO: Choose most nadir image, likely determined by a previous step and a new tool based on
+    # metadata in the source PAN images
+    items = [Item().load(itemId, force=True, exc=True)
+             for itemId in pansharpenWorkingSet['datasetIds']]
+    if not items:
+        raise DanesfieldWorkflowException('Unable to find pansharpened images', step=stepName)
+    msiImageFile = _fileFromItem(items[0])
+
+    # Get options
+    segmentByHeightOptions = _getOptions(options, stepName)
+
+    # Run algorithm
+    algorithms.segmentByHeight(
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, dsmFile=dsmFile, dtmFile=dtmFile, msiImageFile=msiImageFile,
+        **segmentByHeightOptions)
+
+
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
     """
     Workflow handler to run finalize step.
