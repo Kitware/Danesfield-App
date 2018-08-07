@@ -36,7 +36,7 @@
           <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="customVizDatasetId=null">
             <v-icon>arrow_back</v-icon>
           </v-btn>
-          <v-toolbar-title>{{!customVizDatasetId?"Working Set":"Custom"}}</v-toolbar-title>
+          <v-toolbar-title>{{!customVizDatasetId?"Working Set":"Customize"}}</v-toolbar-title>
         </v-toolbar>
       </template>
       <div class="main">
@@ -100,8 +100,8 @@
                             <v-icon>more_vert</v-icon>
                           </v-btn>
                           <v-list>
-                            <v-list-tile @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])">
-                              <v-list-tile-title>Custom</v-list-tile-title>
+                            <v-list-tile @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])" :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
+                              <v-list-tile-title>Customize</v-list-tile-title>
                             </v-list-tile>
                           </v-list>
                         </v-menu>

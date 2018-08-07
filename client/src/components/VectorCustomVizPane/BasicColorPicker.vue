@@ -1,5 +1,6 @@
 <template>
   <v-select
+    :disabled="disabled"
     :items="items"
     hide-details
     placeholder=" "
@@ -11,7 +12,7 @@
       <div class="color" :style="{background:data.item}"></div>
     </template>
     <template slot="selection" slot-scope="data">
-      <div class="color" :style="{background:data.item}"></div>
+      <div class="color" :class="{disabled}" :style="{background:data.item}"></div>
     </template>
   </v-select>
 </template>
@@ -23,6 +24,10 @@ export default {
     color: {
       type: String,
       required: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -63,5 +68,9 @@ export default {
   height: 18px;
   width: 100%;
   border: 1px solid #333;
+
+  &.disabled {
+    filter: grayscale(100%);
+  }
 }
 </style>

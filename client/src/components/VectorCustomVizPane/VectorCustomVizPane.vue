@@ -1,5 +1,5 @@
 <template>
-  <div class="vector-custom-viz-pane">
+  <div class="vector-customize-viz-pane">
     <v-tabs
       grow
       v-model="currentTab"
@@ -8,23 +8,42 @@
       <v-tab key="line" :disabled="!summary.types.lineAlike">LINES</v-tab>
       <v-tab key="polygon" :disabled="!summary.types.polygonAlike">POLYGONS</v-tab>
       <v-tab-item key="point">
+        <Stroke :enabled.sync="vizProperties.point.stroke"
+          :property.sync="vizProperties.point.strokeProperty"
+          :properties="summary.properties"
+          :color.sync="vizProperties.point.strokeColor"
+          :scheme.sync="vizProperties.point.strokeScheme"
+          :opacity.sync="vizProperties.point.strokeOpacity"
+          :width.sync="vizProperties.point.strokeWidth" />
+        <Fill :enabled.sync="vizProperties.point.fill"
+          :property.sync="vizProperties.point.fillProperty"
+          :properties="summary.properties"
+          :color.sync="vizProperties.point.fillColor"
+          :scheme.sync="vizProperties.point.fillScheme"
+          :opacity.sync="vizProperties.point.fillOpacity"
+          :scale.sync="vizProperties.point.fillScale"
+          :radius.sync="vizProperties.point.radius" />
       </v-tab-item>
       <v-tab-item key="line">
-        <v-card flat>
-          <v-card-text>line</v-card-text>
-        </v-card>
+        <Stroke :enabled.sync="vizProperties.line.stroke"
+          :property.sync="vizProperties.line.strokeProperty"
+          :properties="summary.properties"
+          :color.sync="vizProperties.line.strokeColor"
+          :scheme.sync="vizProperties.line.strokeScheme"
+          :opacity.sync="vizProperties.line.strokeOpacity"
+          :width.sync="vizProperties.line.strokeWidth" />
       </v-tab-item>
       <v-tab-item key="polygon">
         <Stroke :enabled.sync="vizProperties.polygon.stroke"
           :property.sync="vizProperties.polygon.strokeProperty"
-          :properties="Object.keys(summary.properties)"
+          :properties="summary.properties"
           :color.sync="vizProperties.polygon.strokeColor"
           :scheme.sync="vizProperties.polygon.strokeScheme"
           :opacity.sync="vizProperties.polygon.strokeOpacity"
           :width.sync="vizProperties.polygon.strokeWidth" />
         <Fill :enabled.sync="vizProperties.polygon.fill"
           :property.sync="vizProperties.polygon.fillProperty"
-          :properties="Object.keys(summary.properties)"
+          :properties="summary.properties"
           :color.sync="vizProperties.polygon.fillColor"
           :scheme.sync="vizProperties.polygon.fillScheme"
           :opacity.sync="vizProperties.polygon.fillOpacity"

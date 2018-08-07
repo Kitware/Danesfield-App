@@ -65,7 +65,7 @@ var ignored_properties = [
     'strokeOpacity',
     'fillColorKey',
     'strokeColorKey'
-].sort();
+];
 
 /**
  * Accumulate property values into a summary object.  The

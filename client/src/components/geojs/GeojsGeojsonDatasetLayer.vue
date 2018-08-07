@@ -148,38 +148,19 @@ export default {
           // linear scaling
           scaleFunc = d3.scale
             .quantize()
-            .domain([
-              minClamp ? minClamp : propertySummary.min,
-              maxClamp ? maxClamp : propertySummary.max
-            ])
+            .domain([minClamp ? minClamp : min, maxClamp ? maxClamp : max])
             .range(colors);
         }
       }
-      return function() {
-        return scaleFunc(arguments[2].properties[property]);
+      return (...args) => {
+        if (args[2]) {
+          return scaleFunc(args[2].properties[property]);
+        } else {
+          // geojs callback for point has different arguments
+          return scaleFunc(args[0].properties[property]);
+        }
       };
     }
   }
 };
-
-// if (vis.strokeColorKey) {
-//     vis.strokeColor = _.compose(
-//         geojsonUtil.colorScale(vis.strokeRamp, summary[vis.strokeColorKey]),
-//         function (props) { return props[vis.strokeColorKey]; }
-//     );
-// }
-
-// if (vis.fillColorKey) {
-//     d = [];
-//     key = vis.fillColorKey;
-//     data.features.forEach(function (item, index, array) {
-//         d.push(item.properties[key]);
-//     });
-//     vis.fillColor = _.compose(
-//         geojsonUtil.colorScale(vis.fillRamp, summary[vis.fillColorKey],
-//             vis.logFlag, vis.quantileFlag,
-//             vis.clampingFlag, vis.minClamp, vis.maxClamp, d),
-//         function (props) { return props[vis.fillColorKey]; }
-//     );
-// }
 </script>

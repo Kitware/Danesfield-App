@@ -4,6 +4,7 @@
     <v-layout align-center>
       <v-flex>
         <v-slider class=""
+          :disabled="!enabled"
           hide-details
           thumb-label
           :min="0"
@@ -17,6 +18,7 @@
     <v-layout align-center>
       <v-flex xs6>
         <v-select
+          :disabled="!enabled"
           :items="propertyItems"
           item-text="name"
           item-value="value"
@@ -28,13 +30,22 @@
         </v-select>
       </v-flex>
       <v-flex xs6>
-        <BasicColorPicker v-if="!property" :color="color" @update:color="$emit('update:color', $event)" />
-        <ColorbrewerPicker v-else :scheme="scheme" @update:scheme="$emit('update:scheme', $event)" />
+        <BasicColorPicker
+          v-if="!property"
+          :disabled="!enabled"
+          :color="color"
+          @update:color="$emit('update:color', $event)" />
+        <ColorbrewerPicker
+          v-else
+          :disabled="!enabled"
+          :scheme="scheme"
+          @update:scheme="$emit('update:scheme', $event)" />
       </v-flex>
     </v-layout>
     <v-layout align-center>
       <v-flex>
-        <v-slider class=""
+        <v-slider
+          :disabled="!enabled"
           hide-details
           thumb-label
           :min="0"
@@ -53,9 +64,10 @@
 import ColorbrewerPicker from "./ColorbrewerPicker";
 import BasicColorPicker from "./BasicColorPicker";
 import StyleSection from "./StyleSection";
+import { colorbrewerCategories } from "../../utils/palettableColorbrewerMapper";
 
 export default {
-  name: "Fill",
+  name: "Stroke",
   components: { StyleSection, BasicColorPicker, ColorbrewerPicker },
   props: {
     enabled: {
@@ -70,7 +82,7 @@ export default {
       type: String
     },
     properties: {
-      type: Array,
+      type: Object,
       required: true
     },
     scheme: {
@@ -90,11 +102,25 @@ export default {
       return [
         { name: "Constant", value: null },
         { divider: true },
-        ...this.properties.map(property => ({
+        ...Object.keys(this.properties).map(property => ({
           name: property,
           value: property
         }))
       ];
+    }
+  },
+  watch: {
+    property(newValue) {
+      if (newValue) {
+        if (!this.scheme) {
+          this.$emit(
+            "update:scheme",
+            colorbrewerCategories[Object.keys(colorbrewerCategories)[0]][0]
+          );
+        }
+      } else {
+        this.$emit("update:scheme", null);
+      }
     }
   }
 };

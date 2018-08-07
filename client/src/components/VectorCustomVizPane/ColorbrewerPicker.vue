@@ -1,5 +1,6 @@
 <template>
   <v-select
+    :disabled="disabled"
     :items="items"
     hide-details
     placeholder=" "
@@ -14,7 +15,7 @@
       </div>
     </template>
     <template slot="selection" slot-scope="data">
-      <div class="d-flex scheme">
+      <div class="d-flex scheme" :class="{disabled}">
         <div class="flex1" v-for="color of toSchemeColors(data.item)" :key='color' :style="{background:color}">
         </div>
       </div>
@@ -33,6 +34,10 @@ export default {
   props: {
     scheme: {
       type: String
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -60,6 +65,10 @@ export default {
 .scheme {
   height: 20px;
   width: 100%;
+
+  &.disabled {
+    filter: grayscale(100%);
+  }
 
   &.item {
     min-width: 140px;
