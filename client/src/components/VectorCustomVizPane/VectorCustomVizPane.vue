@@ -61,9 +61,8 @@
           ></v-checkbox>
         </v-flex>
         <v-flex xs4 offset-xs1>
-          <v-btn block depressed color='primary' class='' @click="apply">
-            Apply
-            <v-icon class='ml-1'>check</v-icon>
+          <v-btn block outline color='primary' class='' @click="revert">
+            Revert
           </v-btn>
         </v-flex>
       </v-layout>
@@ -75,6 +74,7 @@
 import Stroke from "./Stroke";
 import Fill from "./Fill";
 import cloneDeep from "lodash-es/cloneDeep";
+import debounce from "lodash-es/debounce";
 
 export default {
   name: "VectorDatasetVisualizationPane",
@@ -94,22 +94,31 @@ export default {
       enabled: true,
       preserve: false,
       currentTab: null,
+      initialVizProperties: cloneDeep(this.dataset.meta.vizProperties),
       vizProperties: cloneDeep(this.dataset.meta.vizProperties)
     };
+  },
+  watch: {
+    vizProperties: {
+      handler() {
+        this.debouncedApply();
+      },
+      deep: true
+    }
   },
   created() {
     this.currentTab = this.summary.types.pointAlike
       ? 0
       : this.summary.types.lineAlike ? 1 : 2;
+    this.debouncedApply = debounce(this.apply, 200);
   },
   methods: {
     apply() {
-      // this.$set(
-      //   this.dataset.meta,
-      //   "vizProperties",
-      //   cloneDeep(this.vizProperties)
-      // );
       this.dataset.meta.vizProperties = cloneDeep(this.vizProperties);
+    },
+    revert() {
+      this.dataset.meta.vizProperties = cloneDeep(this.initialVizProperties);
+      this.vizProperties = cloneDeep(this.initialVizProperties);
     }
   }
 };
