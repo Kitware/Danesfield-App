@@ -28,7 +28,7 @@ class WorkingSet(Model):
         """
         doc = {
             'name': name,
-            'parentWorkingSetId': parentWorkingSet['_id'],
+            'parentWorkingSetId': parentWorkingSet['_id'] if parentWorkingSet is not None else None,
             'datasetIds': [ObjectId(datasetId) for datasetId in datasetIds]
         }
 
