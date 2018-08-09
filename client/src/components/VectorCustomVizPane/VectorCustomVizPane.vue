@@ -57,7 +57,8 @@
             hide-details
             class="mt-0"
             label="Save to dataset"
-            v-model="preserve"
+            :input-value="preserve"
+            @change="$emit('update:preserve',$event)"
           ></v-checkbox>
         </v-flex>
         <v-flex xs4 offset-xs1>
@@ -87,12 +88,14 @@ export default {
     summary: {
       type: Object,
       required: true
+    },
+    preserve: {
+      type: Boolean,
+      default: null
     }
   },
   data() {
     return {
-      enabled: true,
-      preserve: false,
       currentTab: null,
       initialVizProperties: cloneDeep(this.dataset.meta.vizProperties),
       vizProperties: cloneDeep(this.dataset.meta.vizProperties)

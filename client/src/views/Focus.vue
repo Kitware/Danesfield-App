@@ -33,7 +33,7 @@
       </template>
       <template slot="toolbar">
         <v-toolbar flat>
-          <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="customVizDatasetId=null">
+          <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="returnFromCustomViz">
             <v-icon>arrow_back</v-icon>
           </v-btn>
           <v-toolbar-title>{{!customVizDatasetId?"Working Set":"Customize"}}</v-toolbar-title>
@@ -191,10 +191,11 @@
             </div>
           </div>
           <VectorCustomVizPane 
-          v-if="customVizDatasetId"
-          :dataset="datasets[customVizDatasetId]"
-          :summary="datasetIdMetaMap[customVizDatasetId].summary"
-          />
+            v-if="customVizDatasetId"
+            :dataset="datasets[customVizDatasetId]"
+            :summary="datasetIdMetaMap[customVizDatasetId].summary"
+            :preserve.sync="preserveCustomViz"
+            />
         </transition>
       </div>
     </SidePanel>
@@ -213,7 +214,7 @@ import findIndex from "lodash-es/findIndex";
 import draggable from "vuedraggable";
 
 import girder from "../girder";
-import { loadDatasetById } from "../utils/loadDataset";
+import { loadDatasetById, saveDatasetMetadata } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import eventstream from "../utils/eventstream";
 import FocusWorkspace from "./FocusWorkspace";
@@ -238,7 +239,8 @@ export default {
       includedChildrenWorkingSets: [],
       processes: ["DSM"],
       transitionName: "fade-group",
-      customVizDatasetId: null
+      customVizDatasetId: null,
+      preserveCustomViz: false
     };
   },
   computed: {
@@ -410,6 +412,15 @@ export default {
         .indexOf(this.datasets[datasetId]);
       return this.focusedWorkspace.layers[index];
     },
+    async getDatasetMeta(dataset) {
+      if (!(dataset._id in this.datasetIdMetaMap)) {
+        if (dataset.geometa.driver === "GeoJSON") {
+          var geojson = await loadDatasetData(dataset);
+          var summary = summarize(geojson);
+          this.$set(this.datasetIdMetaMap, dataset._id, { geojson, summary });
+        }
+      }
+    },
     async visualize(dataset, workspace) {
       await this.getDatasetMeta(dataset);
       this.addDatasetToWorkspace({ dataset, workspace });
@@ -420,13 +431,12 @@ export default {
       }
       this.customVizDatasetId = dataset._id;
     },
-    async getDatasetMeta(dataset) {
-      if (!(dataset._id in this.datasetIdMetaMap)) {
-        if (dataset.geometa.driver === "GeoJSON") {
-          var geojson = await loadDatasetData(dataset);
-          var summary = summarize(geojson);
-          this.$set(this.datasetIdMetaMap, dataset._id, { geojson, summary });
-        }
+    returnFromCustomViz() {
+      var dataset = this.datasets[this.customVizDatasetId];
+      this.customVizDatasetId = null;
+      if (this.preserveCustomViz) {
+        this.preserveCustomViz = false;
+        saveDatasetMetadata(dataset);
       }
     },
     ...mapMutations([

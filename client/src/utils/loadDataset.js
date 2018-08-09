@@ -37,3 +37,8 @@ export const loadDatasetById = (ids) => {
         return datasets.filter(dataset => dataset)
     });
 }
+
+export const saveDatasetMetadata = async (dataset) => {
+    var { data: dataset } = await girder.girder.put(`item/${dataset._id}/metadata`, dataset.meta);
+    return dataset;
+}
