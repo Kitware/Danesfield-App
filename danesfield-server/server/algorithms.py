@@ -24,6 +24,7 @@ import re
 
 from celery import group
 
+from girder.models.setting import Setting
 from girder.plugins.jobs.models.job import Job
 
 from girder_client import GirderClient
@@ -35,6 +36,7 @@ from girder_worker.docker.transforms.girder import (
 
 from .constants import DanesfieldJobKey, DanesfieldStep, DockerImage
 from .utilities import getPrefix, isMsiImage, isPanImage, removeDuplicateCount
+from .settings import PluginSettings
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
@@ -758,6 +760,117 @@ def segmentByHeight(stepName, requestInfo, jobId, trigger, outputFolder, dsmFile
         pull_image=False,
         container_args=containerArgs,
         girder_job_title='Segment by height: %s' % dsmFile['name'],
+        girder_job_type=stepName,
+        girder_result_hooks=resultHooks,
+        girder_user=requestInfo.user)
+
+    # Add info for job event listeners
+    job = asyncResult.job
+    job = _addJobInfo(job, requestInfo=requestInfo, jobId=jobId, stepName=stepName, trigger=trigger)
+
+    return job
+
+
+def classifyMaterials(stepName, requestInfo, jobId, trigger, outputFolder, imageFiles,
+                      metadataFiles, cuda=None, batchSize=None):
+    """
+    Run a Girder Worker job to classify materials in an orthorectified image.
+
+    Requirements:
+    - core3d/danesfield Docker image is available on host
+
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param requestInfo: HTTP request and authorization info.
+    :type requestInfo: RequestInfo
+    :param jobId: Job ID.
+    :type jobId: str
+    :param trigger: Whether to trigger the next step in the workflow.
+    :type trigger: bool
+    :param outputFolder: Output folder document.
+    :type outputFolder: dict
+    :param imageFiles: List of orthorectified MSI image files.
+    :type imageFiles: list[dict]
+    :param metadataFiles: List of MSI-source NITF metadata files.
+    :type metadataFiles: list[dict]
+    :param cuda: Enable CUDA.
+    :type cuda: bool
+    :param batchSize: Number of pixels classified at a time.
+    :type batchSize: int
+    :returns: Job document.
+    """
+    gc = _createGirderClient(requestInfo)
+
+    outputVolumePath = VolumePath('__output__')
+
+    # Find NITF metadata file corresponding to each image, or None
+    correspondingMetadataFiles = [
+        next(
+            (
+                metadataFile
+                for metadataFile in metadataFiles
+                if getPrefix(metadataFile['name']) == getPrefix(imageFile['name'])
+            ), None)
+        for imageFile in imageFiles
+    ]
+    imagesMissingMetadataFiles = [
+        imageFile['name']
+        for imageFile, metadataFile
+        in itertools.izip(imageFiles, correspondingMetadataFiles)
+        if not metadataFile
+    ]
+    if imagesMissingMetadataFiles:
+        raise DanesfieldWorkflowException('Missing NITF metadata files for images: {}'.format(
+            imagesMissingMetadataFiles), step=stepName)
+
+    # Get model file ID from setting
+    modelFileId = Setting().get(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
+    if not modelFileId:
+        raise DanesfieldWorkflowException(
+            'Invalid material classifier model file ID: {}'.format(modelFileId), step=stepName)
+
+    # Docker container arguments
+    containerArgs = list(itertools.chain(
+        [
+            'danesfield/tools/material_classifier.py',
+            '--model_path', GirderFileIdToVolume(modelFileId, gc=gc),
+            '--output_dir', outputVolumePath,
+            '--image_paths'
+        ],
+        [
+            GirderFileIdToVolume(imageFile['_id'], gc=gc)
+            for imageFile in imageFiles
+        ],
+        [
+            '--info_paths'
+        ],
+        [
+            GirderFileIdToVolume(metadataFile['_id'], gc=gc)
+            for metadataFile in correspondingMetadataFiles
+        ]
+    ))
+    if cuda:
+        containerArgs.append('--cuda')
+    if batchSize is not None:
+        containerArgs.extend(['--batch_size', str(batchSize)])
+
+    # Result hooks
+    # - Upload output files to output folder
+    # - Provide upload metadata
+    upload_kwargs = _createUploadMetadata(jobId, stepName)
+    resultHooks = [
+        GirderUploadVolumePathToFolder(
+            outputVolumePath,
+            outputFolder['_id'],
+            upload_kwargs=upload_kwargs,
+            gc=gc)
+    ]
+
+    asyncResult = docker_run.delay(
+        image=DockerImage.DANESFIELD,
+        pull_image=False,
+        container_args=containerArgs,
+        girder_job_title='Classify materials',
         girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)
