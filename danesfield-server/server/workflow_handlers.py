@@ -21,7 +21,7 @@ from girder.models.item import Item
 
 from . import algorithms
 from .constants import DanesfieldStep
-from .utilities import hasExtension, isMsiImage, isPanImage
+from .utilities import hasExtension, isMsiImage, isMsiNitfMetadata, isPanImage
 from .workflow import DanesfieldWorkflowException
 
 
@@ -388,6 +388,50 @@ def runSegmentByHeight(requestInfo, jobId, workingSets, outputFolder, options):
         stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
         outputFolder=outputFolder, dsmFile=dsmFile, dtmFile=dtmFile, msiImageFile=msiImageFile,
         **segmentByHeightOptions)
+
+
+def runClassifyMaterials(requestInfo, jobId, workingSets, outputFolder, options):
+    """
+    Workflow handler to run material classification.
+
+    Supports the following options:
+    - cuda
+    - batchSize
+    """
+    stepName = DanesfieldStep.CLASSIFY_MATERIALS
+
+    # Get working sets
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
+    orthorectifyWorkingSet = _getWorkingSet(DanesfieldStep.ORTHORECTIFY, workingSets)
+
+    # Get IDs of MSI images
+    imageFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in orthorectifyWorkingSet['datasetIds']
+        )
+        if isMsiImage(item)
+    ]
+
+    # Get IDs of NITF metadata files
+    metadataFiles = [
+        _fileFromItem(item)
+        for item in (
+            Item().load(itemId, force=True, exc=True)
+            for itemId in initWorkingSet['datasetIds']
+        )
+        if isMsiNitfMetadata(item)
+    ]
+
+    # Get options
+    classifyMaterialsOptions = _getOptions(options, stepName)
+
+    # Run algorithm
+    algorithms.classifyMaterials(
+        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
+        outputFolder=outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
+        **classifyMaterialsOptions)
 
 
 def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):

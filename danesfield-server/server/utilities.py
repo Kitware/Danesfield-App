@@ -72,3 +72,15 @@ def isPanImage(item):
     name = item['name'].lower()
     ext = os.path.splitext(name)[1]
     return '-p1bs-' in name and ext.startswith(('.ntf', '.tif'))
+
+
+def isMsiNitfMetadata(item):
+    """
+    Return true if the item refers to an MSI-source NITF metadata file.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '-m1bs-' in name and ext.startswith(('.imd', '.tar'))

@@ -27,7 +27,8 @@ def load(info):
     workflow.addHandler(DanesfieldStep.ORTHORECTIFY, workflow_handlers.runPansharpen)
     workflow.addHandler(DanesfieldStep.PANSHARPEN, workflow_handlers.runMsiToRgb)
     workflow.addHandler(DanesfieldStep.MSI_TO_RGB, workflow_handlers.runSegmentByHeight)
-    workflow.addHandler(DanesfieldStep.SEGMENT_BY_HEIGHT, workflow_handlers.runFinalize)
+    workflow.addHandler(DanesfieldStep.SEGMENT_BY_HEIGHT, workflow_handlers.runClassifyMaterials)
+    workflow.addHandler(DanesfieldStep.CLASSIFY_MATERIALS, workflow_handlers.runFinalize)
     DanesfieldWorkflowManager.instance().workflow = workflow
 
     # Relocate Girder

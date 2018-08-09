@@ -41,6 +41,7 @@ class DanesfieldStep(object):
     ORTHORECTIFY = 'orthorectify'
     PANSHARPEN = 'pansharpen'
     SEGMENT_BY_HEIGHT = 'segment-by-height'
+    CLASSIFY_MATERIALS = 'classify-materials'
 
 
 class DockerImage(object):
