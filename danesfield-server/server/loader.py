@@ -3,7 +3,7 @@
 
 from girder import events
 
-from rest import dataset, workingSet, processing, filter
+from .rest import dataset, workingSet, processing, filter
 
 from . import workflow_handlers
 from .constants import DanesfieldStep
