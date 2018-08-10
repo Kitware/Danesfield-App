@@ -801,7 +801,7 @@ def classifyMaterials(stepName, requestInfo, jobId, trigger, outputFolder, image
     """
     gc = _createGirderClient(requestInfo)
 
-    outputVolumePath = VolumePath('__output__')
+    outputVolumePath = VolumePath('.')
 
     # Find NITF metadata file corresponding to each image, or None
     correspondingMetadataFiles = [
