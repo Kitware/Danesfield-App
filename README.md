@@ -46,5 +46,14 @@ To archive an image for transfer to another system, run `docker save IMAGE_NAME 
 
 To load an archived image, run `gzip -d -c image.gz | docker load`.
 
+## Configuration
+
+### Material Classification
+
+- Upload the model file referenced in the [tool documentation](
+https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#material-classification)
+to Girder.
+- Set the `danesfield.material_classifier_model_file_id` setting to the ID of that file.
+
 # Client Setup
 See [here](client/README.md)
