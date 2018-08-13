@@ -138,8 +138,8 @@ export default {
       if (this.editingFilter) {
         return [
           { name: "rectangle", icon: "aspect_ratio" },
-          { name: "polygon", icon: "label_outline" }
-          // { name: "daterange", icon: "date_range" }
+          { name: "polygon", icon: "label_outline" },
+          { name: "upload-geojson", icon: "fa-file-upload" }
         ];
       }
       return [];
@@ -165,6 +165,9 @@ export default {
       this.selectedCondition;
       return {
         polygon: {
+          strokeColor: "#000000",
+          strokeOpacity: 0.75,
+          fillOpacity: 0.25,
           fillColor: (a, b, data) => {
             return this.selectedCondition &&
               data === this.selectedCondition.geojson
@@ -219,8 +222,11 @@ export default {
         case "polygon":
           this.drawing = this.drawing !== name ? name : null;
           break;
-        case "daterange":
-          this.$store.commit("filter/setPickDateRange", true);
+        // case "daterange":
+        //   this.$store.commit("filter/setPickDateRange", true);
+        //   break;
+        case "upload-geojson":
+          this.$store.commit("filter/setUploadGeojsonDialog", true);
           break;
       }
     }
