@@ -22,6 +22,7 @@ import uuid
 from girder import logprint
 
 from .constants import DanesfieldStep
+from .job_info import JobInfo
 from .models.workingSet import WorkingSet
 from .workflow import DanesfieldWorkflowException
 
@@ -38,8 +39,8 @@ class DanesfieldWorkflowManager(object):
 
     Handlers for workflow steps receive information about the original HTTP
     request and authorization, the job identifier, the initial working set and
-    any working sets created during the workflow, and the folder in which to
-    store output files.
+    any working sets created during the workflow, the standard output for each step,
+    the folder in which to store output files, and user-specified options.
     """
     _instance = None
 
@@ -48,7 +49,7 @@ class DanesfieldWorkflowManager(object):
         self.workflow = None
 
         # Data indexed by job ID
-        self._jobInfo = {}
+        self._jobData = {}
 
     @classmethod
     def instance(cls):
@@ -61,17 +62,17 @@ class DanesfieldWorkflowManager(object):
         """Return new job identifier."""
         return uuid.uuid4().hex
 
-    def _getJobInfo(self, jobId):
+    def _getJobData(self, jobId):
         """
-        Get job info by ID. Raise an exception if the ID is invalid.
+        Get job data by ID. Raise an exception if the ID is invalid.
 
         :param jobId: Job identifier.
         :type jobId: str
         """
-        jobInfo = self._jobInfo.get(jobId)
-        if jobInfo is None:
+        jobData = self._jobData.get(jobId)
+        if jobData is None:
             raise DanesfieldWorkflowException('Invalid job ID: \'{}\''.format(jobId))
-        return jobInfo
+        return jobData
 
     def initJob(self, workingSet, outputFolder, options):
         """
@@ -89,13 +90,15 @@ class DanesfieldWorkflowManager(object):
             raise DanesfieldWorkflowException('Workflow not configured')
 
         jobId = self._createJobId()
-        self._jobInfo[jobId] = {
+        self._jobData[jobId] = {
             # Working sets indexed by step name
             'workingSets': {
                 DanesfieldStep.INIT: workingSet
             },
-            # Files indexed by by step name
+            # Files indexed by step name
             'files': {},
+            # Standard output indexed by step name
+            'standardOutput': {},
             # Output folder
             'outputFolder': outputFolder,
             # Options
@@ -118,7 +121,7 @@ class DanesfieldWorkflowManager(object):
         """
         logprint.info('DanesfieldWorkflowManager.finalizeJob Job={}'.format(jobId))
 
-        del self._jobInfo[jobId]
+        del self._jobData[jobId]
 
     def addFile(self, jobId, stepName, file):
         """
@@ -134,8 +137,25 @@ class DanesfieldWorkflowManager(object):
         logprint.info('DanesfieldWorkflowManager.addFile Job={} StepName={} File={}'.format(
             jobId, stepName, file['_id']))
 
-        jobInfo = self._getJobInfo(jobId)
-        jobInfo['files'].setdefault(stepName, []).append(file)
+        jobData = self._getJobData(jobId)
+        jobData['files'].setdefault(stepName, []).append(file)
+
+    def addStandardOutput(self, jobId, stepName, output):
+        """
+        Record standard output from a step.
+
+        :param jobId: Identifier of the job.
+        :type jobId: str
+        :param stepName: The name of the step to which the output belongs.
+        :type stepName: str (DanesfieldStep)
+        :param output: Standard output
+        :type output: list[str]
+        """
+        logprint.info('DanesfieldWorkflowManager.addStandardOutput Job={} StepName={}'.format(
+            jobId, stepName))
+
+        jobData = self._getJobData(jobId)
+        jobData['standardOutput'][stepName] = output
 
     def setGroupResult(self, jobId, stepName, groupResult):
         """
@@ -152,16 +172,16 @@ class DanesfieldWorkflowManager(object):
         :param groupResult: Celery GroupResult.
         :type groupResult: celery.result.GroupResult
         """
-        jobInfo = self._getJobInfo(jobId)
-        jobInfo['groupResult'][stepName] = groupResult
+        jobData = self._getJobData(jobId)
+        jobData['groupResult'][stepName] = groupResult
 
     def getGroupResult(self, jobId, stepName):
         """
         Look up a Celery GroupResult for a composite step. Return None if no GroupResult is set
         for the step.
         """
-        jobInfo = self._getJobInfo(jobId)
-        return jobInfo['groupResult'].get(stepName)
+        jobData = self._getJobData(jobId)
+        return jobData['groupResult'].get(stepName)
 
     def advance(self, jobId, stepName, requestInfo):
         """
@@ -177,14 +197,18 @@ class DanesfieldWorkflowManager(object):
         logprint.info('DanesfieldWorkflowManager.advance Job={} StepName={}'.format(
             jobId, stepName))
 
-        jobInfo = self._getJobInfo(jobId)
-        workingSets = jobInfo['workingSets']
-        outputFolder = jobInfo['outputFolder']
-        options = jobInfo['options']
+        jobData = self._getJobData(jobId)
+        jobInfo = JobInfo(
+            jobId=jobId,
+            workingSets=jobData['workingSets'],
+            standardOutput=jobData['standardOutput'],
+            outputFolder=jobData['outputFolder'],
+            options=jobData['options']
+        )
 
         handler = self.workflow.getHandler(stepName)
         if handler is not None:
-            handler(requestInfo, jobId, workingSets, outputFolder, options)
+            handler(requestInfo, jobInfo)
 
     def stepSucceeded(self, jobId, stepName):
         """
@@ -193,13 +217,13 @@ class DanesfieldWorkflowManager(object):
         logprint.info('DanesfieldWorkflowManager.stepSucceeded Job={} StepName={}'.format(
             jobId, stepName))
 
-        jobInfo = self._getJobInfo(jobId)
-        files = jobInfo['files'].get(stepName)
+        jobData = self._getJobData(jobId)
+        files = jobData['files'].get(stepName)
         if not files:
             return
 
         # Create working set containing files created by step
-        initialWorkingSet = jobInfo['workingSets'][DanesfieldStep.INIT]
+        initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
         workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
         datasetIds = [file['itemId'] for file in files]
         workingSet = WorkingSet().createWorkingSet(
@@ -207,11 +231,11 @@ class DanesfieldWorkflowManager(object):
             parentWorkingSet=initialWorkingSet,
             datasetIds=datasetIds
         )
-        jobInfo['workingSets'][stepName] = workingSet
+        jobData['workingSets'][stepName] = workingSet
 
         # Remove data applicable only while step is running
-        jobInfo['files'].pop(stepName, None)
-        jobInfo['groupResult'].pop(stepName, None)
+        jobData['files'].pop(stepName, None)
+        jobData['groupResult'].pop(stepName, None)
 
         logprint.info(
             'DanesfieldWorkflowManager.createdWorkingSet Job={} StepName={} WorkingSet={}'.format(
@@ -224,4 +248,4 @@ class DanesfieldWorkflowManager(object):
         logprint.info('DanesfieldWorkflowManager.stepFailed Job={} StepName={}'.format(
             jobId, stepName))
 
-        self._jobInfo.pop(jobId, None)
+        self._jobData.pop(jobId, None)

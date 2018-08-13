@@ -42,8 +42,7 @@ class DanesfieldWorkflow(object):
 
         The handler is a callable object that accepts the following parameters:
         - requestInfo: HTTP request info.
-        - workingSets: The initial working set and working sets created during the workflow.
-        - outputFolder: The folder in which to store output files.
+        - jobInfo: Danesfield job info.
 
         :param stepName: The name of the step.
         :type stepName: str (DanesfieldStep)

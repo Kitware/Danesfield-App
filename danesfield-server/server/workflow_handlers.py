@@ -57,39 +57,57 @@ def _isRpc(item):
     return hasExtension(item, '.rpc')
 
 
-def _getWorkingSet(name, workingSets):
+def _getWorkingSet(stepName, jobInfo):
     """
-    Get a specific working set by name. Raise an error if the working set is not found.
+    Get a specific working set by step name. Raise an error if the working set is not found.
 
-    :param name: The name of the working set.
-    :type name: str
-    :param workingSets: The available working sets.
-    :type workingSets: dict
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param jobInfo: Danesfield job information.
+    :type jobInfo: JobInfo
     """
-    workingSet = workingSets.get(name)
+    workingSet = jobInfo.workingSets.get(stepName)
     if workingSet is None:
-        raise DanesfieldWorkflowException('Error looking up working set \'{}\''.format(name))
+        raise DanesfieldWorkflowException(
+            'Error looking up working set for step\'{}\''.format(stepName))
     return workingSet
 
 
-def _getOptions(globalOptions, stepName):
+def _getStandardOutput(stepName, jobInfo):
+    """
+    Get a standard output for a specific step by name. Raise an error if the standard output is
+    not found.
+
+    :param stepName: The name of the step.
+    :type stepName: str (DanesfieldStep)
+    :param jobInfo: Danesfield job information.
+    :type jobInfo: JobInfo
+    """
+    standardOutput = jobInfo.standardOutput.get(stepName)
+    if standardOutput is None:
+        raise DanesfieldWorkflowException(
+            'Error looking up standard output \'{}\''.format(stepName))
+    return standardOutput
+
+
+def _getOptions(stepName, jobInfo):
     """
     Get the options for a particular step from the global options and perform basic
     validation. Returns a dictionary that may be empty.
 
-    :param globalOptions: Global workflow options.
-    :type globalOptions: dict
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
+    :param jobInfo: Danesfield job information.
+    :type jobInfo: JobInfo
     :returns: Options for the specified step.
     """
-    options = globalOptions.get(stepName, {})
+    options = jobInfo.options.get(stepName, {})
     if not isinstance(options, dict):
         raise DanesfieldWorkflowException('Invalid options', step=stepName)
     return options
 
 
-def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options):
+def runGeneratePointCloud(requestInfo, jobInfo):
     """
     Workflow handler to run p3d to generate a point cloud.
 
@@ -102,7 +120,7 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     stepName = DanesfieldStep.GENERATE_POINT_CLOUD
 
     # Get working set
-    workingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
+    workingSet = _getWorkingSet(DanesfieldStep.INIT, jobInfo)
 
     # Get IDs of PAN image files
     panFileIds = [
@@ -115,7 +133,7 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
     ]
 
     # Get required options
-    generatePointCloudOptions = _getOptions(options, stepName)
+    generatePointCloudOptions = _getOptions(stepName, jobInfo)
 
     try:
         longitude = generatePointCloudOptions['longitude']
@@ -129,13 +147,13 @@ def runGeneratePointCloud(requestInfo, jobId, workingSets, outputFolder, options
 
     # Run algorithm
     algorithms.generatePointCloud(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, imageFileIds=panFileIds,
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, imageFileIds=panFileIds,
         longitude=longitude, latitude=latitude,
         longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)
 
 
-def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
+def runGenerateDsm(requestInfo, jobInfo):
     """
     Workflow handler to run generate_dsm.
 
@@ -145,8 +163,8 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     stepName = DanesfieldStep.GENERATE_DSM
 
     # Get working sets
-    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
-    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, jobInfo)
+    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo)
 
     # Get point cloud file
     pointCloudItems = [
@@ -165,16 +183,16 @@ def runGenerateDsm(requestInfo, jobId, workingSets, outputFolder, options):
     pointCloudFile = _fileFromItem(pointCloudItems[0])
 
     # Get options
-    generateDsmOptions = _getOptions(options, stepName)
+    generateDsmOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.generateDsm(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, file=pointCloudFile, outputPrefix=initWorkingSet['name'],
-        **generateDsmOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, file=pointCloudFile,
+        outputPrefix=initWorkingSet['name'], **generateDsmOptions)
 
 
-def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
+def runFitDtm(requestInfo, jobInfo):
     """
     Workflow handler to run fit_dtm.
 
@@ -185,8 +203,8 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     stepName = DanesfieldStep.FIT_DTM
 
     # Get working sets
-    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
-    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, jobInfo)
+    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
 
     # Get DSM
     items = [Item().load(itemId, force=True, exc=True)
@@ -199,16 +217,16 @@ def runFitDtm(requestInfo, jobId, workingSets, outputFolder, options):
     file = _fileFromItem(items[0])
 
     # Get options
-    fitDtmOptions = _getOptions(options, stepName)
+    fitDtmOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.fitDtm(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, file=file, outputPrefix=initWorkingSet['name'],
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, file=file, outputPrefix=initWorkingSet['name'],
         **fitDtmOptions)
 
 
-def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
+def runOrthorectify(requestInfo, jobInfo):
     """
     Workflow handler to run orthorectify.
 
@@ -219,10 +237,10 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     stepName = DanesfieldStep.ORTHORECTIFY
 
     # Get working sets
-    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
-    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
-    dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, workingSets)
-    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, workingSets)
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, jobInfo)
+    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
+    dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
+    pointCloudWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo)
 
     # Get IDs of MSI and PAN source image files
     imageFiles = [
@@ -265,16 +283,16 @@ def runOrthorectify(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    orthorectifyOptions = _getOptions(options, stepName)
+    orthorectifyOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.orthorectify(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, imageFiles=imageFiles, dsmFile=dsmFile, dtmFile=dtmFile,
-        rpcFiles=rpcFiles, **orthorectifyOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
+        dtmFile=dtmFile, rpcFiles=rpcFiles, **orthorectifyOptions)
 
 
-def runPansharpen(requestInfo, jobId, workingSets, outputFolder, options):
+def runPansharpen(requestInfo, jobInfo):
     """
     Workflow handler to run pansharpen.
 
@@ -284,7 +302,7 @@ def runPansharpen(requestInfo, jobId, workingSets, outputFolder, options):
     stepName = DanesfieldStep.PANSHARPEN
 
     # Get working set
-    workingSet = _getWorkingSet(DanesfieldStep.ORTHORECTIFY, workingSets)
+    workingSet = _getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
 
     # Get IDs of MSI and PAN source image files
     imageFiles = [
@@ -297,15 +315,15 @@ def runPansharpen(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    pansharpenOptions = _getOptions(options, stepName)
+    pansharpenOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.pansharpen(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, imageFiles=imageFiles, **pansharpenOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **pansharpenOptions)
 
 
-def runMsiToRgb(requestInfo, jobId, workingSets, outputFolder, options):
+def runMsiToRgb(requestInfo, jobInfo):
     """
     Workflow handler to run multispectral image (MSI) to RGB conversion.
 
@@ -317,7 +335,7 @@ def runMsiToRgb(requestInfo, jobId, workingSets, outputFolder, options):
     stepName = DanesfieldStep.MSI_TO_RGB
 
     # Get working set
-    workingSet = _getWorkingSet(DanesfieldStep.PANSHARPEN, workingSets)
+    workingSet = _getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
     # Get IDs of pansharpened MSI images
     imageFiles = [
@@ -329,15 +347,15 @@ def runMsiToRgb(requestInfo, jobId, workingSets, outputFolder, options):
     ]
 
     # Get options
-    msiToRgbOptions = _getOptions(options, stepName)
+    msiToRgbOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.convertMsiToRgb(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
 
 
-def runSegmentByHeight(requestInfo, jobId, workingSets, outputFolder, options):
+def runSegmentByHeight(requestInfo, jobInfo):
     """
     Workflow handler to run segment by height.
 
@@ -347,9 +365,9 @@ def runSegmentByHeight(requestInfo, jobId, workingSets, outputFolder, options):
     stepName = DanesfieldStep.SEGMENT_BY_HEIGHT
 
     # Get working sets
-    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, workingSets)
-    dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, workingSets)
-    pansharpenWorkingSet = _getWorkingSet(DanesfieldStep.PANSHARPEN, workingSets)
+    dsmWorkingSet = _getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
+    dtmWorkingSet = _getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
+    pansharpenWorkingSet = _getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
     # Get DSM
     items = [Item().load(itemId, force=True, exc=True)
@@ -381,16 +399,16 @@ def runSegmentByHeight(requestInfo, jobId, workingSets, outputFolder, options):
     msiImageFile = _fileFromItem(items[0])
 
     # Get options
-    segmentByHeightOptions = _getOptions(options, stepName)
+    segmentByHeightOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.segmentByHeight(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, dsmFile=dsmFile, dtmFile=dtmFile, msiImageFile=msiImageFile,
-        **segmentByHeightOptions)
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
+        msiImageFile=msiImageFile, **segmentByHeightOptions)
 
 
-def runClassifyMaterials(requestInfo, jobId, workingSets, outputFolder, options):
+def runClassifyMaterials(requestInfo, jobInfo):
     """
     Workflow handler to run material classification.
 
@@ -401,8 +419,8 @@ def runClassifyMaterials(requestInfo, jobId, workingSets, outputFolder, options)
     stepName = DanesfieldStep.CLASSIFY_MATERIALS
 
     # Get working sets
-    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, workingSets)
-    orthorectifyWorkingSet = _getWorkingSet(DanesfieldStep.ORTHORECTIFY, workingSets)
+    initWorkingSet = _getWorkingSet(DanesfieldStep.INIT, jobInfo)
+    orthorectifyWorkingSet = _getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
 
     # Get IDs of MSI images
     imageFiles = [
@@ -425,17 +443,17 @@ def runClassifyMaterials(requestInfo, jobId, workingSets, outputFolder, options)
     ]
 
     # Get options
-    classifyMaterialsOptions = _getOptions(options, stepName)
+    classifyMaterialsOptions = _getOptions(stepName, jobInfo)
 
     # Run algorithm
     algorithms.classifyMaterials(
-        stepName=stepName, requestInfo=requestInfo, jobId=jobId, trigger=True,
-        outputFolder=outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
+        stepName=stepName, requestInfo=requestInfo, jobId=jobInfo.jobId, trigger=True,
+        outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
         **classifyMaterialsOptions)
 
 
-def runFinalize(requestInfo, jobId, workingSets, outputFolder, options):
+def runFinalize(requestInfo, jobInfo):
     """
     Workflow handler to run finalize step.
     """
-    algorithms.finalize(requestInfo=requestInfo, jobId=jobId)
+    algorithms.finalize(requestInfo=requestInfo, jobId=jobInfo.jobId)
