@@ -23,6 +23,7 @@ import json
 from girder import events, logprint
 from girder.models.notification import Notification
 from girder.models.user import User
+from girder.plugins.jobs.models.job import Job
 from girder.plugins.jobs.constants import JobStatus
 
 from .constants import DanesfieldJobKey
@@ -94,6 +95,11 @@ def onJobUpdate(event):
         status = JobStatus.SUCCESS if groupResult.successful() else JobStatus.ERROR
 
     if status == JobStatus.SUCCESS:
+        # Add standard output from job
+        # TODO: Alternatively, could record job model ID and defer log lookup
+        job = Job().load(job['_id'], includeLog=True, force=True)
+        workflowManager.addStandardOutput(jobId=jobId, stepName=stepName, output=job.get('log'))
+
         workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
 
         # Advance workflow asynchronously to avoid affecting finished job in case of error
