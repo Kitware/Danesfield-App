@@ -1,6 +1,6 @@
 <template>
   <div class='workspace' @mousedown="focus" @click="focus">
-    <div class="slot-container">
+    <div class="slot-container" :class="{focused:!onlyWorkspace && focused}">
       <slot></slot>
     </div>
     <div class="bottom-bar">
@@ -14,8 +14,8 @@
           item-text="name"
           item-value='value'
         ></v-select>
-        <v-spacer />
         <slot name="actions"></slot>
+        <v-spacer />
         <v-tooltip top v-if="!onlyWorkspace">
           <span>{{!maximized?'Maximize':'Minimize'}}</span>
           <v-btn
@@ -172,13 +172,26 @@ export default {
       );
     }
 
-    .unfocused{
-      background:#555;
+    .unfocused {
+      background: #555;
     }
   }
 
   .slot-container {
     flex: 1;
+
+    &.focused::after {
+      content: "";
+      border: 2px solid black;
+      border-bottom: none;
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
   }
 
   .button-container {
