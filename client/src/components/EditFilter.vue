@@ -94,27 +94,51 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog  
+      :value="uploadGeojsonDialog"
+      @input="setUploadGeojsonDialog($event)"
+      max-width="290">
+      <v-card>
+        <v-card-title class="title">Upload a geojson file</v-card-title>
+        <v-card-text>
+          Select or drop a geojson file to be used region filter
+          <FileSelector
+          v-model="geojsonFilename"
+          accept=".json,.geojson"
+          @file='onGeojsonSelected' />
+        </v-card-text>
+        <v-card-actions>
+          <v-layout>
+            <v-flex class="text-xs-center"><v-btn color="primary" :disabled="!uploadFeatures" @click="uploadGeojson">Upload</v-btn></v-flex>
+          </v-layout>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script>
-import { mapState, mapMutations } from "vuex";
+import { mapState, mapMutations, mapActions } from "vuex";
 
 import DateRangeControl from "./DateRangeControl";
+import FileSelector from "./FileSelector";
 
 export default {
   name: "EditFilter",
   components: {
-    DateRangeControl
+    DateRangeControl,
+    FileSelector
   },
   props: {},
   data() {
     return {
+      name: null,
       dateRangeFilter: {
         start: null,
         end: null
       },
-      name: null
+      geojsonFilename: "",
+      uploadFeatures: null
     };
   },
   computed: {
@@ -134,15 +158,18 @@ export default {
       "editingConditions",
       "annotations",
       "pickDateRange",
+      "uploadGeojsonDialog",
       "datasets"
     ])
   },
   watch: {
     annotations([annotation]) {
       if (annotation && annotation.geojson()) {
+        var geojson = annotation.geojson();
+        delete geojson.properties;
         this.editingConditions.push({
           type: "region",
-          geojson: annotation.geojson()
+          geojson
         });
         this.$store.commit("filter/setAnnotations", []);
       }
@@ -200,16 +227,14 @@ export default {
       this.setSelectedCondition(null);
       var index = this.editingConditions.indexOf(filter);
       this.editingConditions.splice(index, 1);
-      this.$store
-        .dispatch("prompt/prompt", {
-          message: "Condition deleted",
-          button: "undo"
-        })
-        .then(result => {
-          if (result === "undo") {
-            this.editingConditions.splice(index, 0, filter);
-          }
-        });
+      this.prompt({
+        message: "Condition deleted",
+        button: "undo"
+      }).then(result => {
+        if (result === "undo") {
+          this.editingConditions.splice(index, 0, filter);
+        }
+      });
     },
     deleteRecord() {
       this.$store.dispatch("deleteFilter", this.editingFilter).then(() => {
@@ -227,9 +252,74 @@ export default {
         end: this.dateRangeFilter.end
       });
     },
+    async onGeojsonSelected(file) {
+      if (!file) {
+        this.uploadFeatures = null;
+        return;
+      }
+      try {
+        this.uploadFeatures = await this.tryGetFeaturesFromFile(file);
+      } catch (ex) {
+        this.uploadFeatures = null;
+        this.prompt({ message: ex.message });
+      }
+    },
+    async tryGetFeaturesFromFile(file) {
+      if (file.size > 1024 * 1024) {
+        throw new Error("File is too large");
+      }
+      var result = await new Promise((resolve, reject) => {
+        var reader = new FileReader();
+        reader.onload = e => {
+          resolve(reader.result);
+        };
+        reader.readAsText(file);
+      });
+      var geojson = JSON.parse(result);
+      var features = null;
+      if (geojson.features) {
+        features = geojson.features;
+      } else if (geojson.geometries) {
+        features = geojson.geometries.map(geometry => ({
+          type: "Feature", geometry
+        }));
+      } else if (geojson.coordinates) {
+        features = [
+          {
+            type: "Feature",
+            geometry: geojson
+          }
+        ];
+      } else {
+        features = [geojson];
+      }
+      features = features.filter(
+        feature => feature.geometry && feature.geometry.type === "Polygon"
+      );
+      if (!features.length) {
+        throw new Error("File doesn't contain a valid polygon feature");
+      }
+      if (features.length > 5) {
+        throw new Error("File has more than 5 polygon features");
+      }
+      return features;
+    },
+    uploadGeojson() {
+      for (let feature of this.uploadFeatures) {
+        this.editingConditions.push({
+          type: "region",
+          geojson: feature
+        });
+      }
+      this.uploadFeatures = null;
+      this.geojsonFilename = null;
+      this.setUploadGeojsonDialog(false);
+    },
+    ...mapActions("prompt", ["prompt"]),
     ...mapMutations("filter", [
       "setSelectedCondition",
-      "setSelectedDataset"
+      "setSelectedDataset",
+      "setUploadGeojsonDialog"
     ])
   }
 };

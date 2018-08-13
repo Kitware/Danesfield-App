@@ -9,6 +9,7 @@ export default {
     selectedCondition: null,
     annotations: [],
     pickDateRange: false,
+    uploadGeojsonDialog: false,
     editingConditions: null,
     datasets: [],
     selectedDataset: null
@@ -29,6 +30,9 @@ export default {
     },
     setPickDateRange(state, value) {
       state.pickDateRange = value;
+    },
+    setUploadGeojsonDialog(state, value) {
+      state.uploadGeojsonDialog = value;
     },
     setEditingConditions(state, conditions) {
       state.editingConditions = conditions;
