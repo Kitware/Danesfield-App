@@ -49,7 +49,7 @@ export default new Vuex.Store({
       Vue.set(state.workspaces, Math.random().toString(36).substring(7), {
         type: workspace.type,
         layers: []
-      })
+      });
     },
     removeWorkspace(state, key) {
       Vue.delete(state.workspaces, key);

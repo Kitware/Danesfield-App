@@ -75,12 +75,10 @@
       </template>
       <div class="main">
         <transition name="slide-fade" mode="out-in">
-         <WorkingSetModule 
-            v-if="exploreTab==='workingSet'"
-           />
+          <WorkingSetModule 
+            v-if="exploreTab==='workingSet'" />
           <FilterModule 
-            v-if="exploreTab==='filter'"
-           />
+            v-if="exploreTab==='filter'" />
         </transition>
       </div>
       <v-bottom-nav :value="true" :active="exploreTab" @update:active="$store.commit('setExploreTab',$event)" color="transparent">

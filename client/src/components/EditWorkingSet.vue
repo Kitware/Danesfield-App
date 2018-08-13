@@ -1,7 +1,7 @@
 <template>
   <div class='edit-workingset'>
     <div class='main ma-2'>
-      <v-layout row wrap>
+      <v-layout>
         <v-flex>
           <v-text-field
             class="input"
@@ -12,7 +12,7 @@
           ></v-text-field>
         </v-flex>
       </v-layout>
-      <v-layout row wrap>
+      <v-layout>
         <v-flex>
           <v-select
             :items="filters"
@@ -23,7 +23,7 @@
           ></v-select>
         </v-flex>
       </v-layout>
-      <v-layout row wrap>
+      <v-layout>
         <transition name='fade'>
           <v-flex xs12 class='datasets' v-if="datasets.length">
             <div class='body-2'>Datasets</div>
@@ -40,26 +40,26 @@
         </transition>
       </v-layout>
     </div>
-    <div class='bottom py-3'>
-      <v-layout row wrap>
-        <v-flex xs2 offset-xs1>
+    <v-container fluid grid-list-lg class="py-2">
+      <v-layout>
+        <v-flex xs3>
           <v-btn block depressed color='error' class='' @click="deleteRecord">
             <v-icon>delete</v-icon>
           </v-btn>
         </v-flex>
-        <v-flex xs3 offset-xs1>
+        <v-flex xs4>
           <v-btn block outline color='error' class='' @click="exit">
             Cancel
           </v-btn>
         </v-flex>
-        <v-flex xs3 offset-xs1>
+        <v-flex xs5>
           <v-btn block depressed color='primary' class='' @click="save">
             Save
             <v-icon class='ml-1'>save</v-icon>
           </v-btn>
         </v-flex>
       </v-layout>
-    </div>
+    </v-container>
   </div>
 </template>
 
@@ -191,12 +191,6 @@ export default {
 
     .datasets .dataset {
       width: 100%;
-    }
-  }
-
-  .bottom {
-    .btn {
-      min-width: 0;
     }
   }
 }

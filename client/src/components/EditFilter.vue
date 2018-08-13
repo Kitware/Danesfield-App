@@ -1,7 +1,7 @@
 <template>
   <div class='edit-filter'>
     <div class='main ma-2'>
-      <v-layout row wrap>
+      <v-layout>
         <v-flex>
           <v-text-field
             class="input"
@@ -12,7 +12,7 @@
           ></v-text-field>
         </v-flex>
       </v-layout>
-      <v-layout row wrap>
+      <v-layout>
         <transition name='fade'>
           <v-flex xs12>
             <div class='datasets' v-if="datasets.length">
@@ -56,7 +56,7 @@
     </v-expansion-panel>
     <div class='bottom'>
       <v-container grid-list-xs class="pa-0">
-        <v-layout row wrap>
+        <v-layout>
           <v-flex xs2 offset-xs1>
             <v-btn block depressed color='error' class='' @click="deleteRecord">
               <v-icon>delete</v-icon>

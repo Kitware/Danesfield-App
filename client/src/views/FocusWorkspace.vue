@@ -27,6 +27,8 @@
           v-if="layer.dataset.geometa.driver==='GeoJSON'"
           :key="layer.dataset._id"
           :dataset="layer.dataset"
+          :summary="datasetIdMetaMap[layer.dataset._id].summary"
+          :geojson="datasetIdMetaMap[layer.dataset._id].geojson"
           :opacity="layer.opacity"
           :zIndex="i+1">
         </GeojsGeojsonDatasetLayer>
@@ -99,13 +101,12 @@ export default {
   },
   computed: {
     viewport() {
+      var viewPort = {
+        center: [-100, 30],
+        zoom: 4
+      };
       if (!this.boundDatasets) {
-        return {
-          viewport: {
-            center: [-100, 30],
-            zoom: 4
-          }
-        };
+        return viewPort;
       } else {
         var geojsViewport = this.$refs.geojsMapViewport
           ? this.$refs.geojsMapViewport[0]
@@ -125,13 +126,18 @@ export default {
         var bufferedBbox = bbox(
           buffer(bboxPolygon(bboxOfAllDatasets), dist / 4)
         );
-
-        return geojsViewport.$geojsMap.zoomAndCenterFromBounds({
-          left: bufferedBbox[0],
-          right: bufferedBbox[2],
-          top: bufferedBbox[3],
-          bottom: bufferedBbox[1]
-        });
+        try {
+          // Sometime the bounds could be wierd and the function could fail
+          return geojsViewport.$geojsMap.zoomAndCenterFromBounds({
+            left: bufferedBbox[0],
+            right: bufferedBbox[2],
+            top: bufferedBbox[3],
+            bottom: bufferedBbox[1]
+          });
+        } catch (ex) {
+          console.warn(ex);
+          return viewPort;
+        }
       }
     }
   },
@@ -139,6 +145,7 @@ export default {
     "boundDatasets",
     "workspaces",
     "listingDatasetIdAndWorkingSets",
+    "datasetIdMetaMap",
     "focusedWorkspace",
     "setFocusedWorkspaceKey",
     "addWorkspace",
