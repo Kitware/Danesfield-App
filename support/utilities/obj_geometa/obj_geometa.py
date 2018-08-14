@@ -151,7 +151,8 @@ def getGeospatialMetadata(sourceProj, destProj, offsetFileName, objFileName):
             'top': offsetBounds[3]
         },
         'bounds': geoJsonBounds,
-        'type_': 'vector'
+        'type_': 'vector',
+        'driver': 'OBJ'
     }
 
 
