@@ -28,7 +28,7 @@ function toPalettable(schemeName) {
     let out_category, out_scheme;
     for (let [category, scheme] of Object.entries(colorbrewerCategories)) {
         for (let schemeWithNumber of scheme) {
-            if (schemeWithNumber.split('_')[0] === schemeName) {
+            if (schemeWithNumber === schemeName) {
                 out_category = category;
                 out_scheme = schemeWithNumber;
             }

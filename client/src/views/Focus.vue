@@ -100,7 +100,10 @@
                             <v-icon>more_vert</v-icon>
                           </v-btn>
                           <v-list>
-                            <v-list-tile @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])" :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
+                            <v-list-tile
+                              v-if="['GeoTIFF', 'GeoJSON'].indexOf(datasets[datasetIdAndWorkingSet.datasetId].geometa.driver)!==-1"
+                              @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])"
+                              :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
                               <v-list-tile-title>Customize</v-list-tile-title>
                             </v-list-tile>
                           </v-list>
@@ -190,10 +193,16 @@
               </v-list>
             </div>
           </div>
-          <VectorCustomVizPane 
-            v-if="customVizDatasetId"
+          <VectorCustomVizPane
+            v-if="customVizDatasetId && datasets[customVizDatasetId].geometa.driver === 'GeoJSON'"
             :dataset="datasets[customVizDatasetId]"
             :summary="datasetIdMetaMap[customVizDatasetId].summary"
+            :preserve.sync="preserveCustomViz"
+            />
+          <GeotiffCustomVizPane
+            v-if="customVizDatasetId && datasets[customVizDatasetId].geometa.driver === 'GeoTIFF'"
+            :dataset="datasets[customVizDatasetId]"
+            :meta="datasetIdMetaMap[customVizDatasetId]"
             :preserve.sync="preserveCustomViz"
             />
         </transition>
@@ -221,12 +230,15 @@ import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
 import { summarize } from "../utils/geojsonUtil";
 import { getDefaultGeojsonVizProperties } from "../utils/getDefaultGeojsonVizProperties";
+import GeotiffCustomVizPane from "../components/GeotiffCustomVizPane";
+import getLargeImageMeta from "../utils/getLargeImageMeta";
 
 export default {
   name: "Focus",
   components: {
     FocusWorkspace,
     VectorCustomVizPane,
+    GeotiffCustomVizPane,
     draggable
   },
   data() {
@@ -364,11 +376,23 @@ export default {
     },
     addDatasets(datasets) {
       for (let dataset of datasets) {
-        if (!dataset.meta || !dataset.meta.vizProperties) {
-          dataset = {
-            ...dataset,
-            ...{ meta: { vizProperties: getDefaultGeojsonVizProperties() } }
-          };
+        if (!dataset.geometa) {
+          continue;
+        }
+        switch (dataset.geometa.driver) {
+          case "GeoJSON":
+            if (!dataset.meta || !dataset.meta.vizProperties) {
+              dataset = {
+                ...dataset,
+                ...{ meta: { vizProperties: getDefaultGeojsonVizProperties() } }
+              };
+            }
+            break;
+          case "GeoTIFF":
+            if (!dataset.meta) {
+              dataset.meta = {};
+            }
+            break;
         }
         this.$set(this.datasets, dataset._id, dataset);
       }
@@ -428,6 +452,15 @@ export default {
     async customDatasetVisualization(dataset) {
       if (dataset.geometa.driver === "GeoJSON") {
         await this.getDatasetMeta(dataset);
+      }
+      if (dataset.geometa.driver === "GeoTIFF") {
+        if (!(dataset._id in this.datasetIdMetaMap)) {
+          this.$set(
+            this.datasetIdMetaMap,
+            dataset._id,
+            await getLargeImageMeta(dataset)
+          );
+        }
       }
       this.customVizDatasetId = dataset._id;
     },

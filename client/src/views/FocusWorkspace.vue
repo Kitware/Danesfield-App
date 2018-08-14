@@ -32,14 +32,15 @@
           :opacity="layer.opacity"
           :zIndex="i+1">
         </GeojsGeojsonDatasetLayer>
-        <GeojsTileLayer
+        <StyledGeoTIFFLayer
           v-if="layer.dataset.geometa.driver==='GeoTIFF'"
           :key="layer.dataset._id"
-          :url="getTileURL(layer.dataset)"
+          :dataset="layer.dataset"
+          :tileURL="getTileURL(layer.dataset)"
           :opacity="layer.opacity"
           :keepLower="false"
           :zIndex="i+1">
-        </GeojsTileLayer>
+        </StyledGeoTIFFLayer>
       </template>
     </GeojsMapViewport>
       <VTKViewport v-if="workspace.type==='vtk'"
@@ -81,6 +82,7 @@ import WorkspaceContainer from "../components/Workspace/Container";
 import Workspace from "../components/Workspace/Workspace";
 import WorkspaceAction from "../components/Workspace/Action";
 import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
+import StyledGeoTIFFLayer from "../components/geojs/StyledGeoTIFFLayer";
 import VTKViewport from "../components/vtk/VTKViewport";
 import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
 import Palette from "../components/vtk/Palette";
@@ -92,6 +94,7 @@ export default {
     Workspace,
     WorkspaceAction,
     GeojsGeojsonDatasetLayer,
+    StyledGeoTIFFLayer,
     VTKViewport,
     OBJMultiItemActor,
     Palette
