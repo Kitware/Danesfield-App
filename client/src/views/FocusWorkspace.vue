@@ -14,9 +14,10 @@
     @stateChange="changeWorkspaceType({workspace,type:$event})"
     >
     <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
-      class='map'
-      :viewport='viewport'
-      ref='geojsMapViewport'>
+      class="map"
+      :viewport="viewport"
+      :zoomRange="{ min: 0, max: 18 }"
+      ref="geojsMapViewport">
       <GeojsTileLayer
         url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
         attribution='© OpenStreetMap contributors, © CARTO'

@@ -3,8 +3,9 @@
 <template>
   <FullScreenViewport>
     <GeojsMapViewport
-      class='map'
-      :viewport.sync='viewport'
+      class="map"
+      :viewport.sync="viewport"
+      :zoomRange="{ min: 0, max: 18 }"
     >
       <GeojsTileLayer
         url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
