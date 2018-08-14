@@ -1,0 +1,5 @@
+gdal
+girder-client
+osr
+pyproj
+shapely
