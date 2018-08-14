@@ -120,7 +120,6 @@ export default {
       this.dataset.meta.vizProperties = cloneDeep(this.vizProperties);
     },
     revert() {
-      this.dataset.meta.vizProperties = cloneDeep(this.initialVizProperties);
       this.vizProperties = cloneDeep(this.initialVizProperties);
     }
   }
