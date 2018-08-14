@@ -24,6 +24,7 @@ export default {
           JSON.stringify({
             band: parseInt(vizProperties.band),
             palette: toPalettable(vizProperties.scheme),
+            scheme: vizProperties.type,
             min: vizProperties.range[0],
             max: vizProperties.range[1]
           })

@@ -14,19 +14,29 @@
     </v-layout>
     <template v-if="vizProperties">
       <v-layout>
-        <v-flex xs6>
+        <v-flex xs5>
           <v-select
             :items="bands"
             hide-details
             label="Band"
             placeholder=" "
-            :value="vizProperties?vizProperties.band:null"
-            @input="vizProperties.band=$event">
-          </v-select>
+            v-model="vizProperties.band" />
         </v-flex>
+      </v-layout>
+      <v-layout>
         <v-flex xs6>
           <ColorbrewerPicker
             :scheme.sync="vizProperties.scheme" />
+        </v-flex>
+        <v-flex xs6>
+          <v-select
+            :items="[{name:'Continuous',value:'linear'},{name:'Discrete',value:'discrete'}]"
+            item-text="name"
+            item-value="value"
+            hide-details
+            label="Type"
+            placeholder=" "
+            v-model="vizProperties.type" />
         </v-flex>
       </v-layout>
       <v-layout class="mt-2">
@@ -136,6 +146,7 @@ export default {
               band: this.bands[0],
               scheme:
                 colorbrewerCategories[Object.keys(colorbrewerCategories)[0]][0],
+              type: "linear",
               range: null
             };
             this.vizProperties.range = [this.min, this.max];
