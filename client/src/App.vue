@@ -2,9 +2,37 @@
 <v-app>
     <AppToolbar
     :title="title"
-    :tabs="tabs"
     :panelButton="true"
+    class="app-toolbar"
     @click-panel="$store.commit('toggleSidePanel')">
+      <template slot="left">
+        <v-tabs
+          icons-and-text
+          :height='64'
+          color='transparent'>
+            <v-tab
+              to="/explore">
+              Explore
+              <v-icon>explore</v-icon>
+            </v-tab>
+            <v-tab
+              to="/focus">
+              Focus
+              <v-icon>center_focus_strong</v-icon>
+            </v-tab>
+            <v-tab
+              to="/job">
+              Jobs
+              <v-badge :value="runningJobIds.length">
+                <v-icon
+                  slot="badge"
+                  dark
+                  class="mb-0 rotate">autorenew</v-icon>
+                <v-icon>fa-tasks</v-icon>
+              </v-badge>
+            </v-tab>
+        </v-tabs>
+      </template>
       <template slot="right">
         <GirderUserButton 
           @login="userForm='login';userDialog=true;"
@@ -24,11 +52,15 @@
 </template>
 
 <script>
-import eventstream from "./utils/eventstream";
-import Prompt from "./components/prompt/Prompt";
 import { mapActions } from "vuex";
 
+import girder from "./girder";
+import Prompt from "./components/prompt/Prompt";
+import { status } from "resonantgeo/src/components/girder/jobs";
+
 import "./transitions.scss";
+
+let jobStatus = status.all();
 
 export default {
   name: "App",
@@ -36,28 +68,12 @@ export default {
   data() {
     return {
       title: "Core3D",
-      tabs: [
-        {
-          title: "Explore",
-          route: "/explore",
-          icon: "explore"
-        },
-        {
-          title: "Focus",
-          route: "/focus",
-          icon: "center_focus_strong"
-        },
-        {
-          title: "Jobs",
-          route: "/job",
-          icon: "fa-tasks"
-        }
-      ],
       userForm: "login",
-      userDialog: false
+      userDialog: false,
+      runningJobIds: []
     };
   },
-  created() {
+  async created() {
     function displayJobStatus(statusCode) {
       switch (statusCode) {
         case 0:
@@ -70,15 +86,29 @@ export default {
           return "suceeded";
       }
     }
-    eventstream.on("job_created", e => {
-      this.prompt({
-        message: `${e.data.title} is ${displayJobStatus(e.data.status)}`
-      });
+
+    let { data: runningJobs } = await girder.girder.get("/job", {
+      params: {
+        statuses: `[${jobStatus.RUNNING.value}]`
+      }
     });
-    eventstream.on("job_status", e => {
-      this.prompt({
-        message: `${e.data.title} is ${displayJobStatus(e.data.status)}`
-      });
+    this.runningJobIds = runningJobs.map(job => job._id);
+
+    girder.girder.sse.$on("message:job_status", ({ data: job }) => {
+      let jobId = job._id;
+      switch (job.status) {
+        case jobStatus.RUNNING.value:
+          if (this.runningJobIds.indexOf(jobId) === -1) {
+            this.runningJobIds.push(jobId);
+          }
+          break;
+        case jobStatus.SUCCESS.value:
+        case jobStatus.ERROR.value:
+          if (this.runningJobIds.indexOf(jobId) !== -1) {
+            this.runningJobIds.splice(this.runningJobIds.indexOf(jobId), 1);
+          }
+          break;
+      }
     });
   },
   methods: {
@@ -87,7 +117,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
 /* global */
 html,
 body,
@@ -101,8 +131,44 @@ body,
   flex: 1 1 auto;
 }
 
+.rotate {
+  animation: rotation 1.5s infinite linear;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
+}
+
 /* overwrite */
 .v-btn {
   min-width: 0;
+}
+
+/* local */
+.v-toolbar.app-toolbar {
+  .v-tabs {
+    width: initial;
+
+    .v-tabs__div {
+      min-width: 100px;
+    }
+
+    .v-badge {
+      .v-badge__badge {
+        top: -7px;
+        right: -24px;
+      }
+    }
+  }
+
+  // This is a wierd fix needed for the login label
+  button .v-btn__content {
+    height: inherit;
+  }
 }
 </style>

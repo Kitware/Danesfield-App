@@ -242,7 +242,6 @@ import draggable from "vuedraggable";
 import girder from "../girder";
 import { loadDatasetById, saveDatasetMetadata } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
-import eventstream from "../utils/eventstream";
 import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
 import { summarize } from "../utils/geojsonUtil";
@@ -321,11 +320,15 @@ export default {
   created() {
     this.load();
 
-    eventstream.on("job_status", e => {
+    this.jobStatusHandler = e => {
       if (e.data.status === 3) {
         this.load();
       }
-    });
+    };
+    girder.girder.sse.$on("message:job_status", this.jobStatusHandler);
+  },
+  beforeDestroy() {
+    girder.girder.sse.$off("message:job_status", this.jobStatusHandler);
   },
   beforeRouteLeave(to, from, next) {
     this.resetWorkspace();
