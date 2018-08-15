@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import time
+
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import Resource, getApiUrl, getCurrentToken
@@ -40,17 +42,21 @@ class ProcessingResource(Resource):
 
         self.route('POST', ('process',), self.process)
 
-    def _datasetsFolder(self):
+    def _outputFolder(self, workingSet):
         """
-        Return the datasets folder document. Creates a collection and folder if necessary.
+        Return the output folder document. Creates a collection if necessary. Creates a folder
+        named by the initial working set and a timestamp.
         """
         # FIXME: Folder is accessible only to admin
         adminUser = User().getAdmins().next()
         collection = Collection().createCollection(
             name='core3d', creator=adminUser, description='', public=True, reuseExisting=True)
+
+        timestamp = str(time.time()).split('.')[0]
+        folderName = '{}-{}'.format(workingSet['name'], timestamp)
         folder = Folder().createFolder(
-            parent=collection, name='datasets', parentType='collection', public=False,
-            creator=adminUser, reuseExisting=True)
+            parent=collection, name=folderName, parentType='collection', public=False,
+            creator=adminUser)
         return folder
 
     @access.user
@@ -91,7 +97,7 @@ class ProcessingResource(Resource):
         user = self.getCurrentUser()
         apiUrl = getApiUrl()
         token = getCurrentToken()
-        outputFolder = self._datasetsFolder()
+        outputFolder = self._outputFolder(workingSet)
 
         requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
 
