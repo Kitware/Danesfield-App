@@ -97,4 +97,4 @@ class ProcessingResource(Resource):
 
         workflowManager = DanesfieldWorkflowManager.instance()
         jobId = workflowManager.initJob(requestInfo, workingSet, outputFolder, options)
-        DanesfieldWorkflowManager.instance().advance(jobId=jobId)
+        workflowManager.advance(jobId=jobId)
