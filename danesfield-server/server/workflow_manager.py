@@ -17,6 +17,7 @@
 #  limitations under the License.
 ##############################################################################
 
+import threading
 import uuid
 
 from girder import logprint
@@ -51,6 +52,9 @@ class DanesfieldWorkflowManager(object):
 
         # Data indexed by job ID
         self._jobData = {}
+
+        # Lock
+        self._lock = threading.RLock()
 
     @classmethod
     def instance(cls):
@@ -89,37 +93,39 @@ class DanesfieldWorkflowManager(object):
         :param options: Processing options.
         :type options: dict
         """
-        if not self.workflow:
-            raise DanesfieldWorkflowException('Workflow not configured')
+        with self._lock:
+            if not self.workflow:
+                raise DanesfieldWorkflowException('Workflow not configured')
 
-        jobId = self._createJobId()
-        self._jobData[jobId] = {
-            # Running steps
-            'runningSteps': set(),
-            # Completed steps
-            'completedSteps': set(),
-            # Request info
-            'requestInfo': requestInfo,
-            # Working sets indexed by step name
-            'workingSets': {
-                DanesfieldStep.INIT: workingSet
-            },
-            # Files indexed by step name
-            'files': {},
-            # Standard output indexed by step name
-            'standardOutput': {},
-            # Output folder
-            'outputFolder': outputFolder,
-            # Options
-            'options': options if options is not None else {},
-            # For composite steps, Celery GroupResult indexed by step name
-            'groupResult': {}
-        }
+            jobId = self._createJobId()
 
-        logprint.info('DanesfieldWorkflowManager.initJob Job={} WorkingSet={}'.format(
-            jobId, workingSet['_id']))
+            self._jobData[jobId] = {
+                # Running steps
+                'runningSteps': set(),
+                # Completed steps
+                'completedSteps': set(),
+                # Request info
+                'requestInfo': requestInfo,
+                # Working sets indexed by step name
+                'workingSets': {
+                    DanesfieldStep.INIT: workingSet
+                },
+                # Files indexed by step name
+                'files': {},
+                # Standard output indexed by step name
+                'standardOutput': {},
+                # Output folder
+                'outputFolder': outputFolder,
+                # Options
+                'options': options if options is not None else {},
+                # For composite steps, Celery GroupResult indexed by step name
+                'groupResult': {}
+            }
 
-        return jobId
+            logprint.info('DanesfieldWorkflowManager.initJob Job={} WorkingSet={}'.format(
+                jobId, workingSet['_id']))
+
+            return jobId
 
     def finalizeJob(self, jobId):
         """
@@ -128,9 +134,10 @@ class DanesfieldWorkflowManager(object):
         :param jobId: Job identifier.
         :type jobId: str
         """
-        logprint.info('DanesfieldWorkflowManager.finalizeJob Job={}'.format(jobId))
+        with self._lock:
+            logprint.info('DanesfieldWorkflowManager.finalizeJob Job={}'.format(jobId))
 
-        del self._jobData[jobId]
+            del self._jobData[jobId]
 
     def addFile(self, jobId, stepName, file):
         """
@@ -143,11 +150,12 @@ class DanesfieldWorkflowManager(object):
         :param file: File document.
         :type file: dict
         """
-        logprint.info('DanesfieldWorkflowManager.addFile Job={} StepName={} File={}'.format(
-            jobId, stepName, file['_id']))
+        with self._lock:
+            logprint.info('DanesfieldWorkflowManager.addFile Job={} StepName={} File={}'.format(
+                jobId, stepName, file['_id']))
 
-        jobData = self._getJobData(jobId)
-        jobData['files'].setdefault(stepName, []).append(file)
+            jobData = self._getJobData(jobId)
+            jobData['files'].setdefault(stepName, []).append(file)
 
     def addStandardOutput(self, jobId, stepName, output):
         """
@@ -160,11 +168,12 @@ class DanesfieldWorkflowManager(object):
         :param output: Standard output
         :type output: list[str]
         """
-        logprint.info('DanesfieldWorkflowManager.addStandardOutput Job={} StepName={}'.format(
-            jobId, stepName))
+        with self._lock:
+            logprint.info('DanesfieldWorkflowManager.addStandardOutput Job={} StepName={}'.format(
+                jobId, stepName))
 
-        jobData = self._getJobData(jobId)
-        jobData['standardOutput'][stepName] = output
+            jobData = self._getJobData(jobId)
+            jobData['standardOutput'][stepName] = output
 
     def setGroupResult(self, jobId, stepName, groupResult):
         """
@@ -181,16 +190,18 @@ class DanesfieldWorkflowManager(object):
         :param groupResult: Celery GroupResult.
         :type groupResult: celery.result.GroupResult
         """
-        jobData = self._getJobData(jobId)
-        jobData['groupResult'][stepName] = groupResult
+        with self._lock:
+            jobData = self._getJobData(jobId)
+            jobData['groupResult'][stepName] = groupResult
 
     def getGroupResult(self, jobId, stepName):
         """
         Look up a Celery GroupResult for a composite step. Return None if no GroupResult is set
         for the step.
         """
-        jobData = self._getJobData(jobId)
-        return jobData['groupResult'].get(stepName)
+        with self._lock:
+            jobData = self._getJobData(jobId)
+            return jobData['groupResult'].get(stepName)
 
     def advance(self, jobId):
         """
@@ -201,104 +212,108 @@ class DanesfieldWorkflowManager(object):
         :param jobId: Identifier of the job running the workflow.
         :type jobId: str
         """
-        logprint.info('DanesfieldWorkflowManager.advance Job={}'.format(jobId))
+        with self._lock:
+            logprint.info('DanesfieldWorkflowManager.advance Job={}'.format(jobId))
 
-        jobData = self._getJobData(jobId)
+            jobData = self._getJobData(jobId)
 
-        incompleteSteps = [
-            step
-            for step in self.workflow.steps
-            if step.name not in jobData['completedSteps']
-        ]
+            incompleteSteps = [
+                step
+                for step in self.workflow.steps
+                if step.name not in jobData['completedSteps']
+            ]
 
-        logprint.info('DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
-            [step.name for step in incompleteSteps]
-        ))
-
-        runningSteps = [
-            step
-            for step in self.workflow.steps
-            if step.name in jobData['runningSteps']
-        ]
-
-        logprint.info('DanesfieldWorkflowManager.advance RunningSteps={}'.format(
-            [step.name for step in runningSteps]
-        ))
-
-        if not runningSteps and not incompleteSteps:
-            self.finalizeJob(jobId)
-            return
-
-        readySteps = [
-            step
-            for step in incompleteSteps
-            if step.name not in jobData['runningSteps'] and
-            step.dependencies.issubset(jobData['completedSteps'])
-        ]
-
-        logprint.info('DanesfieldWorkflowManager.advance ReadySteps={}'.format(
-            [step.name for step in readySteps]
-        ))
-
-        if not runningSteps and not readySteps and incompleteSteps:
-            logprint.error('DanesfieldWorkflowManager.advance StuckSteps={}'.format(
+            logprint.info('DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
                 [step.name for step in incompleteSteps]
             ))
-            # TODO: More error notification/handling/clean up
-            return
 
-        jobInfo = JobInfo(
-            jobId=jobId,
-            requestInfo=jobData['requestInfo'],
-            workingSets=jobData['workingSets'],
-            standardOutput=jobData['standardOutput'],
-            outputFolder=jobData['outputFolder'],
-            options=jobData['options']
-        )
+            runningSteps = [
+                step
+                for step in self.workflow.steps
+                if step.name in jobData['runningSteps']
+            ]
 
-        for step in readySteps:
-            jobData['runningSteps'].add(step.name)
-            step.run(jobInfo)
+            logprint.info('DanesfieldWorkflowManager.advance RunningSteps={}'.format(
+                [step.name for step in runningSteps]
+            ))
+
+            if not runningSteps and not incompleteSteps:
+                self.finalizeJob(jobId)
+                return
+
+            readySteps = [
+                step
+                for step in incompleteSteps
+                if step.name not in jobData['runningSteps'] and
+                step.dependencies.issubset(jobData['completedSteps'])
+            ]
+
+            logprint.info('DanesfieldWorkflowManager.advance ReadySteps={}'.format(
+                [step.name for step in readySteps]
+            ))
+
+            if not runningSteps and not readySteps and incompleteSteps:
+                logprint.error('DanesfieldWorkflowManager.advance StuckSteps={}'.format(
+                    [step.name for step in incompleteSteps]
+                ))
+                # TODO: More error notification/handling/clean up
+                return
+
+            jobInfo = JobInfo(
+                jobId=jobId,
+                requestInfo=jobData['requestInfo'],
+                workingSets=jobData['workingSets'],
+                standardOutput=jobData['standardOutput'],
+                outputFolder=jobData['outputFolder'],
+                options=jobData['options']
+            )
+
+            for step in readySteps:
+                jobData['runningSteps'].add(step.name)
+                step.run(jobInfo)
 
     def stepSucceeded(self, jobId, stepName):
         """
         Call when a step completes successfully.
         """
-        logprint.info('DanesfieldWorkflowManager.stepSucceeded Job={} StepName={}'.format(
-            jobId, stepName))
+        with self._lock:
+            logprint.info('DanesfieldWorkflowManager.stepSucceeded Job={} StepName={}'.format(
+                jobId, stepName))
 
-        jobData = self._getJobData(jobId)
+            jobData = self._getJobData(jobId)
 
-        # Record that step completed
-        jobData['runningSteps'].remove(stepName)
-        jobData['completedSteps'].add(stepName)
+            # Record that step completed
+            jobData['runningSteps'].remove(stepName)
+            jobData['completedSteps'].add(stepName)
 
-        # Create working set containing files created by step
-        files = jobData['files'].get(stepName)
-        if files:
-            initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
-            workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
-            datasetIds = [file['itemId'] for file in files]
-            workingSet = WorkingSet().createWorkingSet(
-                name=workingSetName,
-                parentWorkingSet=initialWorkingSet,
-                datasetIds=datasetIds
-            )
-            jobData['workingSets'][stepName] = workingSet
+            # Create working set containing files created by step
+            files = jobData['files'].get(stepName)
+            if files:
+                initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
+                workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
+                datasetIds = [file['itemId'] for file in files]
+                workingSet = WorkingSet().createWorkingSet(
+                    name=workingSetName,
+                    parentWorkingSet=initialWorkingSet,
+                    datasetIds=datasetIds
+                )
+                jobData['workingSets'][stepName] = workingSet
 
-        # Remove data applicable only while step is running
-        jobData['files'].pop(stepName, None)
-        jobData['groupResult'].pop(stepName, None)
+            # Remove data applicable only while step is running
+            jobData['files'].pop(stepName, None)
+            jobData['groupResult'].pop(stepName, None)
 
-        logprint.info(
-            'DanesfieldWorkflowManager.createdWorkingSet Job={} StepName={} WorkingSet={}'.format(
-                jobId, stepName, workingSet['_id']))
+            logprint.info(
+                'DanesfieldWorkflowManager.createdWorkingSet Job={} StepName={} '
+                'WorkingSet={}'.format(
+                    jobId, stepName, workingSet['_id']))
 
     def stepFailed(self, jobId, stepName):
         """
         Call when a step fails or is canceled.
         """
-        logprint.info('DanesfieldWorkflowManager.stepFailed Job={} StepName={}'.format(
-            jobId, stepName))
+        with self._lock:
+            logprint.info('DanesfieldWorkflowManager.stepFailed Job={} StepName={}'.format(
+                jobId, stepName))
 
-        self._jobData.pop(jobId, None)
+            self._jobData.pop(jobId, None)
