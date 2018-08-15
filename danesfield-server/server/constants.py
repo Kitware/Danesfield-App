@@ -22,11 +22,8 @@ class DanesfieldJobKey(object):
     """
     Keys for metadata attached to Danesfield jobs and related objects.
     """
-    API_URL = 'danesfieldJobUrl'
     ID = 'danesfieldJobId'
     STEP_NAME = 'danesfieldJobStep'
-    TOKEN = 'danesfieldJobToken'
-    TRIGGER = 'danesfieldJobTrigger'
 
 
 class DanesfieldStep(object):

@@ -24,9 +24,9 @@ from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.user import User
 
-from .. import algorithms
 from ..models import workingSet
 from ..request_info import RequestInfo
+from ..workflow_manager import DanesfieldWorkflowManager
 
 
 class ProcessingResource(Resource):
@@ -94,5 +94,7 @@ class ProcessingResource(Resource):
         outputFolder = self._datasetsFolder()
 
         requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
-        return algorithms.process(
-            requestInfo, workingSet=workingSet, outputFolder=outputFolder, options=options)
+
+        workflowManager = DanesfieldWorkflowManager.instance()
+        jobId = workflowManager.initJob(requestInfo, workingSet, outputFolder, options)
+        DanesfieldWorkflowManager.instance().advance(jobId=jobId)
