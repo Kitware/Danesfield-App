@@ -31,31 +31,38 @@ class DanesfieldWorkflowException(RuntimeError):
 class DanesfieldWorkflow(object):
     """
     Class to define the Danesfield workflow.
-    When a step completes, the handler associated with the step is executed.
     """
     def __init__(self):
-        self._steps = {}
+        self.steps = []
 
-    def addHandler(self, stepName, handler):
+    def addStep(self, step):
         """
-        Add handler to run when a step completes.
+        Add a step to the workflow.
 
-        The handler is a callable object that accepts the following parameters:
-        - requestInfo: HTTP request info.
-        - jobInfo: Danesfield job info.
-
-        :param stepName: The name of the step.
-        :type stepName: str (DanesfieldStep)
-        :param handler: The step handler.
-        :type handler: callable
+        :param step: The step to add.
+        :type step: DanesfieldWorkflowStep
         """
-        self._steps[stepName] = handler
+        self.steps.append(step)
 
-    def getHandler(self, stepName):
-        """
-        Get the handler associated with a step.
 
-        :param stepName: The name of the step.
-        :type stepName: str (DanesfieldStep)
+class DanesfieldWorkflowStep(object):
+    """
+    Class to define a step in the Danesfield workflow.
+    """
+    def __init__(self):
+        self.dependencies = set()
+
+    def addDependency(self, name):
         """
-        return self._steps.get(stepName)
+        Add a dependency to indicate that this step depends on the output of another step.
+        """
+        self.dependencies.add(name)
+
+    def run(self, jobInfo):
+        """
+        Run the step. Subclasses must implement this method.
+
+        :param jobInfo: The job context in which to run the step.
+        :type jobInfo: JobInfo
+        """
+        raise NotImplementedError('Implement in subclass')

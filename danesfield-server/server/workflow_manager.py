@@ -35,7 +35,8 @@ class DanesfieldWorkflowManager(object):
     singleton should be initialized by configuring a DanesfieldWorkflow and
     setting it as the workflow property.
 
-    Call initJob() to start a new job, then trigger the next step using advance().
+    Call initJob() to start a new job, then advance the workflow to run the
+    steps that are ready using advance().
 
     Handlers for workflow steps receive information about the original HTTP
     request and authorization, the job identifier, the initial working set and
@@ -74,10 +75,12 @@ class DanesfieldWorkflowManager(object):
             raise DanesfieldWorkflowException('Invalid job ID: \'{}\''.format(jobId))
         return jobData
 
-    def initJob(self, workingSet, outputFolder, options):
+    def initJob(self, requestInfo, workingSet, outputFolder, options):
         """
         Initialize a new job to run the workflow.
 
+        :param requestInfo: HTTP request and authorization info.
+        :type requestInfo: RequestInfo
         :param workingSet: Source image working set.
         :type workingSet: dict
         :param outputFolder: Output folder document.
@@ -91,6 +94,12 @@ class DanesfieldWorkflowManager(object):
 
         jobId = self._createJobId()
         self._jobData[jobId] = {
+            # Running steps
+            'runningSteps': set(),
+            # Completed steps
+            'completedSteps': set(),
+            # Request info
+            'requestInfo': requestInfo,
             # Working sets indexed by step name
             'workingSets': {
                 DanesfieldStep.INIT: workingSet
@@ -183,32 +192,73 @@ class DanesfieldWorkflowManager(object):
         jobData = self._getJobData(jobId)
         return jobData['groupResult'].get(stepName)
 
-    def advance(self, jobId, stepName, requestInfo):
+    def advance(self, jobId):
         """
-        Advance to the next step in the workflow.
+        Advance the workflow.
+        Runs all remaining steps that have their dependencies met.
+        Finalizes the job if all steps are complete.
 
         :param jobId: Identifier of the job running the workflow.
         :type jobId: str
-        :param stepName: The name of the step that completed.
-        :type stepName: str (DanesfieldStep)
-        :param requestInfo: HTTP request and authorization info.
-        :type requestInfo: RequestInfo
         """
-        logprint.info('DanesfieldWorkflowManager.advance Job={} StepName={}'.format(
-            jobId, stepName))
+        logprint.info('DanesfieldWorkflowManager.advance Job={}'.format(jobId))
 
         jobData = self._getJobData(jobId)
+
+        incompleteSteps = [
+            step
+            for step in self.workflow.steps
+            if step.name not in jobData['completedSteps']
+        ]
+
+        logprint.info('DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
+            [step.name for step in incompleteSteps]
+        ))
+
+        runningSteps = [
+            step
+            for step in self.workflow.steps
+            if step.name in jobData['runningSteps']
+        ]
+
+        logprint.info('DanesfieldWorkflowManager.advance RunningSteps={}'.format(
+            [step.name for step in runningSteps]
+        ))
+
+        if not runningSteps and not incompleteSteps:
+            self.finalizeJob(jobId)
+            return
+
+        readySteps = [
+            step
+            for step in incompleteSteps
+            if step.name not in jobData['runningSteps'] and
+            step.dependencies.issubset(jobData['completedSteps'])
+        ]
+
+        logprint.info('DanesfieldWorkflowManager.advance ReadySteps={}'.format(
+            [step.name for step in readySteps]
+        ))
+
+        if not runningSteps and not readySteps and incompleteSteps:
+            logprint.error('DanesfieldWorkflowManager.advance StuckSteps={}'.format(
+                [step.name for step in incompleteSteps]
+            ))
+            # TODO: More error notification/handling/clean up
+            return
+
         jobInfo = JobInfo(
             jobId=jobId,
+            requestInfo=jobData['requestInfo'],
             workingSets=jobData['workingSets'],
             standardOutput=jobData['standardOutput'],
             outputFolder=jobData['outputFolder'],
             options=jobData['options']
         )
 
-        handler = self.workflow.getHandler(stepName)
-        if handler is not None:
-            handler(requestInfo, jobInfo)
+        for step in readySteps:
+            jobData['runningSteps'].add(step.name)
+            step.run(jobInfo)
 
     def stepSucceeded(self, jobId, stepName):
         """
@@ -218,20 +268,23 @@ class DanesfieldWorkflowManager(object):
             jobId, stepName))
 
         jobData = self._getJobData(jobId)
-        files = jobData['files'].get(stepName)
-        if not files:
-            return
+
+        # Record that step completed
+        jobData['runningSteps'].remove(stepName)
+        jobData['completedSteps'].add(stepName)
 
         # Create working set containing files created by step
-        initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
-        workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
-        datasetIds = [file['itemId'] for file in files]
-        workingSet = WorkingSet().createWorkingSet(
-            name=workingSetName,
-            parentWorkingSet=initialWorkingSet,
-            datasetIds=datasetIds
-        )
-        jobData['workingSets'][stepName] = workingSet
+        files = jobData['files'].get(stepName)
+        if files:
+            initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
+            workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
+            datasetIds = [file['itemId'] for file in files]
+            workingSet = WorkingSet().createWorkingSet(
+                name=workingSetName,
+                parentWorkingSet=initialWorkingSet,
+                datasetIds=datasetIds
+            )
+            jobData['workingSets'][stepName] = workingSet
 
         # Remove data applicable only while step is running
         jobData['files'].pop(stepName, None)

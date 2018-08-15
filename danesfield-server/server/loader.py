@@ -5,12 +5,42 @@ from girder import events
 
 from .rest import dataset, workingSet, processing, filter
 
-from . import workflow_handlers
-from .constants import DanesfieldStep
 from .event_handlers import onFinalizeUpload, onJobUpdate
 from .workflow import DanesfieldWorkflow
 from .workflow_manager import DanesfieldWorkflowManager
 from .client_webroot import ClientWebroot
+
+from .workflow_steps import (
+    ClassifyMaterialsStep,
+    FitDtmStep,
+    GenerateDsmStep,
+    GeneratePointCloudStep,
+    MsiToRgbStep,
+    OrthorectifyStep,
+    PansharpenStep,
+    SegmentByHeightStep,
+)
+
+
+def createWorkflow():
+    """
+    Configure Danesfield Workflow.
+    """
+    workflow = DanesfieldWorkflow()
+
+    for step in [
+        ClassifyMaterialsStep,
+        FitDtmStep,
+        GenerateDsmStep,
+        GeneratePointCloudStep,
+        MsiToRgbStep,
+        OrthorectifyStep,
+        PansharpenStep,
+        SegmentByHeightStep
+    ]:
+        workflow.addStep(step())
+
+    return workflow
 
 
 def load(info):
@@ -18,18 +48,8 @@ def load(info):
     events.bind('model.file.finalizeUpload.after', info['name'], onFinalizeUpload)
     events.bind('jobs.job.update', info['name'], onJobUpdate)
 
-    # Configure Danesfield workflow
-    workflow = DanesfieldWorkflow()
-    workflow.addHandler(DanesfieldStep.INIT, workflow_handlers.runGeneratePointCloud)
-    workflow.addHandler(DanesfieldStep.GENERATE_POINT_CLOUD, workflow_handlers.runGenerateDsm)
-    workflow.addHandler(DanesfieldStep.GENERATE_DSM, workflow_handlers.runFitDtm)
-    workflow.addHandler(DanesfieldStep.FIT_DTM, workflow_handlers.runOrthorectify)
-    workflow.addHandler(DanesfieldStep.ORTHORECTIFY, workflow_handlers.runPansharpen)
-    workflow.addHandler(DanesfieldStep.PANSHARPEN, workflow_handlers.runMsiToRgb)
-    workflow.addHandler(DanesfieldStep.MSI_TO_RGB, workflow_handlers.runSegmentByHeight)
-    workflow.addHandler(DanesfieldStep.SEGMENT_BY_HEIGHT, workflow_handlers.runClassifyMaterials)
-    workflow.addHandler(DanesfieldStep.CLASSIFY_MATERIALS, workflow_handlers.runFinalize)
-    DanesfieldWorkflowManager.instance().workflow = workflow
+    # Set workflow on workflow manager
+    DanesfieldWorkflowManager.instance().workflow = createWorkflow()
 
     # Relocate Girder
     info['serverRoot'], info['serverRoot'].girder = (ClientWebroot(),

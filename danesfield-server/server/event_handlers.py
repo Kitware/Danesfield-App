@@ -27,7 +27,6 @@ from girder.plugins.jobs.models.job import Job
 from girder.plugins.jobs.constants import JobStatus
 
 from .constants import DanesfieldJobKey
-from .request_info import RequestInfo
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
@@ -63,18 +62,15 @@ def onJobUpdate(event):
     """
     Event handler for job update event.
 
-    When a Danesfield job succeeds, advance to the next step of the workflow, when requested.
+    When a Danesfield job succeeds, advance the workflow.
     When a Danesfield job fails, remove its associated information from the workflow manager.
     """
     job = event.info['job']
     params = event.info['params']
 
     try:
-        apiUrl = job[DanesfieldJobKey.API_URL]
         jobId = job[DanesfieldJobKey.ID]
         stepName = job[DanesfieldJobKey.STEP_NAME]
-        token = job[DanesfieldJobKey.TOKEN]
-        trigger = job[DanesfieldJobKey.TRIGGER]
     except KeyError:
         return
 
@@ -103,14 +99,11 @@ def onJobUpdate(event):
         workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
 
         # Advance workflow asynchronously to avoid affecting finished job in case of error
-        if trigger:
-            events.daemon.trigger(info={
-                'jobId': jobId,
-                'stepName': stepName,
-                'userId': job['userId'],
-                'apiUrl': apiUrl,
-                'token': token
-            }, callback=advanceWorkflow)
+        events.daemon.trigger(info={
+            'jobId': jobId,
+            'stepName': stepName,
+            'userId': job['userId']
+        }, callback=advanceWorkflow)
     elif status in (JobStatus.CANCELED, JobStatus.ERROR):
         workflowManager.stepFailed(jobId=jobId, stepName=stepName)
 
@@ -122,15 +115,11 @@ def advanceWorkflow(event):
     jobId = event.info['jobId']
     stepName = event.info['stepName']
     userId = event.info['userId']
-    apiUrl = event.info['apiUrl']
-    token = event.info['token']
 
     user = User().load(userId, force=True, exc=True)
 
     try:
-        DanesfieldWorkflowManager.instance().advance(
-            jobId=jobId, stepName=stepName,
-            requestInfo=RequestInfo(user=user, apiUrl=apiUrl, token=token))
+        DanesfieldWorkflowManager.instance().advance(jobId=jobId)
     except DanesfieldWorkflowException as e:
         logprint.warning('advanceWorkflow: Error advancing workflow '
                          'Job={} Step={} PreviousStep={} Message=\'{}\''.format(
