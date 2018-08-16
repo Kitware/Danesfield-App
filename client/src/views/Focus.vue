@@ -88,7 +88,7 @@
                           <v-list-tile-sub-title>{{ datasetIdAndWorkingSet.workingSet._id!==selectedWorkingSetId? datasetIdAndWorkingSet.workingSet.name:'' }}</v-list-tile-sub-title>
                       </v-list-tile-content>
                       <v-list-tile-action class="hover-show-child" @click.stop>
-                        <v-menu>
+                        <v-menu absolute>
                           <v-btn class="group-menu-button" slot="activator" flat icon color="grey darken-2">
                             <v-icon>more_vert</v-icon>
                           </v-btn>
@@ -98,6 +98,11 @@
                               @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])"
                               :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
                               <v-list-tile-title>Customize</v-list-tile-title>
+                            </v-list-tile>
+                            <v-list-tile
+                              :href="`${API_URL}/item/${datasetIdAndWorkingSet.datasetId}/download`"
+                               target="_blank">
+                              <v-list-tile-title>Download</v-list-tile-title>
                             </v-list-tile>
                           </v-list>
                         </v-menu>
@@ -240,6 +245,7 @@ import findIndex from "lodash-es/findIndex";
 import draggable from "vuedraggable";
 
 import girder from "../girder";
+import { API_URL } from "../constants";
 import { loadDatasetById, saveDatasetMetadata } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
@@ -272,6 +278,9 @@ export default {
     };
   },
   computed: {
+    API_URL() {
+      return API_URL;
+    },
     user() {
       return this.$girder.user;
     },
