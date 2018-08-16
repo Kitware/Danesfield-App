@@ -118,7 +118,8 @@ class DanesfieldWorkflowManager(object):
                 'outputFolder': outputFolder,
                 # Options
                 'options': options if options is not None else {},
-                # For composite steps, Celery GroupResult indexed by step name
+                # For composite steps, list of [Celery GroupResult, number of jobs remaining],
+                # indexed by step name
                 'groupResult': {}
             }
 
@@ -177,11 +178,17 @@ class DanesfieldWorkflowManager(object):
 
     def setGroupResult(self, jobId, stepName, groupResult):
         """
-        Set the Celery GroupResult for a composite step.
+        Set the Celery GroupResult for a composite step. Composite steps run
+        multiple Girder Worker jobs in parallel using a Celery group.
 
-        Composite steps run multiple Girder Worker jobs in parallel using a Celery group.
-        When a single job completes, the GroupResult can be queried to check whether all
-        jobs in the step have completed.
+        The isCompositeStep() method checks whether a step is a composite step.
+
+        The compositeStepJobCompleted() method should be called when each job
+        completes, whether successful or not.
+
+        The isCompositeStepComplete() method returns True if all the jobs in
+        the group have completed. If so, the isCompositeStepSuccessful() method
+        returns true if all the jobs in the group were successful.
 
         :param jobId: Identifier of job that created the file.
         :type jobId: str
@@ -192,16 +199,46 @@ class DanesfieldWorkflowManager(object):
         """
         with self._lock:
             jobData = self._getJobData(jobId)
-            jobData['groupResult'][stepName] = groupResult
+            # Store GroupResult and number of jobs
+            jobData['groupResult'][stepName] = [groupResult, len(groupResult.children)]
 
-    def getGroupResult(self, jobId, stepName):
+    def isCompositeStep(self, jobId, stepName):
         """
-        Look up a Celery GroupResult for a composite step. Return None if no GroupResult is set
-        for the step.
+        Query whether a step is a composite step.
         """
         with self._lock:
             jobData = self._getJobData(jobId)
-            return jobData['groupResult'].get(stepName)
+            return jobData['groupResult'].get(stepName) is not None
+
+    def isCompositeStepComplete(self, jobId, stepName):
+        """
+        Query whether a composite step is complete. A composite step is complete
+        when all its jobs have completed and compositeStepJobCompleted() has
+        been called for each job.
+        """
+        with self._lock:
+            jobData = self._getJobData(jobId)
+            groupResult, remainingJobs = jobData['groupResult'].get(stepName)
+            return groupResult.ready() and not remainingJobs
+
+    def isCompositeStepSuccessful(self, jobId, stepName):
+        """
+        Query whether a composite step is successful. A composite step is
+        successful if all its jobs are succesful.
+        """
+        with self._lock:
+            jobData = self._getJobData(jobId)
+            groupResult, _ = jobData['groupResult'].get(stepName)
+            return groupResult.successful()
+
+    def compositeStepJobCompleted(self, jobId, stepName):
+        """
+        Indicate that a job in a composite step has completed.
+        """
+        with self._lock:
+            jobData = self._getJobData(jobId)
+            # Update number of jobs remaining
+            jobData['groupResult'][stepName][1] -= 1
 
     def advance(self, jobId):
         """

@@ -19,6 +19,7 @@
 
 import datetime
 import json
+import threading
 
 from girder import events, logprint
 from girder.models.notification import Notification
@@ -29,6 +30,10 @@ from girder.plugins.jobs.constants import JobStatus
 from .constants import DanesfieldJobKey
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
+
+
+# Lock for onJobUpdate()
+_onJobUpdateLock = threading.RLock()
 
 
 def onFinalizeUpload(event):
@@ -82,30 +87,37 @@ def onJobUpdate(event):
 
     workflowManager = DanesfieldWorkflowManager.instance()
 
-    # For composite steps, skip processing until all jobs have finished
-    groupResult = workflowManager.getGroupResult(jobId, stepName)
-    if groupResult is not None:
-        if not groupResult.ready():
-            return
-        # Set status from group result
-        status = JobStatus.SUCCESS if groupResult.successful() else JobStatus.ERROR
+    with _onJobUpdateLock:
+        # Handle composite steps
+        if workflowManager.isCompositeStep(jobId, stepName):
+            # Notify workflow manager when a job in a composite step completes
+            if status in (JobStatus.SUCCESS, JobStatus.ERROR, JobStatus.CANCELED):
+                workflowManager.compositeStepJobCompleted(jobId, stepName)
+            # Skip processing until all jobs in a composite step have completed
+            if not workflowManager.isCompositeStepComplete(jobId, stepName):
+                return
+            # Set overall status for composite step
+            successful = workflowManager.isCompositeStepSuccessful(jobId, stepName)
+            status = JobStatus.SUCCESS if successful else JobStatus.ERROR
 
-    if status == JobStatus.SUCCESS:
-        # Add standard output from job
-        # TODO: Alternatively, could record job model ID and defer log lookup
-        job = Job().load(job['_id'], includeLog=True, force=True)
-        workflowManager.addStandardOutput(jobId=jobId, stepName=stepName, output=job.get('log'))
+        if status == JobStatus.SUCCESS:
+            # Add standard output from job
+            # TODO: Alternatively, could record job model ID and defer log lookup
+            # TODO: This currently doesn't support composite steps; only the output
+            # from the last job is saved
+            job = Job().load(job['_id'], includeLog=True, force=True)
+            workflowManager.addStandardOutput(jobId=jobId, stepName=stepName, output=job.get('log'))
 
-        workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
+            workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
 
-        # Advance workflow asynchronously to avoid affecting finished job in case of error
-        events.daemon.trigger(info={
-            'jobId': jobId,
-            'stepName': stepName,
-            'userId': job['userId']
-        }, callback=advanceWorkflow)
-    elif status in (JobStatus.CANCELED, JobStatus.ERROR):
-        workflowManager.stepFailed(jobId=jobId, stepName=stepName)
+            # Advance workflow asynchronously to avoid affecting finished job in case of error
+            events.daemon.trigger(info={
+                'jobId': jobId,
+                'stepName': stepName,
+                'userId': job['userId']
+            }, callback=advanceWorkflow)
+        elif status in (JobStatus.CANCELED, JobStatus.ERROR):
+            workflowManager.stepFailed(jobId=jobId, stepName=stepName)
 
 
 def advanceWorkflow(event):
