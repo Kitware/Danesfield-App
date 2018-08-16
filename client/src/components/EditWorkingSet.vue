@@ -84,6 +84,10 @@ export default {
   props: {},
   data() {
     return {
+      portal: {
+        name: "title",
+        text: "Edit Working set"
+      },
       name: null,
       filterId: null
     };

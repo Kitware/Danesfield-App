@@ -136,6 +136,10 @@ export default {
   props: {},
   data() {
     return {
+      portal: {
+        name: "title",
+        text: "Edit Filter"
+      },
       name: null,
       dateRangeFilter: {
         start: null,
@@ -285,7 +289,8 @@ export default {
         features = geojson.features;
       } else if (geojson.geometries) {
         features = geojson.geometries.map(geometry => ({
-          type: "Feature", geometry
+          type: "Feature",
+          geometry
         }));
       } else if (geojson.coordinates) {
         features = [

@@ -15,6 +15,7 @@
       ref="focusWorkspace"
       />
     <SidePanel
+    class="side-panel"
     :top="64"
     :floating='false'
     :expanded='sidePanelExpanded'
@@ -31,7 +32,8 @@
           <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="returnFromCustomViz">
             <v-icon>arrow_back</v-icon>
           </v-btn>
-          <v-toolbar-title>{{!customVizDatasetId?"Working Set":"Customize"}}</v-toolbar-title>
+          <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
+          <v-toolbar-title v-else class="caption">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
         </v-toolbar>
       </template>
       <div class="main">
@@ -303,6 +305,12 @@ export default {
         });
       }
     },
+    portal() {
+      return {
+        name: "title",
+        text: this.customVizDatasetId ? "Customize" : null
+      };
+    },
     ...mapState([
       "sidePanelExpanded",
       "workingSets",
@@ -570,6 +578,12 @@ export default {
 </style>
 
 <style lang="scss">
+.side-panel {
+  .v-toolbar__title:not(:first-child) {
+    margin-left: 0;
+  }
+}
+
 .datasets-pane {
   .datasets {
     .dataset {

@@ -49,8 +49,6 @@ export default {
     ...mapState(["workingSets"]),
     ...mapState("workingSet", ["editingWorkingSet"])
   },
-  watch: {},
-  created() {},
   methods: {
     addNewWorkingSet(name) {
       var workingSet = { name, filter: null, datasetIds: [] };
