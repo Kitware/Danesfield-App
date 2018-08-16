@@ -82,17 +82,23 @@ def onJobUpdate(event):
 
     workflowManager = DanesfieldWorkflowManager.instance()
 
-    # For composite steps, skip processing until all jobs have finished
-    groupResult = workflowManager.getGroupResult(jobId, stepName)
-    if groupResult is not None:
-        if not groupResult.ready():
+    # Handle composite steps
+    if workflowManager.isCompositeStep(jobId, stepName):
+        # Notify workflow manager when a job in a composite step completes
+        if status in (JobStatus.SUCCESS, JobStatus.ERROR, JobStatus.CANCELED):
+            workflowManager.compositeStepJobCompleted(jobId, stepName)
+        # Skip processing until all jobs in a composite step have completed
+        if not workflowManager.isCompositeStepComplete(jobId, stepName):
             return
-        # Set status from group result
-        status = JobStatus.SUCCESS if groupResult.successful() else JobStatus.ERROR
+        # Set overall status for composite step
+        successful = workflowManager.isCompositeStepSuccessful(jobId, stepName)
+        status = JobStatus.SUCCESS if successful else JobStatus.ERROR
 
     if status == JobStatus.SUCCESS:
         # Add standard output from job
         # TODO: Alternatively, could record job model ID and defer log lookup
+        # TODO: This currently doesn't support composite steps; only the output
+        # from the last job is saved
         job = Job().load(job['_id'], includeLog=True, force=True)
         workflowManager.addStandardOutput(jobId=jobId, stepName=stepName, output=job.get('log'))
 
