@@ -20,7 +20,9 @@
     :expanded='sidePanelExpanded'
     :footer='false'>
       <template slot="actions">
-        <SidePanelAction @click.stop="processConfirmDialog = true">
+        <SidePanelAction 
+          @click.stop="processConfirmDialog = true"
+          :disabled="!selectedWorkingSetId">
           <v-icon>developer_board</v-icon>
         </SidePanelAction>
       </template>
@@ -246,7 +248,7 @@ import draggable from "vuedraggable";
 
 import girder from "../girder";
 import { API_URL } from "../constants";
-import { loadDatasetById, saveDatasetMetadata } from "../utils/loadDataset";
+import { loadDatasetByIds, saveDatasetMetadata } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
@@ -361,12 +363,12 @@ export default {
       }
       return Promise.all([
         ...this.childrenWorkingSets.map(async workingSet => {
-          var datasets = await loadDatasetById(workingSet.datasetIds);
+          var datasets = await loadDatasetByIds(workingSet.datasetIds);
           this.addDatasets(datasets);
         }),
-        loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
+        loadDatasetByIds(selectedWorkingSet.datasetIds).then(datasets => {
           this.addDatasets(datasets);
-          this.boundDatasets = datasets;
+          this.boundDatasets = Object.values(this.datasets);
           this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
             datasetId: dataset._id,
             workingSet: selectedWorkingSet

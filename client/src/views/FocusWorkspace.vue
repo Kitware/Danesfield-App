@@ -109,7 +109,7 @@ export default {
         center: [-100, 30],
         zoom: 4
       };
-      if (!this.boundDatasets) {
+      if (!this.boundDatasets || !this.boundDatasets.length) {
         return viewPort;
       } else {
         var geojsViewport = this.$refs.geojsMapViewport

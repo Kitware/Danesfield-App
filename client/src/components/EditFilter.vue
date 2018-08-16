@@ -55,20 +55,24 @@
       </v-expansion-panel-content>
     </v-expansion-panel>
     <div class='bottom'>
-      <v-container grid-list-xs class="pa-0">
+      <v-container grid-list-lg class="py-2">
         <v-layout>
-          <v-flex xs2 offset-xs1>
-            <v-btn block depressed color='error' class='' @click="deleteRecord">
+          <v-flex xs3>
+            <v-btn block depressed color='error'
+              :disabled="!editingFilter._id"
+              @click="deleteRecord">
               <v-icon>delete</v-icon>
             </v-btn>
           </v-flex>
-          <v-flex xs3 offset-xs1>
-            <v-btn block outline color='error' class='' @click="exit">
+          <v-flex xs4>
+            <v-btn block outline color='error' @click="exit">
               Cancel
             </v-btn>
           </v-flex>
-          <v-flex xs3 offset-xs1>
-            <v-btn block depressed color='primary' class='' @click="save">
+          <v-flex xs5>
+            <v-btn block depressed color='primary'
+              :disabled="!name"
+              @click="save">
               Save
               <v-icon class='ml-1'>save</v-icon>
             </v-btn>

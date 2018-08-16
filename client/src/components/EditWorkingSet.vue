@@ -40,20 +40,24 @@
         </transition>
       </v-layout>
     </div>
-    <v-container fluid grid-list-lg class="py-2">
+    <v-container grid-list-lg class="py-2">
       <v-layout>
         <v-flex xs3>
-          <v-btn block depressed color='error' class='' @click="deleteRecord">
+          <v-btn block depressed color='error'
+            :disabled="!editingWorkingSet._id"
+            @click="deleteRecord">
             <v-icon>delete</v-icon>
           </v-btn>
         </v-flex>
         <v-flex xs4>
-          <v-btn block outline color='error' class='' @click="exit">
+          <v-btn block outline color='error' @click="exit">
             Cancel
           </v-btn>
         </v-flex>
         <v-flex xs5>
-          <v-btn block depressed color='primary' class='' @click="save">
+          <v-btn block depressed color='primary'
+            :disabled="!name"
+            @click="save">
             Save
             <v-icon class='ml-1'>save</v-icon>
           </v-btn>
@@ -67,7 +71,7 @@
 import { mapState, mapMutations } from "vuex";
 
 import {
-  loadDatasetById,
+  loadDatasetByIds,
   loadDatasetByFilterConditions
 } from "../utils/loadDataset";
 import DateRangeControl from "./DateRangeControl";
@@ -90,7 +94,7 @@ export default {
     if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
       this.loadDatasets(this.filterId);
     } else {
-      loadDatasetById(this.editingWorkingSet.datasetIds).then(datasets => {
+      loadDatasetByIds(this.editingWorkingSet.datasetIds).then(datasets => {
         this.initialized = true;
         this.$store.commit("workingSet/setDatasets", datasets);
       });
