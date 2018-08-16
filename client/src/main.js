@@ -4,7 +4,6 @@ import { Session } from 'resonantgeo/src/rest';
 import '@fortawesome/fontawesome-free/css/all.css';
 
 import { API_URL } from './constants';
-import eventstream from './utils/eventstream';
 import App from './App.vue';
 import router from './router';
 import store from './store';
@@ -12,8 +11,7 @@ import girder from './girder';
 
 Vue.config.productionTip = false;
 
-eventstream.open();
-girder.girder = new Session({ apiRoot: API_URL });
+girder.girder = new Session({ apiRoot: API_URL, enableSSE: true });
 girder.girder.$refresh().then(() => {
   Vue.use(ResonantGeo, {
     girder: girder.girder,
