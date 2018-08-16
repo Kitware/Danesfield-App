@@ -288,6 +288,7 @@ class DanesfieldWorkflowManager(object):
 
             # Create working set containing files created by step
             files = jobData['files'].get(stepName)
+            workingSet = None
             if files:
                 initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
                 workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
@@ -306,7 +307,7 @@ class DanesfieldWorkflowManager(object):
             logprint.info(
                 'DanesfieldWorkflowManager.createdWorkingSet Job={} StepName={} '
                 'WorkingSet={}'.format(
-                    jobId, stepName, workingSet['_id']))
+                    jobId, stepName, workingSet['_id'] if workingSet is not None else None))
 
     def stepFailed(self, jobId, stepName):
         """
