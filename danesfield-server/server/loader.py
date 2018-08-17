@@ -19,6 +19,7 @@ from .workflow_steps import (
     OrthorectifyStep,
     PansharpenStep,
     SegmentByHeightStep,
+    UNetSemanticSegmentationStep,
 )
 
 
@@ -36,7 +37,8 @@ def createWorkflow():
         MsiToRgbStep,
         OrthorectifyStep,
         PansharpenStep,
-        SegmentByHeightStep
+        SegmentByHeightStep,
+        UNetSemanticSegmentationStep,
     ]:
         workflow.addStep(step())
 

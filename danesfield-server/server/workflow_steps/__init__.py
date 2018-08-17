@@ -25,3 +25,4 @@ from .generate_point_cloud import GeneratePointCloudStep  # noqa: F401
 from .orthorectify import OrthorectifyStep  # noqa: F401
 from .pansharpen import PansharpenStep  # noqa: F401
 from .segment_by_height import SegmentByHeightStep  # noqa: F401
+from .unet_semantic_segmentation import UNetSemanticSegmentationStep  # noqa: F401

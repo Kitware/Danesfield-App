@@ -25,14 +25,40 @@ from girder.utility import setting_utilities
 
 class PluginSettings(object):
     MATERIAL_CLASSIFIER_MODEL_FILE_ID = 'danesfield.material_classifier_model_file_id'
+    UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID = \
+        'danesfield.unet_semantic_segmentation_config_file_id'
+    UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID = 'danesfield.unet_semantic_segmentation_model_file_id'
 
 
 @setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-def _validationMaterialClassifierModelFileId(doc):
+def _validateMaterialClassifierModelFileId(doc):
     if not isinstance(doc['value'], six.string_types):
-        raise ValidationException('Material classifier model ID must be a string.')
+        raise ValidationException('Material classifier model file ID must be a string.')
 
 
 @setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
 def _defaultMaterialClassifierModelFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
+def _validateUNetSemanticSegmentationConfigFileId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException(
+            'UNet semantic segmentation configuration file ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
+def _defaultUNetSemanticSegmentationConfigFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
+def _validateUNetSemanticSegmentationModelFileId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('UNet semantic segmentation model file ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
+def _defaultUNetSemanticSegmentationModelFileId():
     return ''
