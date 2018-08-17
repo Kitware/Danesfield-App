@@ -28,9 +28,9 @@ class PluginSettings(object):
 
 
 @setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-def _validationMaterialClassifierModelFileId(doc):
+def _validateMaterialClassifierModelFileId(doc):
     if not isinstance(doc['value'], six.string_types):
-        raise ValidationException('Material classifier model ID must be a string.')
+        raise ValidationException('Material classifier model file ID must be a string.')
 
 
 @setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
