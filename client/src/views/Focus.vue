@@ -216,15 +216,28 @@
     </SidePanel>
     <v-dialog
       v-model="processConfirmDialog"
-      max-width="290">
-      <v-card>
+      max-width="400">
+      <v-card class="start-processing">
         <v-card-title class="headline">Start a pipeline?</v-card-title>
         <v-card-text>
           A pipeline will be started with datasets within the current working set as input data. Multiple result working sets will be created.
+          <div class="pointcloud-params mt-2 ml-2">
+            <div class="subheading">Point cloud paremeters</div>
+            <template v-if="pointCloudParams">
+              <div>Center: {{pointCloudParams.longitude.toFixed(6)}}, {{pointCloudParams.latitude.toFixed(6)}}</div>
+              <div>Dimensions: {{pointCloudParams.longitudeWidth.toFixed(6)}}, {{pointCloudParams.latitudeWidth.toFixed(6)}}</div>
+            </template>
+            <div v-else>(Choose from a geojson file)</div>
+            <v-flex xs8>
+            <FeatureSelector
+              class="feature-selector"
+              v-model="pointCloudFeature"
+              @message="prompt({message:$event})" />
+              </v-flex>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-
           <v-btn
             flat
             @click="processConfirmDialog = false">
@@ -232,6 +245,7 @@
           </v-btn>
           <v-btn
             color="primary"
+            :disabled="!pointCloudParams"
             @click="processConfirmDialog = false; startPipeline()">
             Confirm
           </v-btn>
@@ -251,6 +265,10 @@
 import { mapState, mapGetters, mapMutations, mapActions } from "vuex";
 import findIndex from "lodash-es/findIndex";
 import draggable from "vuedraggable";
+import bbox from "@turf/bbox";
+import bboxPolygon from "@turf/bbox-polygon";
+import center from "@turf/center";
+import { featureCollection } from "@turf/helpers";
 
 import girder from "../girder";
 import { API_URL } from "../constants";
@@ -262,6 +280,7 @@ import { summarize } from "../utils/geojsonUtil";
 import { getDefaultGeojsonVizProperties } from "../utils/getDefaultGeojsonVizProperties";
 import GeotiffCustomVizPane from "../components/GeotiffCustomVizPane";
 import getLargeImageMeta from "../utils/getLargeImageMeta";
+import FeatureSelector from "../components/FeatureSelector";
 
 export default {
   name: "Focus",
@@ -269,7 +288,8 @@ export default {
     FocusWorkspace,
     VectorCustomVizPane,
     GeotiffCustomVizPane,
-    draggable
+    draggable,
+    FeatureSelector
   },
   data() {
     return {
@@ -282,15 +302,27 @@ export default {
       processConfirmDialog: false,
       transitionName: "fade-group",
       customVizDatasetId: null,
-      preserveCustomViz: false
+      preserveCustomViz: false,
+      pointCloudFeature: null
     };
   },
   computed: {
+    portal() {
+      return {
+        name: "title",
+        text: this.customVizDatasetId ? "Customize" : null
+      };
+    },
     API_URL() {
       return API_URL;
     },
     user() {
       return this.$girder.user;
+    },
+    selectedWorkingSet() {
+      return this.workingSets.filter(
+        workingSet => workingSet._id === this.selectedWorkingSetId
+      )[0];
     },
     childrenWorkingSets() {
       return this.workingSets.filter(
@@ -309,12 +341,6 @@ export default {
         });
       }
     },
-    portal() {
-      return {
-        name: "title",
-        text: this.customVizDatasetId ? "Customize" : null
-      };
-    },
     ...mapState([
       "sidePanelExpanded",
       "workingSets",
@@ -324,6 +350,35 @@ export default {
       "vtkBGColor"
     ]),
     ...mapGetters(["focusedWorkspace"])
+  },
+  asyncComputed: {
+    async pointCloudParams() {
+      var features = this.pointCloudFeature ? this.pointCloudFeature : null;
+      if (!features && this.selectedWorkingSet) {
+        if (this.selectedWorkingSet.filterId) {
+          try {
+            var { data: filter } = await girder.girder.get(
+              `filter/${this.selectedWorkingSet.filterId}`
+            );
+            features = filter.conditions
+              .map(condition => condition.geojson)
+              .filter(feature => feature);
+          } catch (ex) {}
+        }
+      }
+      if (features && features.length) {
+        var box = bbox(featureCollection(features));
+        var polygonBox = bboxPolygon(box);
+        var centerPoint = center(polygonBox);
+        return {
+          longitude: centerPoint.geometry.coordinates[0],
+          latitude: centerPoint.geometry.coordinates[1],
+          longitudeWidth: box[2] - box[0],
+          latitudeWidth: box[3] - box[1]
+        };
+      }
+      return null;
+    }
   },
   watch: {
     user(user) {
@@ -366,13 +421,7 @@ export default {
     async load() {
       this.includedChildrenWorkingSets = [];
       await this.loadWorkingSets();
-      if (!this.selectedWorkingSetId) {
-        return;
-      }
-      var selectedWorkingSet = this.workingSets.filter(
-        workingSet => workingSet._id === this.selectedWorkingSetId
-      )[0];
-      if (!selectedWorkingSet) {
+      if (!this.selectedWorkingSet) {
         return;
       }
       return Promise.all([
@@ -380,12 +429,12 @@ export default {
           var datasets = await loadDatasetByIds(workingSet.datasetIds);
           this.addDatasets(datasets);
         }),
-        loadDatasetByIds(selectedWorkingSet.datasetIds).then(datasets => {
+        loadDatasetByIds(this.selectedWorkingSet.datasetIds).then(datasets => {
           this.addDatasets(datasets);
           this.boundDatasets = Object.values(this.datasets);
           this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
             datasetId: dataset._id,
-            workingSet: selectedWorkingSet
+            workingSet: this.selectedWorkingSet
           }));
         })
       ]);
@@ -394,7 +443,9 @@ export default {
       var { data: job } = await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
-        }&options={"generate-point-cloud":{"longitude":-84.084032161833051,"latitude":39.780404255857590,"longitudeWidth":0.008880209782049,"latitudeWidth":0.007791684155826}}`
+        }&options=${encodeURIComponent(
+          `{"generate-point-cloud":${JSON.stringify(this.pointCloudParams)}}`
+        )}`
       );
     },
     workspaceSupportsDataset(workspace, dataset) {
@@ -519,7 +570,8 @@ export default {
       "resetWorkspace",
       "changeVTKBGColor"
     ]),
-    ...mapActions(["loadWorkingSets"])
+    ...mapActions(["loadWorkingSets"]),
+    ...mapActions("prompt", ["prompt"])
   }
 };
 </script>
@@ -635,5 +687,11 @@ export default {
 .narrow-list-tile-action.v-list__tile__action {
   min-width: inherit;
   flex: 0 0 32px;
+}
+
+.start-processing {
+  .feature-selector .file-selector {
+    margin-top: 0;
+  }
 }
 </style>

@@ -100,6 +100,19 @@ export default {
     OBJMultiItemActor,
     Palette
   },
+  props: [
+    "boundDatasets",
+    "workspaces",
+    "listingDatasetIdAndWorkingSets",
+    "datasetIdMetaMap",
+    "focusedWorkspace",
+    "setFocusedWorkspaceKey",
+    "addWorkspace",
+    "removeWorkspace",
+    "changeWorkspaceType",
+    "vtkBGColor",
+    "changeVTKBGColor"
+  ],
   data() {
     return {};
   },
@@ -145,25 +158,12 @@ export default {
             bottom: bufferedBbox[1]
           });
         } catch (ex) {
-          console.warn(ex);
+          console.warn(ex.message);
           return viewPort;
         }
       }
     }
   },
-  props: [
-    "boundDatasets",
-    "workspaces",
-    "listingDatasetIdAndWorkingSets",
-    "datasetIdMetaMap",
-    "focusedWorkspace",
-    "setFocusedWorkspaceKey",
-    "addWorkspace",
-    "removeWorkspace",
-    "changeWorkspaceType",
-    "vtkBGColor",
-    "changeVTKBGColor"
-  ],
   methods: {
     getTileURL(dataset) {
       var url = `${API_URL}/item/${

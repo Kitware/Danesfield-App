@@ -98,7 +98,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog  
+    <v-dialog
       :value="uploadGeojsonDialog"
       @input="setUploadGeojsonDialog($event)"
       max-width="290">
@@ -106,10 +106,9 @@
         <v-card-title class="title">Upload a geojson file</v-card-title>
         <v-card-text>
           Select or drop a geojson file to be used region filter
-          <FileSelector
-          v-model="geojsonFilename"
-          accept=".json,.geojson"
-          @file='onGeojsonSelected' />
+          <FeatureSelector
+            v-model="uploadFeatures"
+            @message="prompt({message:$event})" />
         </v-card-text>
         <v-card-actions>
           <v-layout>
@@ -125,13 +124,13 @@
 import { mapState, mapMutations, mapActions } from "vuex";
 
 import DateRangeControl from "./DateRangeControl";
-import FileSelector from "./FileSelector";
+import FeatureSelector from "./FeatureSelector";
 
 export default {
   name: "EditFilter",
   components: {
     DateRangeControl,
-    FileSelector
+    FeatureSelector
   },
   props: {},
   data() {
