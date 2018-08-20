@@ -28,7 +28,7 @@ export const loadDatasetByFilterConditions = async (conditions) => {
     return result.data;
 }
 
-export const loadDatasetById = (ids) => {
+export const loadDatasetByIds = (ids) => {
     return Promise.all(ids.map(id => {
         return girder.girder.get(`dataset/${id}`)
             .then(({ data }) => data)

@@ -1,6 +1,15 @@
 module.exports = {
   devServer: {
-    proxy: process.env.API_PROXY,
+    proxy: {
+      '/api': {
+        target: process.env.API_PROXY,
+        secure: false
+      },
+      '/girder': {
+        target: "http://localhost:8080",
+        secure: false
+      }
+    },
     public: "localhost:8080"
   },
   baseUrl: process.env.NODE_ENV === 'production'

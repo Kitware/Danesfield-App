@@ -135,6 +135,13 @@ export default {
     };
   },
   computed: {
+    portal() {
+      return {
+        name: "title",
+        appendText:
+          (this.exploreTab === "workingSet") ? "Working Sets" : "Filters"
+      };
+    },
     actions() {
       if (this.editingFilter) {
         return [

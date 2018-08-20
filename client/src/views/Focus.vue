@@ -15,12 +15,15 @@
       ref="focusWorkspace"
       />
     <SidePanel
+    class="side-panel"
     :top="64"
     :floating='false'
     :expanded='sidePanelExpanded'
     :footer='false'>
       <template slot="actions">
-        <SidePanelAction @click.stop="processConfirmDialog = true">
+        <SidePanelAction 
+          @click.stop="processConfirmDialog = true"
+          :disabled="!selectedWorkingSetId">
           <v-icon>developer_board</v-icon>
         </SidePanelAction>
       </template>
@@ -29,7 +32,8 @@
           <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="returnFromCustomViz">
             <v-icon>arrow_back</v-icon>
           </v-btn>
-          <v-toolbar-title>{{!customVizDatasetId?"Working Set":"Customize"}}</v-toolbar-title>
+          <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
+          <v-toolbar-title v-else class="caption">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
         </v-toolbar>
       </template>
       <div class="main">
@@ -88,7 +92,7 @@
                           <v-list-tile-sub-title>{{ datasetIdAndWorkingSet.workingSet._id!==selectedWorkingSetId? datasetIdAndWorkingSet.workingSet.name:'' }}</v-list-tile-sub-title>
                       </v-list-tile-content>
                       <v-list-tile-action class="hover-show-child" @click.stop>
-                        <v-menu>
+                        <v-menu absolute>
                           <v-btn class="group-menu-button" slot="activator" flat icon color="grey darken-2">
                             <v-icon>more_vert</v-icon>
                           </v-btn>
@@ -98,6 +102,11 @@
                               @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])"
                               :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
                               <v-list-tile-title>Customize</v-list-tile-title>
+                            </v-list-tile>
+                            <v-list-tile
+                              :href="`${API_URL}/item/${datasetIdAndWorkingSet.datasetId}/download`"
+                               target="_blank">
+                              <v-list-tile-title>Download</v-list-tile-title>
                             </v-list-tile>
                           </v-list>
                         </v-menu>
@@ -240,7 +249,8 @@ import findIndex from "lodash-es/findIndex";
 import draggable from "vuedraggable";
 
 import girder from "../girder";
-import { loadDatasetById, saveDatasetMetadata } from "../utils/loadDataset";
+import { API_URL } from "../constants";
+import { loadDatasetByIds, saveDatasetMetadata } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
@@ -272,6 +282,9 @@ export default {
     };
   },
   computed: {
+    API_URL() {
+      return API_URL;
+    },
     user() {
       return this.$girder.user;
     },
@@ -291,6 +304,12 @@ export default {
           layers
         });
       }
+    },
+    portal() {
+      return {
+        name: "title",
+        text: this.customVizDatasetId ? "Customize" : null
+      };
     },
     ...mapState([
       "sidePanelExpanded",
@@ -352,12 +371,12 @@ export default {
       }
       return Promise.all([
         ...this.childrenWorkingSets.map(async workingSet => {
-          var datasets = await loadDatasetById(workingSet.datasetIds);
+          var datasets = await loadDatasetByIds(workingSet.datasetIds);
           this.addDatasets(datasets);
         }),
-        loadDatasetById(selectedWorkingSet.datasetIds).then(datasets => {
+        loadDatasetByIds(selectedWorkingSet.datasetIds).then(datasets => {
           this.addDatasets(datasets);
-          this.boundDatasets = datasets;
+          this.boundDatasets = Object.values(this.datasets);
           this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
             datasetId: dataset._id,
             workingSet: selectedWorkingSet
@@ -559,6 +578,12 @@ export default {
 </style>
 
 <style lang="scss">
+.side-panel {
+  .v-toolbar__title:not(:first-child) {
+    margin-left: 0;
+  }
+}
+
 .datasets-pane {
   .datasets {
     .dataset {

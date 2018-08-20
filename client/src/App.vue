@@ -1,7 +1,7 @@
 <template>
 <v-app>
     <AppToolbar
-    :title="title"
+    title="title"
     :panelButton="true"
     class="app-toolbar"
     @click-panel="$store.commit('toggleSidePanel')">
@@ -32,6 +32,11 @@
               </v-badge>
             </v-tab>
         </v-tabs>
+      </template>
+      <template slot="title">
+        <v-toolbar-title>
+          <Portal name="title" />
+        </v-toolbar-title>
       </template>
       <template slot="right">
         <GirderUserButton 
@@ -67,7 +72,10 @@ export default {
   components: { Prompt },
   data() {
     return {
-      title: "Core3D",
+      portal: {
+        name: "title",
+        text: "Core3D"
+      },
       userForm: "login",
       userDialog: false,
       runningJobIds: []
