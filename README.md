@@ -50,8 +50,8 @@ To load an archived image, run `gzip -d -c image.gz | docker load`.
 
 ### UNet Semantic Segmentation
 
-- Upload the configuration and model files referenced in the tool documentation
-  (TBD).
+- Upload the configuration and model files referenced in the [tool documentation](
+  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#unet-semantic-segmentation).
 - Set the `danesfield.unet_semantic_segmentation_config_file_id` and
   `danesfield.unet_semantic_segmentation_model_file_id` settings to the IDs of
   those files.
