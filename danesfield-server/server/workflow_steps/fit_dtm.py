@@ -17,12 +17,10 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.item import Item
-
 from ..algorithms import fitDtm
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
-from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet
+from ..workflow_step import DanesfieldWorkflowStep
+from ..workflow_utilities import getOptions, getWorkingSet
 
 
 class FitDtmStep(DanesfieldWorkflowStep):
@@ -33,34 +31,23 @@ class FitDtmStep(DanesfieldWorkflowStep):
     - iterations
     - tension
     """
-    name = DanesfieldStep.FIT_DTM
-
     def __init__(self):
-        super(FitDtmStep, self).__init__()
+        super(FitDtmStep, self).__init__(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
 
     def run(self, jobInfo):
-        stepName = FitDtmStep.name
-
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
 
         # Get DSM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dsmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        file = fileFromItem(items[0])
+        dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get options
-        fitDtmOptions = getOptions(stepName, jobInfo)
+        fitDtmOptions = getOptions(self.name, jobInfo)
 
         # Run algorithm
         fitDtm(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, file=file, outputPrefix=initWorkingSet['name'],
-            **fitDtmOptions)
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            outputFolder=jobInfo.outputFolder, dsmFile=dsmFile,
+            outputPrefix=initWorkingSet['name'], **fitDtmOptions)

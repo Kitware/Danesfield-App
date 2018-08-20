@@ -21,7 +21,8 @@ from girder.models.item import Item
 
 from ..algorithms import segmentByHeight
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
+from ..workflow import DanesfieldWorkflowException
+from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet
 
 
@@ -32,41 +33,23 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
     Supports the following options:
     - <none>
     """
-    name = DanesfieldStep.SEGMENT_BY_HEIGHT
-
     def __init__(self):
-        super(SegmentByHeightStep, self).__init__()
+        super(SegmentByHeightStep, self).__init__(DanesfieldStep.SEGMENT_BY_HEIGHT)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
         self.addDependency(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.PANSHARPEN)
 
     def run(self, jobInfo):
-        stepName = SegmentByHeightStep.name
-
         # Get working sets
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
         # Get DSM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dsmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        dsmFile = fileFromItem(items[0])
+        dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get DTM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dtmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DTM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        dtmFile = fileFromItem(items[0])
+        dtmFile = self.getSingleFile(dtmWorkingSet)
 
         # Get the ID of the first pansharpened MSI image
         # TODO: Choose most nadir image, likely determined by a previous step
@@ -74,14 +57,14 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         items = [Item().load(itemId, force=True, exc=True)
                  for itemId in pansharpenWorkingSet['datasetIds']]
         if not items:
-            raise DanesfieldWorkflowException('Unable to find pansharpened images', step=stepName)
+            raise DanesfieldWorkflowException('Unable to find pansharpened images', step=self.name)
         msiImageFile = fileFromItem(items[0])
 
         # Get options
-        segmentByHeightOptions = getOptions(stepName, jobInfo)
+        segmentByHeightOptions = getOptions(self.name, jobInfo)
 
         # Run algorithm
         segmentByHeight(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
             msiImageFile=msiImageFile, **segmentByHeightOptions)

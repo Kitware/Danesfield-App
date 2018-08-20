@@ -26,7 +26,7 @@ from .common import addJobInfo, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
 
 
-def generateDsm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix):
+def generateDsm(stepName, requestInfo, jobId, outputFolder, pointCloudFile, outputPrefix):
     """
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
@@ -41,8 +41,8 @@ def generateDsm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix):
     :type jobId: str
     :param outputFolder: Output folder document.
     :type outputFolder: dict
-    :param file: Point cloud file document.
-    :type file: dict
+    :param pointCloudFile: Point cloud file document.
+    :type pointCloudFile: dict
     :param outputPrefix: The prefix of the output file name.
     :type outputPrefix: str
     :returns: Job document.
@@ -58,7 +58,7 @@ def generateDsm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix):
         'danesfield/tools/generate_dsm.py',
         outputVolumePath,
         '--source_points',
-        GirderFileIdToVolume(file['_id'], gc=gc)
+        GirderFileIdToVolume(pointCloudFile['_id'], gc=gc)
     ]
 
     # Result hooks
@@ -77,7 +77,7 @@ def generateDsm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix):
         image=DockerImage.DANESFIELD,
         pull_image=False,
         container_args=containerArgs,
-        girder_job_title='Generate DSM: %s' % file['name'],
+        girder_job_title='Generate DSM: %s' % pointCloudFile['name'],
         girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)

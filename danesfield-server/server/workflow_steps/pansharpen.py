@@ -17,12 +17,10 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.item import Item
-
 from ..algorithms import pansharpen
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowStep
-from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet, isMsiImage, isPanImage
+from ..workflow_step import DanesfieldWorkflowStep
+from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage, isPanImage
 
 
 class PansharpenStep(DanesfieldWorkflowStep):
@@ -32,32 +30,23 @@ class PansharpenStep(DanesfieldWorkflowStep):
     Supports the following options:
     - <none>
     """
-    name = DanesfieldStep.PANSHARPEN
-
     def __init__(self):
-        super(PansharpenStep, self).__init__()
+        super(PansharpenStep, self).__init__(DanesfieldStep.PANSHARPEN)
         self.addDependency(DanesfieldStep.ORTHORECTIFY)
 
     def run(self, jobInfo):
-        stepName = PansharpenStep.name
-
         # Get working set
-        workingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
+        orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
 
-        # Get IDs of MSI and PAN source image files
-        imageFiles = [
-            fileFromItem(item)
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in workingSet['datasetIds']
-            )
-            if isMsiImage(item) or isPanImage(item)
-        ]
+        # Get MSI and PAN source image files
+        imageFiles = self.getFiles(
+            orthorectifyWorkingSet,
+            lambda item: isMsiImage(item) or isPanImage(item))
 
         # Get options
-        pansharpenOptions = getOptions(stepName, jobInfo)
+        pansharpenOptions = getOptions(self.name, jobInfo)
 
         # Run algorithm
         pansharpen(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **pansharpenOptions)

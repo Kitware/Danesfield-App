@@ -28,7 +28,7 @@ from .common import addJobInfo, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
 
 
-def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFileIds,
+def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFiles,
                        longitude, latitude, longitudeWidth, latitudeWidth):
     """
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
@@ -45,8 +45,8 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFileIds,
     :type jobId: str
     :param outputFolder: Output folder document.
     :type outputFolder: dict
-    :param imageFileIds: IDs of input image files.
-    :type imageFileIds: list
+    :param imageFiles: List of input image files.
+    :type imageFiles: list[dict]
     :param longitude:
     :type longitude:
     :param latitude:
@@ -81,7 +81,7 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFileIds,
             '--threads', '2',
             '--images'
         ],
-        [GirderFileIdToVolume(fileId, gc=gc) for fileId in imageFileIds],
+        [GirderFileIdToVolume(imageFile['_id'], gc=gc) for imageFile in imageFiles],
     ))
 
     # Result hooks

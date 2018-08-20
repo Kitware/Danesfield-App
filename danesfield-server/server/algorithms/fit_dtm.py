@@ -26,7 +26,7 @@ from .common import addJobInfo, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
 
 
-def fitDtm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix,
+def fitDtm(stepName, requestInfo, jobId, outputFolder, dsmFile, outputPrefix,
            iterations=None, tension=None):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
@@ -42,8 +42,8 @@ def fitDtm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix,
     :type jobId: str
     :param outputFolder: Output folder document.
     :type outputFolder: dict
-    :param file: DSM image file document.
-    :type file: dict
+    :param dsmFile: DSM image file document.
+    :type dsmFile: dict
     :param outputPrefix: The prefix of the output file name.
     :type outputPrefix: str
     :param iterations: The base number of iterations at the coarsest scale.
@@ -61,7 +61,7 @@ def fitDtm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix,
     # Docker container arguments
     containerArgs = [
         'danesfield/tools/fit_dtm.py',
-        GirderFileIdToVolume(file['_id'], gc=gc),
+        GirderFileIdToVolume(dsmFile['_id'], gc=gc),
         outputVolumePath
     ]
     if iterations is not None:
@@ -85,7 +85,7 @@ def fitDtm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix,
         image=DockerImage.DANESFIELD,
         pull_image=False,
         container_args=containerArgs,
-        girder_job_title='Fit DTM: %s' % file['name'],
+        girder_job_title='Fit DTM: %s' % dsmFile['name'],
         girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)

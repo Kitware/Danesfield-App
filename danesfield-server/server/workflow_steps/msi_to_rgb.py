@@ -17,12 +17,10 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.item import Item
-
 from ..algorithms import msiToRgb
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowStep
-from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet
+from ..workflow_step import DanesfieldWorkflowStep
+from ..workflow_utilities import getOptions, getWorkingSet
 
 
 class MsiToRgbStep(DanesfieldWorkflowStep):
@@ -34,31 +32,21 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
     - alpha
     - rangePercentile
     """
-    name = DanesfieldStep.MSI_TO_RGB
-
     def __init__(self):
-        super(MsiToRgbStep, self).__init__()
+        super(MsiToRgbStep, self).__init__(DanesfieldStep.MSI_TO_RGB)
         self.addDependency(DanesfieldStep.PANSHARPEN)
 
     def run(self, jobInfo):
-        stepName = MsiToRgbStep.name
-
         # Get working set
-        workingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
+        pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
-        # Get IDs of pansharpened MSI images
-        imageFiles = [
-            fileFromItem(item)
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in workingSet['datasetIds']
-            )
-        ]
+        # Get pansharpened MSI images
+        imageFiles = self.getFiles(pansharpenWorkingSet)
 
         # Get options
-        msiToRgbOptions = getOptions(stepName, jobInfo)
+        msiToRgbOptions = getOptions(self.name, jobInfo)
 
         # Run algorithm
         msiToRgb(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
