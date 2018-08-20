@@ -21,7 +21,6 @@ import os
 
 from girder.models.item import Item
 from girder.models.folder import Folder
-from girder.models.setting import Setting
 
 from ..algorithms import buildingSegmentation
 from ..constants import DanesfieldStep
@@ -78,12 +77,8 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         buildingSegmentationOptions = getOptions(self.name, jobInfo)
 
         # Get model folder ID from setting
-        modelFolderId = Setting().get(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
-        if not modelFolderId:
-            raise DanesfieldWorkflowException(
-                'Invalid building segmentation model folder ID: {}'.format(modelFolderId),
-                step=self.name)
-        modelFolder = Folder().load(modelFolderId, force=True, exc=True)
+        modelFolder = self.getFolderFromSetting(
+            PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
 
         # Get model file prefix
         modelFiles = list(Folder().childItems(modelFolder, limit=1))

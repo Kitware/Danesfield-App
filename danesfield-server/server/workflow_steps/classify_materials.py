@@ -17,13 +17,9 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.file import File
-from girder.models.setting import Setting
-
 from ..algorithms import classifyMaterials
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
-from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
     getOptions, getWorkingSet, isMsiImage, isMsiNitfMetadata)
@@ -56,14 +52,7 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         classifyMaterialsOptions = getOptions(self.name, jobInfo)
 
         # Get model file from setting
-        modelFileId = Setting().get(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-        if not modelFileId:
-            raise DanesfieldWorkflowException(
-                'Invalid material classifier model file ID: {}'.format(modelFileId), step=self.name)
-        modelFile = File().load(modelFileId, force=True, exc=True)
-        if not modelFile:
-            raise DanesfieldWorkflowException(
-                'Material classifier model file not found', step=self.name)
+        modelFile = self.getFileFromSetting(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
 
         # Run algorithm
         classifyMaterials(

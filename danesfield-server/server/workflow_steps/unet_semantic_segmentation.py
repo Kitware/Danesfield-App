@@ -17,9 +17,7 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.file import File
 from girder.models.item import Item
-from girder.models.setting import Setting
 
 from ..algorithms import unetSemanticSegmentation
 from ..constants import DanesfieldStep
@@ -77,26 +75,12 @@ class UNetSemanticSegmentationStep(DanesfieldWorkflowStep):
         unetSemanticSegmentationOptions = getOptions(self.name, jobInfo)
 
         # Get configuration file from setting
-        configFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
-        if not configFileId:
-            raise DanesfieldWorkflowException(
-                'Invalid UNet semantic segmentation config file ID: {}'.format(configFileId),
-                step=self.name)
-        configFile = File().load(configFileId, force=True, exc=True)
-        if not configFile:
-            raise DanesfieldWorkflowException(
-                'UNet semantic segmentation config file not found', step=self.name)
+        configFile = self.getFileFromSetting(
+            PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
 
         # Get model file from setting
-        modelFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
-        if not modelFileId:
-            raise DanesfieldWorkflowException(
-                'Invalid UNet semantic segmentation model file ID: {}'.format(modelFileId),
-                step=self.name)
-        modelFile = File().load(modelFileId, force=True, exc=True)
-        if not modelFile:
-            raise DanesfieldWorkflowException(
-                'UNet semantic segmentation model file not found', step=self.name)
+        modelFile = self.getFileFromSetting(
+            PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
 
         # Run algorithm
         unetSemanticSegmentation(

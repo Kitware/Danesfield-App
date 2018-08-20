@@ -17,7 +17,10 @@
 #  limitations under the License.
 ##############################################################################
 
+from girder.models.file import File
+from girder.models.folder import Folder
 from girder.models.item import Item
+from girder.models.setting import Setting
 
 from .workflow import DanesfieldWorkflowException
 from .workflow_utilities import fileFromItem
@@ -91,3 +94,35 @@ class DanesfieldWorkflowStep(object):
         ]
 
         return files
+
+    def getFileFromSetting(self, setting):
+        """
+        Get a file from a setting which refers to a file ID.
+
+        :param setting: The setting name.
+        :type setting: str
+        """
+        fileId = Setting().get(setting)
+        if not fileId:
+            raise DanesfieldWorkflowException(
+                'Invalid file ID \'{}\' for setting \'{}\''.format(fileId, setting),
+                step=self.name)
+        file = File().load(fileId, force=True, exc=True)
+
+        return file
+
+    def getFolderFromSetting(self, setting):
+        """
+        Get a folder from a setting which refers to a folder ID.
+
+        :param setting: The setting name.
+        :type setting: str
+        """
+        folderId = Setting().get(setting)
+        if not folderId:
+            raise DanesfieldWorkflowException(
+                'Invalid folder ID \'{}\' for setting \'{}\''.format(folderId, setting),
+                step=self.name)
+        folder = Folder().load(folderId, force=True, exc=True)
+
+        return folder
