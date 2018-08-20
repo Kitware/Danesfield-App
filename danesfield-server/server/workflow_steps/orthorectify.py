@@ -17,13 +17,11 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.item import Item
-
 from ..algorithms import orthorectify
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
+from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
-    fileFromItem, getOptions, getWorkingSet, isMsiImage, isPanImage, isRpc)
+    getOptions, getWorkingSet, isMsiImage, isPanImage, isRpc)
 
 
 class OrthorectifyStep(DanesfieldWorkflowStep):
@@ -34,68 +32,38 @@ class OrthorectifyStep(DanesfieldWorkflowStep):
     - occlusionThreshold
     - denoiseRadius
     """
-    name = DanesfieldStep.ORTHORECTIFY
-
     def __init__(self):
-        super(OrthorectifyStep, self).__init__()
+        super(OrthorectifyStep, self).__init__(DanesfieldStep.ORTHORECTIFY)
         self.addDependency(DanesfieldStep.GENERATE_POINT_CLOUD)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
         self.addDependency(DanesfieldStep.FIT_DTM)
 
     def run(self, jobInfo):
-        stepName = OrthorectifyStep.name
-
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         pointCloudWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo)
 
-        # Get IDs of MSI and PAN source image files
-        imageFiles = [
-            fileFromItem(item)
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in initWorkingSet['datasetIds']
-            )
-            if isMsiImage(item) or isPanImage(item)
-        ]
+        # Get MSI and PAN source image files
+        imageFiles = self.getFiles(
+            initWorkingSet,
+            lambda item: isMsiImage(item) or isPanImage(item))
 
         # Get DSM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dsmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        dsmFile = fileFromItem(items[0])
+        dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get DTM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dtmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DTM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        dtmFile = fileFromItem(items[0])
+        dtmFile = self.getSingleFile(dtmWorkingSet)
 
         # Get updated RPC files
-        rpcFiles = [
-            fileFromItem(item)
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in pointCloudWorkingSet['datasetIds']
-            )
-            if isRpc(item)
-        ]
+        rpcFiles = self.getFiles(pointCloudWorkingSet, isRpc)
 
         # Get options
-        orthorectifyOptions = getOptions(stepName, jobInfo)
+        orthorectifyOptions = getOptions(self.name, jobInfo)
 
         # Run algorithm
         orthorectify(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
             dtmFile=dtmFile, rpcFiles=rpcFiles, **orthorectifyOptions)

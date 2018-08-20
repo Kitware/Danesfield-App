@@ -17,12 +17,11 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.item import Item
-
 from ..algorithms import generatePointCloud
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
-from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet, isMsiImage, isPanImage
+from ..workflow import DanesfieldWorkflowException
+from ..workflow_step import DanesfieldWorkflowStep
+from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage, isPanImage
 
 
 class GeneratePointCloudStep(DanesfieldWorkflowStep):
@@ -35,30 +34,20 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
     - longitudeWidth (required)
     - latitudeWidth (required)
     """
-
-    name = DanesfieldStep.GENERATE_POINT_CLOUD
-
     def __init__(self):
-        super(GeneratePointCloudStep, self).__init__()
+        super(GeneratePointCloudStep, self).__init__(DanesfieldStep.GENERATE_POINT_CLOUD)
 
     def run(self, jobInfo):
-        stepName = GeneratePointCloudStep.name
-
         # Get working set
-        workingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
+        initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
 
         # Get IDs of PAN image files
-        panFileIds = [
-            fileFromItem(item)['_id']
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in workingSet['datasetIds']
-            )
-            if isMsiImage(item) or isPanImage(item)
-        ]
+        imageFiles = self.getFiles(
+            initWorkingSet,
+            lambda item: isMsiImage(item) or isPanImage(item))
 
         # Get required options
-        generatePointCloudOptions = getOptions(stepName, jobInfo)
+        generatePointCloudOptions = getOptions(self.name, jobInfo)
 
         try:
             longitude = generatePointCloudOptions['longitude']
@@ -68,11 +57,11 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
         except KeyError:
             raise DanesfieldWorkflowException(
                 'The following options are required: longtitude, latitude, longitudewith, '
-                'latitudeWidth', step=stepName)
+                'latitudeWidth', step=self.name)
 
         # Run algorithm
         generatePointCloud(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, imageFileIds=panFileIds,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            outputFolder=jobInfo.outputFolder, imageFiles=imageFiles,
             longitude=longitude, latitude=latitude,
             longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)

@@ -17,16 +17,12 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.file import File
-from girder.models.item import Item
-from girder.models.setting import Setting
-
 from ..algorithms import classifyMaterials
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
-from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
+from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
-    fileFromItem, getOptions, getWorkingSet, isMsiImage, isMsiNitfMetadata)
+    getOptions, getWorkingSet, isMsiImage, isMsiNitfMetadata)
 
 
 class ClassifyMaterialsStep(DanesfieldWorkflowStep):
@@ -37,54 +33,29 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
     - cuda
     - batchSize
     """
-    name = DanesfieldStep.CLASSIFY_MATERIALS
-
     def __init__(self):
-        super(ClassifyMaterialsStep, self).__init__()
+        super(ClassifyMaterialsStep, self).__init__(DanesfieldStep.CLASSIFY_MATERIALS)
         self.addDependency(DanesfieldStep.ORTHORECTIFY)
 
     def run(self, jobInfo):
-        stepName = ClassifyMaterialsStep.name
-
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
 
-        # Get IDs of MSI images
-        imageFiles = [
-            fileFromItem(item)
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in orthorectifyWorkingSet['datasetIds']
-            )
-            if isMsiImage(item)
-        ]
+        # Get MSI images
+        imageFiles = self.getFiles(orthorectifyWorkingSet, isMsiImage)
 
-        # Get IDs of NITF metadata files
-        metadataFiles = [
-            fileFromItem(item)
-            for item in (
-                Item().load(itemId, force=True, exc=True)
-                for itemId in initWorkingSet['datasetIds']
-            )
-            if isMsiNitfMetadata(item)
-        ]
+        # Get NITF metadata files
+        metadataFiles = self.getFiles(initWorkingSet, isMsiNitfMetadata)
 
         # Get options
-        classifyMaterialsOptions = getOptions(stepName, jobInfo)
+        classifyMaterialsOptions = getOptions(self.name, jobInfo)
 
         # Get model file from setting
-        modelFileId = Setting().get(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-        if not modelFileId:
-            raise DanesfieldWorkflowException(
-                'Invalid material classifier model file ID: {}'.format(modelFileId), step=stepName)
-        modelFile = File().load(modelFileId, force=True, exc=True)
-        if not modelFile:
-            raise DanesfieldWorkflowException(
-                'Material classifier model file not found', step=stepName)
+        modelFile = self.getFileFromSetting(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
 
         # Run algorithm
         classifyMaterials(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
             modelFile=modelFile, **classifyMaterialsOptions)

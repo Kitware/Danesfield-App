@@ -21,12 +21,12 @@ import os
 
 from girder.models.item import Item
 from girder.models.folder import Folder
-from girder.models.setting import Setting
 
 from ..algorithms import buildingSegmentation
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
-from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
+from ..workflow import DanesfieldWorkflowException
+from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet
 
 
@@ -37,18 +37,14 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
     Supports the following options:
     - <none>
     """
-    name = DanesfieldStep.BUILDING_SEGMENTATION
-
     def __init__(self):
-        super(BuildingSegmentationStep, self).__init__()
+        super(BuildingSegmentationStep, self).__init__(DanesfieldStep.BUILDING_SEGMENTATION)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
         self.addDependency(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.PANSHARPEN)
         self.addDependency(DanesfieldStep.MSI_TO_RGB)
 
     def run(self, jobInfo):
-        stepName = BuildingSegmentationStep.name
-
         # Get working sets
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
@@ -56,31 +52,17 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         rgbWorkingSet = getWorkingSet(DanesfieldStep.MSI_TO_RGB, jobInfo)
 
         # Get DSM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dsmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DSM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        dsmFile = fileFromItem(items[0])
+        dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get DTM
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in dtmWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find DTM', step=stepName)
-        if len(items) > 1:
-            raise DanesfieldWorkflowException(
-                'Expected only one input file, got {}'.format(len(items)), step=stepName)
-        dtmFile = fileFromItem(items[0])
+        dtmFile = self.getSingleFile(dtmWorkingSet)
 
         # Get the ID of the first pansharpened MSI image
         # TODO: Choose most nadir image
         items = [Item().load(itemId, force=True, exc=True)
                  for itemId in pansharpenWorkingSet['datasetIds']]
         if not items:
-            raise DanesfieldWorkflowException('Unable to find pansharpened images', step=stepName)
+            raise DanesfieldWorkflowException('Unable to find pansharpened images', step=self.name)
         msiImageFile = fileFromItem(items[0])
 
         # Get the ID of the first RGB image
@@ -88,30 +70,26 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         items = [Item().load(itemId, force=True, exc=True)
                  for itemId in rgbWorkingSet['datasetIds']]
         if not items:
-            raise DanesfieldWorkflowException('Unable to find RGB images', step=stepName)
+            raise DanesfieldWorkflowException('Unable to find RGB images', step=self.name)
         rgbImageFile = fileFromItem(items[0])
 
         # Get options
-        buildingSegmentationOptions = getOptions(stepName, jobInfo)
+        buildingSegmentationOptions = getOptions(self.name, jobInfo)
 
         # Get model folder ID from setting
-        modelFolderId = Setting().get(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
-        if not modelFolderId:
-            raise DanesfieldWorkflowException(
-                'Invalid building segmentation model folder ID: {}'.format(modelFolderId),
-                step=stepName)
-        modelFolder = Folder().load(modelFolderId, force=True, exc=True)
+        modelFolder = self.getFolderFromSetting(
+            PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
 
         # Get model file prefix
         modelFiles = list(Folder().childItems(modelFolder, limit=1))
         if not modelFiles:
             raise DanesfieldWorkflowException(
-                'Building segmentation model files not found.', step=stepName)
+                'Building segmentation model files not found.', step=self.name)
         modelFilePrefix = os.path.splitext(modelFiles[0]['name'])[0]
 
         # Run algorithm
         buildingSegmentation(
-            stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
+            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
             msiImageFile=msiImageFile, rgbImageFile=rgbImageFile, modelFolder=modelFolder,
             modelFilePrefix=modelFilePrefix, **buildingSegmentationOptions)

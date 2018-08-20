@@ -43,26 +43,3 @@ class DanesfieldWorkflow(object):
         :type step: DanesfieldWorkflowStep
         """
         self.steps.append(step)
-
-
-class DanesfieldWorkflowStep(object):
-    """
-    Class to define a step in the Danesfield workflow.
-    """
-    def __init__(self):
-        self.dependencies = set()
-
-    def addDependency(self, name):
-        """
-        Add a dependency to indicate that this step depends on the output of another step.
-        """
-        self.dependencies.add(name)
-
-    def run(self, jobInfo):
-        """
-        Run the step. Subclasses must implement this method.
-
-        :param jobInfo: The job context in which to run the step.
-        :type jobInfo: JobInfo
-        """
-        raise NotImplementedError('Implement in subclass')
