@@ -17,6 +17,7 @@
 #  limitations under the License.
 ##############################################################################
 
+from .building_segmentation import BuildingSegmentationStep  # noqa: F401
 from .classify_materials import ClassifyMaterialsStep  # noqa: F401
 from .msi_to_rgb import MsiToRgbStep  # noqa: F401
 from .fit_dtm import FitDtmStep  # noqa: F401

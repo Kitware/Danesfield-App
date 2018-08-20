@@ -17,6 +17,7 @@
 #  limitations under the License.
 ##############################################################################
 
+from .building_segmentation import buildingSegmentation  # noqa: F401
 from .classify_materials import classifyMaterials  # noqa: F401
 from .fit_dtm import fitDtm  # noqa: F401
 from .generate_dsm import generateDsm  # noqa: F401

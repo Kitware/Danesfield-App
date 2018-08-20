@@ -56,6 +56,13 @@ To load an archived image, run `gzip -d -c image.gz | docker load`.
   `danesfield.unet_semantic_segmentation_model_file_id` settings to the IDs of
   those files.
 
+### Building Segmentation
+
+- Upload the model files referenced in the [tool documentation](
+https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#columbia-building-segmentation)
+to a Girder folder.
+- Set the `danesfield.building_segmentation_model_folder_id` setting to the ID of that folder.
+
 ### Material Classification
 
 - Upload the model file referenced in the [tool documentation](

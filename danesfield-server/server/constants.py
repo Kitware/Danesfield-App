@@ -39,6 +39,7 @@ class DanesfieldStep(object):
     PANSHARPEN = 'pansharpen'
     SEGMENT_BY_HEIGHT = 'segment-by-height'
     UNET_SEMANTIC_SEGMENTATION = 'unet-semantic-segmentation'
+    BUILDING_SEGMENTATION = 'building-segmentation'
     CLASSIFY_MATERIALS = 'classify-materials'
 
 
