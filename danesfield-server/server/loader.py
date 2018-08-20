@@ -11,6 +11,7 @@ from .workflow_manager import DanesfieldWorkflowManager
 from .client_webroot import ClientWebroot
 
 from .workflow_steps import (
+    BuildingSegmentationStep,
     ClassifyMaterialsStep,
     FitDtmStep,
     GenerateDsmStep,
@@ -30,6 +31,7 @@ def createWorkflow():
     workflow = DanesfieldWorkflow()
 
     for step in [
+        BuildingSegmentationStep,
         ClassifyMaterialsStep,
         FitDtmStep,
         GenerateDsmStep,

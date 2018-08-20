@@ -17,23 +17,19 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.setting import Setting
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
-    GirderFileIdToVolume, GirderUploadVolumePathToFolder)
+    GirderFileIdToVolume, GirderFolderIdToVolume, GirderUploadVolumePathToFolder)
 
 from .common import addJobInfo, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
-from ..settings import PluginSettings
-from ..workflow import DanesfieldWorkflowException
 
 
-def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
-                             msiImageFile, rgbImageFile):
+def buildingSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
+                         msiImageFile, rgbImageFile, modelFolder, modelFilePrefix):
     """
-    Run a Girder Worker job to segment buildings using UNet semantic segmentation.
+    Run a Girder Worker job to segment buildings using Columbia building segmentation.
 
     Requirements:
     - core3d/danesfield Docker image is available on host
@@ -54,6 +50,10 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     :type msiImageFile: dict
     :param rgbImageFile: RGB image file document.
     :type rgbImageFile: dict
+    :param modelFolder: Model folder document.
+    :type modelFolder: dict
+    :param modelFilePrefix: Model file prefix.
+    :type modelFilePrefix: str
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
@@ -61,39 +61,17 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     # Set output directory
     outputVolumePath = VolumePath('.')
 
-    # Get configuration file ID from setting
-    configFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
-    if not configFileId:
-        raise DanesfieldWorkflowException(
-            'Invalid UNet semantic segmentation config file ID: {}'.format(configFileId),
-            step=stepName)
-
-    # Get model file ID from setting
-    modelFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
-    if not modelFileId:
-        raise DanesfieldWorkflowException(
-            'Invalid UNet semantic segmentation model file ID: {}'.format(modelFileId),
-            step=stepName)
-
     # Docker container arguments
     containerArgs = [
-        'danesfield/tools/kwsemantic_segment.py',
-        # Configuration file
-        GirderFileIdToVolume(configFileId, gc=gc),
-        # Model file
-        GirderFileIdToVolume(modelFileId, gc=gc),
-        # RGB image
-        GirderFileIdToVolume(rgbImageFile['_id'], gc=gc),
-        # DSM
-        GirderFileIdToVolume(dsmFile['_id'], gc=gc),
-        # DTM
-        GirderFileIdToVolume(dtmFile['_id'], gc=gc),
-        # MSI image
-        GirderFileIdToVolume(msiImageFile['_id'], gc=gc),
-        # Output directory
-        outputVolumePath,
-        # Output file prefix
-        'semantic'
+        'danesfield/tools/building_segmentation.py',
+        '--rgb_image', GirderFileIdToVolume(rgbImageFile['_id'], gc=gc),
+        '--msi_image', GirderFileIdToVolume(msiImageFile['_id'], gc=gc),
+        '--dsm', GirderFileIdToVolume(dsmFile['_id'], gc=gc),
+        '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc),
+        '--model_dir', GirderFolderIdToVolume(modelFolder['_id'], gc=gc),
+        '--model_prefix', modelFilePrefix,
+        '--save_dir', outputVolumePath,
+        '--output_tif'
     ]
 
     # Result hooks
@@ -112,7 +90,7 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
         image=DockerImage.DANESFIELD,
         pull_image=False,
         container_args=containerArgs,
-        girder_job_title='UNet semantic segmentation: %s' % dsmFile['name'],
+        girder_job_title='Building segmentation: %s' % dsmFile['name'],
         girder_job_type=stepName,
         girder_result_hooks=resultHooks,
         girder_user=requestInfo.user)

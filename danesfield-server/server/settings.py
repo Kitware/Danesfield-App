@@ -24,10 +24,22 @@ from girder.utility import setting_utilities
 
 
 class PluginSettings(object):
+    BUILDING_SEGMENTATION_MODEL_FOLDER_ID = 'danesfield.building_segmentation_model_folder_id'
     MATERIAL_CLASSIFIER_MODEL_FILE_ID = 'danesfield.material_classifier_model_file_id'
     UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID = \
         'danesfield.unet_semantic_segmentation_config_file_id'
     UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID = 'danesfield.unet_semantic_segmentation_model_file_id'
+
+
+@setting_utilities.validator(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
+def _validateBuildingSegmentationModelFolderId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Building segmentation model folder ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
+def _defaultBuildingSegmentationModelFolderId():
+    return ''
 
 
 @setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
