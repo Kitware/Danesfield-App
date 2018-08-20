@@ -17,10 +17,13 @@
 #  limitations under the License.
 ##############################################################################
 
+from girder.models.file import File
 from girder.models.item import Item
+from girder.models.setting import Setting
 
 from ..algorithms import unetSemanticSegmentation
 from ..constants import DanesfieldStep
+from ..settings import PluginSettings
 from ..workflow import DanesfieldWorkflowException, DanesfieldWorkflowStep
 from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet
 
@@ -89,9 +92,31 @@ class UNetSemanticSegmentationStep(DanesfieldWorkflowStep):
         # Get options
         unetSemanticSegmentationOptions = getOptions(stepName, jobInfo)
 
+        # Get configuration file from setting
+        configFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
+        if not configFileId:
+            raise DanesfieldWorkflowException(
+                'Invalid UNet semantic segmentation config file ID: {}'.format(configFileId),
+                step=stepName)
+        configFile = File().load(configFileId, force=True, exc=True)
+        if not configFile:
+            raise DanesfieldWorkflowException(
+                'UNet semantic segmentation config file not found', step=stepName)
+
+        # Get model file from setting
+        modelFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
+        if not modelFileId:
+            raise DanesfieldWorkflowException(
+                'Invalid UNet semantic segmentation model file ID: {}'.format(modelFileId),
+                step=stepName)
+        modelFile = File().load(modelFileId, force=True, exc=True)
+        if not modelFile:
+            raise DanesfieldWorkflowException(
+                'UNet semantic segmentation model file not found', step=stepName)
+
         # Run algorithm
         unetSemanticSegmentation(
             stepName=stepName, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
-            msiImageFile=msiImageFile, rgbImageFile=rgbImageFile,
-            **unetSemanticSegmentationOptions)
+            msiImageFile=msiImageFile, rgbImageFile=rgbImageFile, configFile=configFile,
+            modelFile=modelFile, **unetSemanticSegmentationOptions)

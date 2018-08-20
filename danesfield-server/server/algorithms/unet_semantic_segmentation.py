@@ -17,7 +17,6 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.setting import Setting
 
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
@@ -26,12 +25,10 @@ from girder_worker.docker.transforms.girder import (
 
 from .common import addJobInfo, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
-from ..settings import PluginSettings
-from ..workflow import DanesfieldWorkflowException
 
 
 def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
-                             msiImageFile, rgbImageFile):
+                             msiImageFile, rgbImageFile, configFile, modelFile):
     """
     Run a Girder Worker job to segment buildings using UNet semantic segmentation.
 
@@ -54,6 +51,10 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     :type msiImageFile: dict
     :param rgbImageFile: RGB image file document.
     :type rgbImageFile: dict
+    :param configFile: Configuration file document.
+    :type configFile: dict
+    :param modelFile: Model file document.
+    :type modelFile: dict
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
@@ -61,27 +62,13 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     # Set output directory
     outputVolumePath = VolumePath('.')
 
-    # Get configuration file ID from setting
-    configFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID)
-    if not configFileId:
-        raise DanesfieldWorkflowException(
-            'Invalid UNet semantic segmentation config file ID: {}'.format(configFileId),
-            step=stepName)
-
-    # Get model file ID from setting
-    modelFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
-    if not modelFileId:
-        raise DanesfieldWorkflowException(
-            'Invalid UNet semantic segmentation model file ID: {}'.format(modelFileId),
-            step=stepName)
-
     # Docker container arguments
     containerArgs = [
         'danesfield/tools/kwsemantic_segment.py',
         # Configuration file
-        GirderFileIdToVolume(configFileId, gc=gc),
+        GirderFileIdToVolume(configFile['_id'], gc=gc),
         # Model file
-        GirderFileIdToVolume(modelFileId, gc=gc),
+        GirderFileIdToVolume(modelFile['_id'], gc=gc),
         # RGB image
         GirderFileIdToVolume(rgbImageFile['_id'], gc=gc),
         # DSM
