@@ -118,9 +118,15 @@ export default {
         if (!geojsViewport) {
           return;
         }
+        var eligibleDatasets = this.boundDatasets.filter(
+          dataset => dataset.geometa
+        );
+        if(!eligibleDatasets.length){
+          return;
+        }
         var bboxOfAllDatasets = bbox(
           geometryCollection(
-            this.boundDatasets.map(dataset => dataset.geometa.bounds)
+            eligibleDatasets.map(dataset => dataset.geometa.bounds)
           )
         );
         var dist = distance(

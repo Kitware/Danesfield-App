@@ -97,12 +97,16 @@
                             <v-icon>more_vert</v-icon>
                           </v-btn>
                           <v-list>
+                            <v-list-tile @click="boundDatasets=[datasets[datasetIdAndWorkingSet.datasetId]]">
+                              <v-list-tile-title>Zoom to</v-list-tile-title>
+                            </v-list-tile>
                             <v-list-tile
                               v-if="['GeoTIFF', 'GeoJSON'].indexOf(datasets[datasetIdAndWorkingSet.datasetId].geometa.driver)!==-1"
                               @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])"
                               :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
                               <v-list-tile-title>Customize</v-list-tile-title>
                             </v-list-tile>
+                            <v-divider />
                             <v-list-tile
                               :href="`${API_URL}/item/${datasetIdAndWorkingSet.datasetId}/download`"
                                target="_blank">
@@ -331,6 +335,8 @@ export default {
       if (selectedWorkingSetId) {
         this.listingDatasetIdAndWorkingSets = [];
         this.selectedDatasetIds = {};
+        this.datasets = {};
+        this.datasetIdMetaMap = {};
         this.removeAllDatasetsFromWorkspaces();
       }
       this.load();
