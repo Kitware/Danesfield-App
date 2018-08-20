@@ -31,7 +31,7 @@ def generateDsm(stepName, requestInfo, jobId, outputFolder, file, outputPrefix):
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
     Requirements:
-    - core3d/danesfield Docker image is available on host
+    - Danesfield Docker image is available on host
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)

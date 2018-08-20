@@ -39,7 +39,7 @@ def msiToRgb(stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
     Run Girder Worker jobs to convert multispectral (MSI) images to RGB.
 
     Requirements:
-    - core3d/danesfield Docker image is available on host
+    - Danesfield Docker image is available on host
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)

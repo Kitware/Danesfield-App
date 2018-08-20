@@ -36,7 +36,7 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
     Run a Girder Worker job to classify materials in an orthorectified image.
 
     Requirements:
-    - core3d/danesfield Docker image is available on host
+    - Danesfield Docker image is available on host
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)

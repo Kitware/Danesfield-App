@@ -33,7 +33,7 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     Run a Girder Worker job to segment buildings using UNet semantic segmentation.
 
     Requirements:
-    - core3d/danesfield Docker image is available on host
+    - Danesfield Docker image is available on host
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
