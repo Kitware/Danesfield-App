@@ -72,7 +72,7 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     modelFileId = Setting().get(PluginSettings.UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID)
     if not modelFileId:
         raise DanesfieldWorkflowException(
-            'Invalid UNet semantic segmentation model file ID: {}'.format(configFileId),
+            'Invalid UNet semantic segmentation model file ID: {}'.format(modelFileId),
             step=stepName)
 
     # Docker container arguments
