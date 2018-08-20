@@ -32,7 +32,7 @@ def buildingSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dt
     Run a Girder Worker job to segment buildings using Columbia building segmentation.
 
     Requirements:
-    - core3d/danesfield Docker image is available on host
+    - Danesfield Docker image is available on host
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)

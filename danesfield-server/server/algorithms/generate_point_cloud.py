@@ -34,7 +34,7 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFileIds,
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
 
     Requirements:
-    - p3d_gw Docker image is available on host
+    - P3D Girder Worker Docker image is available on host
     - Host folder /mnt/GTOPO30 contains GTOPO 30 data
 
     :param stepName: The name of the step.

@@ -39,7 +39,7 @@ def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile
     Run Girder Worker jobs to orthorectify source images.
 
     Requirements:
-    - core3d/danesfield Docker image is available on host
+    - Danesfield Docker image is available on host
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
