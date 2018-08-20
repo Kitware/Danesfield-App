@@ -19,8 +19,6 @@
 
 import itertools
 
-from girder.models.setting import Setting
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -28,13 +26,12 @@ from girder_worker.docker.transforms.girder import (
 
 from .common import addJobInfo, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
-from ..settings import PluginSettings
 from ..utilities import getPrefix
 from ..workflow import DanesfieldWorkflowException
 
 
 def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
-                      metadataFiles, cuda=None, batchSize=None):
+                      metadataFiles, modelFile, cuda=None, batchSize=None):
     """
     Run a Girder Worker job to classify materials in an orthorectified image.
 
@@ -53,6 +50,8 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
     :type imageFiles: list[dict]
     :param metadataFiles: List of MSI-source NITF metadata files.
     :type metadataFiles: list[dict]
+    :param modelFile: Model file document.
+    :type modelFile: dict
     :param cuda: Enable CUDA.
     :type cuda: bool
     :param batchSize: Number of pixels classified at a time.
@@ -83,17 +82,11 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
         raise DanesfieldWorkflowException('Missing NITF metadata files for images: {}'.format(
             imagesMissingMetadataFiles), step=stepName)
 
-    # Get model file ID from setting
-    modelFileId = Setting().get(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-    if not modelFileId:
-        raise DanesfieldWorkflowException(
-            'Invalid material classifier model file ID: {}'.format(modelFileId), step=stepName)
-
     # Docker container arguments
     containerArgs = list(itertools.chain(
         [
             'danesfield/tools/material_classifier.py',
-            '--model_path', GirderFileIdToVolume(modelFileId, gc=gc),
+            '--model_path', GirderFileIdToVolume(modelFile['_id'], gc=gc),
             '--output_dir', outputVolumePath,
             '--image_paths'
         ],
