@@ -17,13 +17,13 @@
 #  limitations under the License.
 ##############################################################################
 
-from girder.models.item import Item
-
+from .select_best import SelectBestStep
 from ..algorithms import segmentByHeight
 from ..constants import DanesfieldStep
+from ..utilities import getPrefix
 from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
-from ..workflow_utilities import fileFromItem, getOptions, getWorkingSet
+from ..workflow_utilities import getOptions, getStandardOutput, getWorkingSet
 
 
 class SegmentByHeightStep(DanesfieldWorkflowStep):
@@ -38,6 +38,7 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         self.addDependency(DanesfieldStep.GENERATE_DSM)
         self.addDependency(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.PANSHARPEN)
+        self.addDependency(DanesfieldStep.SELECT_BEST)
 
     def run(self, jobInfo):
         # Get working sets
@@ -45,20 +46,26 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
+        # Get prefix of best image set
+        selectBestStandardOutput = getStandardOutput(DanesfieldStep.SELECT_BEST, jobInfo)
+        prefix = next(SelectBestStep.getImagePrefixes(selectBestStandardOutput), None)
+        if prefix is None:
+            raise DanesfieldWorkflowException('Error looking up best image set', step=self.name)
+
         # Get DSM
         dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get DTM
         dtmFile = self.getSingleFile(dtmWorkingSet)
 
-        # Get the ID of the first pansharpened MSI image
-        # TODO: Choose most nadir image, likely determined by a previous step
-        # and a new tool based on metadata in the source PAN images
-        items = [Item().load(itemId, force=True, exc=True)
-                 for itemId in pansharpenWorkingSet['datasetIds']]
-        if not items:
-            raise DanesfieldWorkflowException('Unable to find pansharpened images', step=self.name)
-        msiImageFile = fileFromItem(items[0])
+        # Get the best pansharpened MSI image
+        msiImageFiles = self.getFiles(
+            pansharpenWorkingSet,
+            lambda item: getPrefix(item['name']) == prefix)
+        if not msiImageFiles:
+            raise DanesfieldWorkflowException(
+                'Unable to find best pansharpened image', step=self.name)
+        msiImageFile = msiImageFiles[0]
 
         # Get options
         segmentByHeightOptions = getOptions(self.name, jobInfo)
