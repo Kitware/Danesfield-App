@@ -38,6 +38,11 @@ export const loadDatasetByIds = (ids) => {
     });
 }
 
+export const loadDatasetByWorkingSetId = async (id) => {
+    var { data: datasets } = await girder.girder.get(`dataset/workingset/${id}`);
+    return datasets;
+}
+
 export const saveDatasetMetadata = async (dataset) => {
     var { data: dataset } = await girder.girder.put(`item/${dataset._id}/metadata`, dataset.meta);
     return dataset;

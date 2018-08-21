@@ -272,7 +272,7 @@ import { featureCollection } from "@turf/helpers";
 
 import girder from "../girder";
 import { API_URL } from "../constants";
-import { loadDatasetByIds, saveDatasetMetadata } from "../utils/loadDataset";
+import { loadDatasetByWorkingSetId, saveDatasetMetadata } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
@@ -425,17 +425,17 @@ export default {
         return;
       }
       return Promise.all([
-        ...this.childrenWorkingSets.map(async workingSet => {
-          var datasets = await loadDatasetByIds(workingSet.datasetIds);
-          this.addDatasets(datasets);
-        }),
-        loadDatasetByIds(this.selectedWorkingSet.datasetIds).then(datasets => {
+        loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(datasets => {
           this.addDatasets(datasets);
           this.boundDatasets = Object.values(this.datasets);
           this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
             datasetId: dataset._id,
             workingSet: this.selectedWorkingSet
           }));
+        }),
+        ...this.childrenWorkingSets.map(async workingSet => {
+          var datasets = await loadDatasetByWorkingSetId(workingSet._id);
+          this.addDatasets(datasets);
         })
       ]);
     },

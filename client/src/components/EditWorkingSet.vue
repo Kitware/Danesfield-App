@@ -71,7 +71,7 @@
 import { mapState, mapMutations } from "vuex";
 
 import {
-  loadDatasetByIds,
+  loadDatasetByWorkingSetId,
   loadDatasetByFilterConditions
 } from "../utils/loadDataset";
 import DateRangeControl from "./DateRangeControl";
@@ -98,7 +98,7 @@ export default {
     if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
       this.loadDatasets(this.filterId);
     } else {
-      loadDatasetByIds(this.editingWorkingSet.datasetIds).then(datasets => {
+      loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
         this.initialized = true;
         this.$store.commit("workingSet/setDatasets", datasets);
       });
