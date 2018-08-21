@@ -1,12 +1,11 @@
 
 
 <template>
-  <FullScreenViewport>
+  <div class="full-screen">
     <GeojsMapViewport
       class="map"
       :viewport.sync="viewport"
-      :zoomRange="{ min: 0, max: 18 }"
-    >
+      :zoomRange="{ min: 0, max: 18 }">
       <GeojsTileLayer
         url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
         attribution='© OpenStreetMap contributors, © CARTO'
@@ -59,13 +58,12 @@
     </GeojsMapViewport>
 
     <SidePanel
-    class="side-panel"
-    :top="64"
-    :floating='false'
-    :toolbar="{title}"
-    :expanded='sidePanelExpanded'
-    :footer="false"
-    >
+      class="side-panel"
+      :top="64"
+      :floating='false'
+      :toolbar="{title}"
+      :expanded='sidePanelExpanded'
+      :footer="false">
       <template slot="actions">
         <SidePanelAction
         v-for="action in actions" 
@@ -93,7 +91,7 @@
         </v-btn>
       </v-bottom-nav>
     </SidePanel>
-  </FullScreenViewport>
+  </div>
 </template>
 
 <style lang="scss" scoped>

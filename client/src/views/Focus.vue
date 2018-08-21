@@ -1,5 +1,5 @@
 <template>
-  <FullScreenViewport>
+  <div class="full-screen">
     <FocusWorkspace
       :workspaces="workspaces"
       :boundDatasets="boundDatasets"
@@ -252,7 +252,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </FullScreenViewport>
+  </div>
 </template>
 
 <style lang="scss" scoped>

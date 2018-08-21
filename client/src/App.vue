@@ -44,10 +44,11 @@
           @user="userForm='logout';userDialog=true;" />
       </template>
     </AppToolbar>
-
-    <transition name="fade" mode="out-in">
-      <router-view></router-view>
-    </transition>
+    <FullScreenViewport>
+      <transition name="fade" mode="out-in">
+        <router-view></router-view>
+      </transition>
+    </FullScreenViewport>
     <GirderUserDialog
       :form.sync='userForm'
       v-model='userDialog'
