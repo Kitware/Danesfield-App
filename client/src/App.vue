@@ -31,6 +31,12 @@
                 <v-icon>fa-tasks</v-icon>
               </v-badge>
             </v-tab>
+            <v-tab
+              :href="GIRDER_URL"
+              target="_blank">
+              Girder
+              <v-icon>open_in_new</v-icon>
+            </v-tab>
         </v-tabs>
       </template>
       <template slot="title">
@@ -63,6 +69,7 @@ import { mapActions } from "vuex";
 import girder from "./girder";
 import Prompt from "./components/prompt/Prompt";
 import { status } from "resonantgeo/src/components/girder/jobs";
+import { GIRDER_URL } from "./constants";
 
 import "./transitions.scss";
 
@@ -77,6 +84,7 @@ export default {
         name: "title",
         text: "Core3D"
       },
+      GIRDER_URL,
       userForm: "login",
       userDialog: false,
       runningJobIds: []
