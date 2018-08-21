@@ -65,8 +65,7 @@
                     class="dataset hover-show-parent"
                     append-icon="">
                     <v-list-tile
-                      slot="activator"
-                      class="width-fix">
+                      slot="activator">
                       <v-list-tile-action @click.stop>
                         <template v-if="workspaceSupportsDataset(focusedWorkspace,datasets[datasetIdAndWorkingSet.datasetId])">
                           <v-btn flat icon key="add" v-if="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="visualize(datasets[datasetIdAndWorkingSet.datasetId],focusedWorkspace)">
@@ -149,9 +148,10 @@
               <v-subheader>Derived working sets</v-subheader>
               <v-list dense expand>
                 <v-list-group
+                  class="hover-show-parent"
                   v-for="workingSet in childrenWorkingSets"
                   :key="workingSet._id">
-                  <v-list-tile slot="activator" class="hover-show-parent">
+                  <v-list-tile slot="activator">
                     <v-list-tile-action class="hover-show-child" @click.stop :class="{show:includedChildrenWorkingSets.indexOf(workingSet)!==-1}">
                       <v-tooltip top open-delay="500">
                         <v-checkbox
@@ -625,10 +625,6 @@ export default {
   }
 }
 
-.width-fix {
-  width: 100%;
-}
-
 // Hide sortable fallback ghost element
 .sortable-fallback {
   display: none;
@@ -644,7 +640,11 @@ export default {
 
 .datasets-pane {
   .datasets {
-    .dataset {
+    .v-list__group__header {
+      > div:first-child {
+        width: 100%;
+      }
+
       .v-list__tile {
         padding: 0 10px 0 12px;
 
@@ -653,7 +653,9 @@ export default {
           flex: 0 0 32px;
         }
       }
+    }
 
+    .dataset {
       // A fix that when v-list-group is not an immediate child of v-list its transition is not working correctly
       .expand-transition-leave-to {
         display: none !important;
@@ -674,6 +676,10 @@ export default {
     }
 
     .v-list__group__header {
+      > div:first-child {
+        width: calc(100% - 40px);
+      }
+
       .v-list__tile {
         padding-right: 0;
       }
