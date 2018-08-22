@@ -99,11 +99,14 @@ class DanesfieldWorkflowManager(object):
 
             jobId = self._createJobId()
 
+            # TODO: Improve job data storage
             self._jobData[jobId] = {
                 # Running steps
                 'runningSteps': set(),
                 # Completed steps
                 'completedSteps': set(),
+                # Failed steps:
+                'failedSteps': set(),
                 # Request info
                 'requestInfo': requestInfo,
                 # Working sets indexed by step name
@@ -138,7 +141,7 @@ class DanesfieldWorkflowManager(object):
         with self._lock:
             logprint.info('DanesfieldWorkflowManager.finalizeJob Job={}'.format(jobId))
 
-            del self._jobData[jobId]
+            self._jobData.pop(jobId, None)
 
     def addFile(self, jobId, stepName, file):
         """
@@ -274,7 +277,12 @@ class DanesfieldWorkflowManager(object):
                 [step.name for step in runningSteps]
             ))
 
-            if not runningSteps and not incompleteSteps:
+            # Finalize job if either:
+            # - All steps have completed, or
+            # - A previous step failed and no steps are running
+            # Note that it's possible that future steps could run successfully if
+            # they don't depend on the failed step; that's not currently handled.
+            if not runningSteps and (not incompleteSteps or jobData['failedSteps']):
                 self.finalizeJob(jobId)
                 return
 
@@ -354,4 +362,11 @@ class DanesfieldWorkflowManager(object):
             logprint.info('DanesfieldWorkflowManager.stepFailed Job={} StepName={}'.format(
                 jobId, stepName))
 
-            self._jobData.pop(jobId, None)
+            jobData = self._getJobData(jobId)
+
+            # Record that step failed
+            jobData['runningSteps'].remove(stepName)
+            jobData['failedSteps'].add(stepName)
+
+            if not jobData['runningSteps']:
+                self.finalizeJob(jobId)
