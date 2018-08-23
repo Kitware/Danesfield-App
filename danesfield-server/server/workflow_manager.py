@@ -260,7 +260,10 @@ class DanesfieldWorkflowManager(object):
             incompleteSteps = [
                 step
                 for step in self.workflow.steps
-                if step.name not in jobData['completedSteps']
+                if (
+                    step.name not in jobData['completedSteps'] and
+                    step.name not in jobData['failedSteps']
+                )
             ]
 
             logprint.info('DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
