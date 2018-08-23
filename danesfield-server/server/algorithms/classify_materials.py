@@ -19,6 +19,8 @@
 
 import itertools
 
+from six.moves import zip
+
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -75,7 +77,7 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
     imagesMissingMetadataFiles = [
         imageFile['name']
         for imageFile, metadataFile
-        in itertools.izip(imageFiles, correspondingMetadataFiles)
+        in zip(imageFiles, correspondingMetadataFiles)
         if not metadataFile
     ]
     if imagesMissingMetadataFiles:

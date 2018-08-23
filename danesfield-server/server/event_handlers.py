@@ -135,7 +135,7 @@ def advanceWorkflow(event):
     except DanesfieldWorkflowException as e:
         logprint.warning('advanceWorkflow: Error advancing workflow '
                          'Job={} Step={} PreviousStep={} Message=\'{}\''.format(
-                             jobId, e.step, stepName, e.message))
+                             jobId, e.step, stepName, str(e)))
 
         # Create notification for workflow error
         Notification().createNotification(
@@ -143,7 +143,7 @@ def advanceWorkflow(event):
             data={
                 'step': e.step or '',
                 'previousStep': stepName,
-                'message': e.message
+                'message': str(e)
             },
             user=user,
             expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=30))

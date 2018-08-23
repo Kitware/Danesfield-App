@@ -17,10 +17,10 @@
 #  limitations under the License.
 ##############################################################################
 
-import itertools
 import os
 
 from celery import group
+from six.moves import zip
 
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
@@ -122,7 +122,7 @@ def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile
     imagesMissingRpcFiles = [
         imageFile['name']
         for imageFile, rpcFile
-        in itertools.izip(imageFiles, correspondingRpcFiles)
+        in zip(imageFiles, correspondingRpcFiles)
         if not rpcFile
     ]
     if imagesMissingRpcFiles:
@@ -133,7 +133,7 @@ def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile
     tasks = [
         createOrthorectifyTask(imageFile, rpcFile)
         for imageFile, rpcFile
-        in itertools.izip(imageFiles, correspondingRpcFiles)
+        in zip(imageFiles, correspondingRpcFiles)
     ]
     groupResult = group(tasks).delay()
 
