@@ -17,9 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
-import itertools
-
 from celery import group
+from six.moves import zip
 
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
@@ -117,7 +116,7 @@ def msiToRgb(stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
     tasks = [
         createConvertMsiToRgbTask(prefix, imageFile)
         for prefix, imageFile
-        in itertools.izip(prefixes, imageFiles)
+        in zip(prefixes, imageFiles)
     ]
     groupResult = group(tasks).delay()
 
