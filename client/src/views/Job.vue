@@ -1,7 +1,7 @@
 <template>
-  <FullScreenViewport>
+  <div class="full-screen">
     <GirderJobList />
-  </FullScreenViewport>
+  </div>
 </template>
 
 <script>
@@ -11,4 +11,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.full-screen {
+  overflow-y: auto;
+}
 </style>

@@ -100,6 +100,19 @@ export default {
     OBJMultiItemActor,
     Palette
   },
+  props: [
+    "boundDatasets",
+    "workspaces",
+    "listingDatasetIdAndWorkingSets",
+    "datasetIdMetaMap",
+    "focusedWorkspace",
+    "setFocusedWorkspaceKey",
+    "addWorkspace",
+    "removeWorkspace",
+    "changeWorkspaceType",
+    "vtkBGColor",
+    "changeVTKBGColor"
+  ],
   data() {
     return {};
   },
@@ -118,9 +131,15 @@ export default {
         if (!geojsViewport) {
           return;
         }
+        var eligibleDatasets = this.boundDatasets.filter(
+          dataset => dataset.geometa && dataset.geometa.bounds
+        );
+        if(!eligibleDatasets.length){
+          return;
+        }
         var bboxOfAllDatasets = bbox(
           geometryCollection(
-            this.boundDatasets.map(dataset => dataset.geometa.bounds)
+            eligibleDatasets.map(dataset => dataset.geometa.bounds)
           )
         );
         var dist = distance(
@@ -139,25 +158,12 @@ export default {
             bottom: bufferedBbox[1]
           });
         } catch (ex) {
-          console.warn(ex);
+          console.warn(ex.message);
           return viewPort;
         }
       }
     }
   },
-  props: [
-    "boundDatasets",
-    "workspaces",
-    "listingDatasetIdAndWorkingSets",
-    "datasetIdMetaMap",
-    "focusedWorkspace",
-    "setFocusedWorkspaceKey",
-    "addWorkspace",
-    "removeWorkspace",
-    "changeWorkspaceType",
-    "vtkBGColor",
-    "changeVTKBGColor"
-  ],
   methods: {
     getTileURL(dataset) {
       var url = `${API_URL}/item/${

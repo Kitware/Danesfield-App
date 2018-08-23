@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-text-field readonly prepend-icon="attach_file" single-line
+    <v-text-field class="file-selector" readonly prepend-icon="attach_file" single-line
                   :value="value" :label="label" :required="required"
                   @click.native="onFocus"
                   :disabled="disabled" ref="fileTextField"></v-text-field>

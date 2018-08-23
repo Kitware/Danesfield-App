@@ -1,5 +1,5 @@
 <template>
-  <FullScreenViewport>
+  <div class="full-screen">
     <FocusWorkspace
       :workspaces="workspaces"
       :boundDatasets="boundDatasets"
@@ -65,8 +65,7 @@
                     class="dataset hover-show-parent"
                     append-icon="">
                     <v-list-tile
-                      slot="activator"
-                      class="width-fix">
+                      slot="activator">
                       <v-list-tile-action @click.stop>
                         <template v-if="workspaceSupportsDataset(focusedWorkspace,datasets[datasetIdAndWorkingSet.datasetId])">
                           <v-btn flat icon key="add" v-if="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="visualize(datasets[datasetIdAndWorkingSet.datasetId],focusedWorkspace)">
@@ -78,10 +77,10 @@
                         </template>
                         <v-icon v-else color="grey lighten-3">fa-ban</v-icon>
                       </v-list-tile-action>
-                      <v-list-tile-action class="hover-show-child" @click.stop :class="{show:selectedDatasetIds[datasetIdAndWorkingSet.datasetId]}">
+                      <!-- <v-list-tile-action class="hover-show-child" @click.stop :class="{show:selectedDatasetIds[datasetIdAndWorkingSet.datasetId]}">
                         <v-checkbox
                           v-model="selectedDatasetIds[datasetIdAndWorkingSet.datasetId]"></v-checkbox>
-                      </v-list-tile-action>
+                      </v-list-tile-action> -->
                       <v-list-tile-content>
                           <v-list-tile-title>
                             <v-tooltip top open-delay="1000">
@@ -98,11 +97,16 @@
                           </v-btn>
                           <v-list>
                             <v-list-tile
-                              v-if="['GeoTIFF', 'GeoJSON'].indexOf(datasets[datasetIdAndWorkingSet.datasetId].geometa.driver)!==-1"
+                              :disabled="!datasets[datasetIdAndWorkingSet.datasetId].geometa.bounds"
+                              @click="boundDatasets=[datasets[datasetIdAndWorkingSet.datasetId]]">
+                              <v-list-tile-title>Zoom to</v-list-tile-title>
+                            </v-list-tile>
+                            <v-list-tile
                               @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])"
                               :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
                               <v-list-tile-title>Customize</v-list-tile-title>
                             </v-list-tile>
+                            <v-divider />
                             <v-list-tile
                               :href="`${API_URL}/item/${datasetIdAndWorkingSet.datasetId}/download`"
                                target="_blank">
@@ -140,14 +144,15 @@
                 </transition-group>
               </draggable>
             </v-list>
-            <div v-if="childrenWorkingSets.length" class="results">
+            <template v-if="childrenWorkingSets.length">
               <v-divider></v-divider>
               <v-subheader>Derived working sets</v-subheader>
-              <v-list dense expand>
+              <v-list dense expand class="results">
                 <v-list-group
+                  class="hover-show-parent"
                   v-for="workingSet in childrenWorkingSets"
                   :key="workingSet._id">
-                  <v-list-tile slot="activator" class="hover-show-parent">
+                  <v-list-tile slot="activator">
                     <v-list-tile-action class="hover-show-child" @click.stop :class="{show:includedChildrenWorkingSets.indexOf(workingSet)!==-1}">
                       <v-tooltip top open-delay="500">
                         <v-checkbox
@@ -193,7 +198,7 @@
                   </v-list-tile>
                 </v-list-group>
               </v-list>
-            </div>
+            </template>
           </div>
           <VectorCustomVizPane
             v-if="customVizDatasetId && datasets[customVizDatasetId].geometa.driver === 'GeoJSON'"
@@ -212,15 +217,28 @@
     </SidePanel>
     <v-dialog
       v-model="processConfirmDialog"
-      max-width="290">
-      <v-card>
+      max-width="400">
+      <v-card class="start-processing">
         <v-card-title class="headline">Start a pipeline?</v-card-title>
         <v-card-text>
           A pipeline will be started with datasets within the current working set as input data. Multiple result working sets will be created.
+          <div class="pointcloud-params mt-2 ml-2">
+            <div class="subheading">Point cloud paremeters</div>
+            <template v-if="pointCloudParams">
+              <div>Center: {{pointCloudParams.longitude.toFixed(6)}}, {{pointCloudParams.latitude.toFixed(6)}}</div>
+              <div>Dimensions: {{pointCloudParams.longitudeWidth.toFixed(6)}}, {{pointCloudParams.latitudeWidth.toFixed(6)}}</div>
+            </template>
+            <div v-else>(Choose from a geojson file)</div>
+            <v-flex xs8>
+            <FeatureSelector
+              class="feature-selector"
+              v-model="pointCloudFeature"
+              @message="prompt({message:$event})" />
+              </v-flex>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-
           <v-btn
             flat
             @click="processConfirmDialog = false">
@@ -228,13 +246,14 @@
           </v-btn>
           <v-btn
             color="primary"
+            :disabled="!pointCloudParams"
             @click="processConfirmDialog = false; startPipeline()">
             Confirm
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </FullScreenViewport>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -247,10 +266,17 @@
 import { mapState, mapGetters, mapMutations, mapActions } from "vuex";
 import findIndex from "lodash-es/findIndex";
 import draggable from "vuedraggable";
+import bbox from "@turf/bbox";
+import bboxPolygon from "@turf/bbox-polygon";
+import center from "@turf/center";
+import { featureCollection } from "@turf/helpers";
 
 import girder from "../girder";
 import { API_URL } from "../constants";
-import { loadDatasetByIds, saveDatasetMetadata } from "../utils/loadDataset";
+import {
+  loadDatasetByWorkingSetId,
+  saveDatasetMetadata
+} from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
@@ -258,6 +284,7 @@ import { summarize } from "../utils/geojsonUtil";
 import { getDefaultGeojsonVizProperties } from "../utils/getDefaultGeojsonVizProperties";
 import GeotiffCustomVizPane from "../components/GeotiffCustomVizPane";
 import getLargeImageMeta from "../utils/getLargeImageMeta";
+import FeatureSelector from "../components/FeatureSelector";
 
 export default {
   name: "Focus",
@@ -265,7 +292,8 @@ export default {
     FocusWorkspace,
     VectorCustomVizPane,
     GeotiffCustomVizPane,
-    draggable
+    draggable,
+    FeatureSelector
   },
   data() {
     return {
@@ -278,15 +306,27 @@ export default {
       processConfirmDialog: false,
       transitionName: "fade-group",
       customVizDatasetId: null,
-      preserveCustomViz: false
+      preserveCustomViz: false,
+      pointCloudFeature: null
     };
   },
   computed: {
+    portal() {
+      return {
+        name: "title",
+        text: this.customVizDatasetId ? "Customize" : null
+      };
+    },
     API_URL() {
       return API_URL;
     },
     user() {
       return this.$girder.user;
+    },
+    selectedWorkingSet() {
+      return this.workingSets.filter(
+        workingSet => workingSet._id === this.selectedWorkingSetId
+      )[0];
     },
     childrenWorkingSets() {
       return this.workingSets.filter(
@@ -305,12 +345,6 @@ export default {
         });
       }
     },
-    portal() {
-      return {
-        name: "title",
-        text: this.customVizDatasetId ? "Customize" : null
-      };
-    },
     ...mapState([
       "sidePanelExpanded",
       "workingSets",
@@ -320,6 +354,35 @@ export default {
       "vtkBGColor"
     ]),
     ...mapGetters(["focusedWorkspace"])
+  },
+  asyncComputed: {
+    async pointCloudParams() {
+      var features = this.pointCloudFeature ? this.pointCloudFeature : null;
+      if (!features && this.selectedWorkingSet) {
+        if (this.selectedWorkingSet.filterId) {
+          try {
+            var { data: filter } = await girder.girder.get(
+              `filter/${this.selectedWorkingSet.filterId}`
+            );
+            features = filter.conditions
+              .map(condition => condition.geojson)
+              .filter(feature => feature);
+          } catch (ex) {}
+        }
+      }
+      if (features && features.length) {
+        var box = bbox(featureCollection(features));
+        var polygonBox = bboxPolygon(box);
+        var centerPoint = center(polygonBox);
+        return {
+          longitude: centerPoint.geometry.coordinates[0],
+          latitude: centerPoint.geometry.coordinates[1],
+          longitudeWidth: box[2] - box[0],
+          latitudeWidth: box[3] - box[1]
+        };
+      }
+      return null;
+    }
   },
   watch: {
     user(user) {
@@ -331,6 +394,8 @@ export default {
       if (selectedWorkingSetId) {
         this.listingDatasetIdAndWorkingSets = [];
         this.selectedDatasetIds = {};
+        this.datasets = {};
+        this.datasetIdMetaMap = {};
         this.removeAllDatasetsFromWorkspaces();
       }
       this.load();
@@ -360,27 +425,23 @@ export default {
     async load() {
       this.includedChildrenWorkingSets = [];
       await this.loadWorkingSets();
-      if (!this.selectedWorkingSetId) {
-        return;
-      }
-      var selectedWorkingSet = this.workingSets.filter(
-        workingSet => workingSet._id === this.selectedWorkingSetId
-      )[0];
-      if (!selectedWorkingSet) {
+      if (!this.selectedWorkingSet) {
         return;
       }
       return Promise.all([
+        loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(
+          datasets => {
+            this.addDatasets(datasets);
+            this.boundDatasets = Object.values(this.datasets);
+            this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
+              datasetId: dataset._id,
+              workingSet: this.selectedWorkingSet
+            }));
+          }
+        ),
         ...this.childrenWorkingSets.map(async workingSet => {
-          var datasets = await loadDatasetByIds(workingSet.datasetIds);
+          var datasets = await loadDatasetByWorkingSetId(workingSet._id);
           this.addDatasets(datasets);
-        }),
-        loadDatasetByIds(selectedWorkingSet.datasetIds).then(datasets => {
-          this.addDatasets(datasets);
-          this.boundDatasets = Object.values(this.datasets);
-          this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
-            datasetId: dataset._id,
-            workingSet: selectedWorkingSet
-          }));
         })
       ]);
     },
@@ -388,7 +449,9 @@ export default {
       var { data: job } = await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
-        }&options={"generate-point-cloud":{"longitude":-84.084032161833051,"latitude":39.780404255857590,"longitudeWidth":0.008880209782049,"latitudeWidth":0.007791684155826}}`
+        }&options=${encodeURIComponent(
+          `{"generate-point-cloud":${JSON.stringify(this.pointCloudParams)}}`
+        )}`
       );
     },
     workspaceSupportsDataset(workspace, dataset) {
@@ -406,22 +469,25 @@ export default {
     addDatasets(datasets) {
       for (let dataset of datasets) {
         if (!dataset.geometa) {
-          continue;
-        }
-        switch (dataset.geometa.driver) {
-          case "GeoJSON":
-            if (!dataset.meta || !dataset.meta.vizProperties) {
-              dataset = {
-                ...dataset,
-                ...{ meta: { vizProperties: getDefaultGeojsonVizProperties() } }
-              };
-            }
-            break;
-          case "GeoTIFF":
-            if (!dataset.meta) {
-              dataset.meta = {};
-            }
-            break;
+          dataset.geometa = {};
+        } else {
+          switch (dataset.geometa.driver) {
+            case "GeoJSON":
+              if (!dataset.meta || !dataset.meta.vizProperties) {
+                dataset = {
+                  ...dataset,
+                  ...{
+                    meta: { vizProperties: getDefaultGeojsonVizProperties() }
+                  }
+                };
+              }
+              break;
+            case "GeoTIFF":
+              if (!dataset.meta) {
+                dataset.meta = {};
+              }
+              break;
+          }
         }
         this.$set(this.datasets, dataset._id, dataset);
       }
@@ -513,7 +579,8 @@ export default {
       "resetWorkspace",
       "changeVTKBGColor"
     ]),
-    ...mapActions(["loadWorkingSets"])
+    ...mapActions(["loadWorkingSets"]),
+    ...mapActions("prompt", ["prompt"])
   }
 };
 </script>
@@ -567,10 +634,6 @@ export default {
   }
 }
 
-.width-fix {
-  width: 100%;
-}
-
 // Hide sortable fallback ghost element
 .sortable-fallback {
   display: none;
@@ -586,7 +649,11 @@ export default {
 
 .datasets-pane {
   .datasets {
-    .dataset {
+    .v-list__group__header {
+      > div:first-child {
+        width: 100%;
+      }
+
       .v-list__tile {
         padding: 0 10px 0 12px;
 
@@ -595,7 +662,9 @@ export default {
           flex: 0 0 32px;
         }
       }
+    }
 
+    .dataset {
       // A fix that when v-list-group is not an immediate child of v-list its transition is not working correctly
       .expand-transition-leave-to {
         display: none !important;
@@ -608,6 +677,10 @@ export default {
   }
 
   .results {
+    max-height: 60%;
+    flex: 0 0 auto;
+    overflow-y: auto;
+
     .v-list__tile {
       .v-list__tile__action {
         min-width: inherit;
@@ -616,6 +689,10 @@ export default {
     }
 
     .v-list__group__header {
+      > div:first-child {
+        width: calc(100% - 40px);
+      }
+
       .v-list__tile {
         padding-right: 0;
       }
@@ -629,5 +706,11 @@ export default {
 .narrow-list-tile-action.v-list__tile__action {
   min-width: inherit;
   flex: 0 0 32px;
+}
+
+.start-processing {
+  .feature-selector .file-selector {
+    margin-top: 0;
+  }
 }
 </style>

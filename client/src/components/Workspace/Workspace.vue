@@ -159,8 +159,8 @@ export default {
 
     .focus-indicator {
       position: absolute;
-      top: 1px;
-      left: 1px;
+      top: 2px;
+      left: 2px;
       width: 9px;
       height: 9px;
       z-index: 1;
