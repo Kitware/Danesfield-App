@@ -27,7 +27,10 @@ from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createGirderClient, createUploadMetadata, rpcFileMatchesImageFile
+from .common import (
+    addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata,
+    rpcFileMatchesImageFile
+)
 from ..constants import DockerImage
 from ..workflow import DanesfieldWorkflowException
 from ..workflow_manager import DanesfieldWorkflowManager
@@ -100,13 +103,15 @@ def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile
         ]
 
         return docker_run.s(
-            image=DockerImage.DANESFIELD,
-            pull_image=False,
-            container_args=containerArgs,
-            girder_job_title='Orthorectify: %s' % imageFile['name'],
-            girder_job_type=stepName,
-            girder_result_hooks=resultHooks,
-            girder_user=requestInfo.user)
+            **createDockerRunArguments(
+                image=DockerImage.DANESFIELD,
+                containerArgs=containerArgs,
+                jobTitle='Orthorectify: %s' % imageFile['name'],
+                jobType=stepName,
+                user=requestInfo.user,
+                resultHooks=resultHooks
+            )
+        )
 
     # Find RPC file corresponding to each image, or None
     correspondingRpcFiles = [
