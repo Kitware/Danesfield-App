@@ -82,6 +82,10 @@ def createDockerRunArguments(image, containerArgs, jobTitle, jobType, user, resu
         'girder_job_title': jobTitle,
         'girder_job_type': jobType,
         'girder_user': user,
+
+        # Force Python's stdout, stderr to be unbuffered. This ensures that the
+        # job log is updated without waiting for a buffer to fill.
+        'environment': ['PYTHONUNBUFFERED=1'],
     }
     if resultHooks is not None:
         args['girder_result_hooks'] = resultHooks
