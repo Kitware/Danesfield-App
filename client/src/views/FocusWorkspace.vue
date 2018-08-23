@@ -132,7 +132,7 @@ export default {
           return;
         }
         var eligibleDatasets = this.boundDatasets.filter(
-          dataset => dataset.geometa
+          dataset => dataset.geometa && dataset.geometa.bounds
         );
         if(!eligibleDatasets.length){
           return;

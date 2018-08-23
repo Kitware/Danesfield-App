@@ -77,10 +77,10 @@
                         </template>
                         <v-icon v-else color="grey lighten-3">fa-ban</v-icon>
                       </v-list-tile-action>
-                      <v-list-tile-action class="hover-show-child" @click.stop :class="{show:selectedDatasetIds[datasetIdAndWorkingSet.datasetId]}">
+                      <!-- <v-list-tile-action class="hover-show-child" @click.stop :class="{show:selectedDatasetIds[datasetIdAndWorkingSet.datasetId]}">
                         <v-checkbox
                           v-model="selectedDatasetIds[datasetIdAndWorkingSet.datasetId]"></v-checkbox>
-                      </v-list-tile-action>
+                      </v-list-tile-action> -->
                       <v-list-tile-content>
                           <v-list-tile-title>
                             <v-tooltip top open-delay="1000">
@@ -96,11 +96,12 @@
                             <v-icon>more_vert</v-icon>
                           </v-btn>
                           <v-list>
-                            <v-list-tile @click="boundDatasets=[datasets[datasetIdAndWorkingSet.datasetId]]">
+                            <v-list-tile
+                              :disabled="!datasets[datasetIdAndWorkingSet.datasetId].geometa.bounds"
+                              @click="boundDatasets=[datasets[datasetIdAndWorkingSet.datasetId]]">
                               <v-list-tile-title>Zoom to</v-list-tile-title>
                             </v-list-tile>
                             <v-list-tile
-                              v-if="['GeoTIFF', 'GeoJSON'].indexOf(datasets[datasetIdAndWorkingSet.datasetId].geometa.driver)!==-1"
                               @click="customDatasetVisualization(datasets[datasetIdAndWorkingSet.datasetId])"
                               :disabled="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1">
                               <v-list-tile-title>Customize</v-list-tile-title>
@@ -143,10 +144,10 @@
                 </transition-group>
               </draggable>
             </v-list>
-            <div v-if="childrenWorkingSets.length" class="results">
+            <template v-if="childrenWorkingSets.length">
               <v-divider></v-divider>
               <v-subheader>Derived working sets</v-subheader>
-              <v-list dense expand>
+              <v-list dense expand class="results">
                 <v-list-group
                   class="hover-show-parent"
                   v-for="workingSet in childrenWorkingSets"
@@ -197,7 +198,7 @@
                   </v-list-tile>
                 </v-list-group>
               </v-list>
-            </div>
+            </template>
           </div>
           <VectorCustomVizPane
             v-if="customVizDatasetId && datasets[customVizDatasetId].geometa.driver === 'GeoJSON'"
@@ -272,7 +273,10 @@ import { featureCollection } from "@turf/helpers";
 
 import girder from "../girder";
 import { API_URL } from "../constants";
-import { loadDatasetByWorkingSetId, saveDatasetMetadata } from "../utils/loadDataset";
+import {
+  loadDatasetByWorkingSetId,
+  saveDatasetMetadata
+} from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
 import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
@@ -425,14 +429,16 @@ export default {
         return;
       }
       return Promise.all([
-        loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(datasets => {
-          this.addDatasets(datasets);
-          this.boundDatasets = Object.values(this.datasets);
-          this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
-            datasetId: dataset._id,
-            workingSet: this.selectedWorkingSet
-          }));
-        }),
+        loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(
+          datasets => {
+            this.addDatasets(datasets);
+            this.boundDatasets = Object.values(this.datasets);
+            this.listingDatasetIdAndWorkingSets = datasets.map(dataset => ({
+              datasetId: dataset._id,
+              workingSet: this.selectedWorkingSet
+            }));
+          }
+        ),
         ...this.childrenWorkingSets.map(async workingSet => {
           var datasets = await loadDatasetByWorkingSetId(workingSet._id);
           this.addDatasets(datasets);
@@ -463,22 +469,25 @@ export default {
     addDatasets(datasets) {
       for (let dataset of datasets) {
         if (!dataset.geometa) {
-          continue;
-        }
-        switch (dataset.geometa.driver) {
-          case "GeoJSON":
-            if (!dataset.meta || !dataset.meta.vizProperties) {
-              dataset = {
-                ...dataset,
-                ...{ meta: { vizProperties: getDefaultGeojsonVizProperties() } }
-              };
-            }
-            break;
-          case "GeoTIFF":
-            if (!dataset.meta) {
-              dataset.meta = {};
-            }
-            break;
+          dataset.geometa = {};
+        } else {
+          switch (dataset.geometa.driver) {
+            case "GeoJSON":
+              if (!dataset.meta || !dataset.meta.vizProperties) {
+                dataset = {
+                  ...dataset,
+                  ...{
+                    meta: { vizProperties: getDefaultGeojsonVizProperties() }
+                  }
+                };
+              }
+              break;
+            case "GeoTIFF":
+              if (!dataset.meta) {
+                dataset.meta = {};
+              }
+              break;
+          }
         }
         this.$set(this.datasets, dataset._id, dataset);
       }
@@ -668,6 +677,10 @@ export default {
   }
 
   .results {
+    max-height: 60%;
+    flex: 0 0 auto;
+    overflow-y: auto;
+
     .v-list__tile {
       .v-list__tile__action {
         min-width: inherit;
