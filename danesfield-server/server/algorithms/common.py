@@ -57,6 +57,38 @@ def createUploadMetadata(jobId, stepName):
     return upload_kwargs
 
 
+def createDockerRunArguments(image, containerArgs, jobTitle, jobType, user, resultHooks=None):
+    """
+    Return arguments to pass to docker_run Celery task.
+
+    :param image: Docker image name.
+    :type image: str
+    :param containerArgs: Docker container arguments.
+    :type containerArgs: list[str]
+    :param jobTitle: Girder job title.
+    :type jobTitle: str
+    :param jobType: Girder job type.
+    :type jobType: str
+    :param user: User document.
+    :type user: dict
+    :param resultHooks: List of Girder Worker transforms.
+    :type resultHooks: list
+    :returns: dict
+    """
+    args = {
+        'image': image,
+        'pull_image': False,
+        'container_args': containerArgs,
+        'girder_job_title': jobTitle,
+        'girder_job_type': jobType,
+        'girder_user': user,
+    }
+    if resultHooks is not None:
+        args['girder_result_hooks'] = resultHooks
+
+    return args
+
+
 def addJobInfo(job, jobId, stepName):
     """
     Add common information to a job for use by job event listeners.

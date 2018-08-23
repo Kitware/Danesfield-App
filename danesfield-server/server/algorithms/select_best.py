@@ -22,7 +22,7 @@ import itertools
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms.girder import GirderFileIdToVolume
 
-from .common import addJobInfo, createGirderClient
+from .common import addJobInfo, createDockerRunArguments, createGirderClient
 from ..constants import DockerImage
 
 
@@ -62,12 +62,14 @@ def selectBest(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile):
     ))
 
     asyncResult = docker_run.delay(
-        image=DockerImage.DANESFIELD,
-        pull_image=False,
-        container_args=containerArgs,
-        girder_job_title='Select best',
-        girder_job_type=stepName,
-        girder_user=requestInfo.user)
+        **createDockerRunArguments(
+            image=DockerImage.DANESFIELD,
+            containerArgs=containerArgs,
+            jobTitle='Select best',
+            jobType=stepName,
+            user=requestInfo.user
+        )
+    )
 
     # Add info for job event listeners
     job = asyncResult.job

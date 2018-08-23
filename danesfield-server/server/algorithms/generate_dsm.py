@@ -22,7 +22,7 @@ from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createGirderClient, createUploadMetadata
+from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
 
 
@@ -74,13 +74,15 @@ def generateDsm(stepName, requestInfo, jobId, outputFolder, pointCloudFile, outp
     ]
 
     asyncResult = docker_run.delay(
-        image=DockerImage.DANESFIELD,
-        pull_image=False,
-        container_args=containerArgs,
-        girder_job_title='Generate DSM: %s' % pointCloudFile['name'],
-        girder_job_type=stepName,
-        girder_result_hooks=resultHooks,
-        girder_user=requestInfo.user)
+        **createDockerRunArguments(
+            image=DockerImage.DANESFIELD,
+            containerArgs=containerArgs,
+            jobTitle='Generate DSM: %s' % pointCloudFile['name'],
+            jobType=stepName,
+            user=requestInfo.user,
+            resultHooks=resultHooks
+        )
+    )
 
     # Add info for job event listeners
     job = asyncResult.job

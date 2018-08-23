@@ -24,7 +24,7 @@ from girder_worker.docker.transforms import BindMountVolume, VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createGirderClient, createUploadMetadata
+from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
 from ..constants import DockerImage
 
 
@@ -97,14 +97,16 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFiles,
     ]
 
     asyncResult = docker_run.delay(
-        image=DockerImage.P3D,
-        pull_image=False,
         volumes=volumes,
-        container_args=containerArgs,
-        girder_job_title='Generate point cloud',
-        girder_job_type=stepName,
-        girder_result_hooks=resultHooks,
-        girder_user=requestInfo.user)
+        **createDockerRunArguments(
+            image=DockerImage.P3D,
+            containerArgs=containerArgs,
+            jobTitle='Generate point cloud',
+            jobType=stepName,
+            user=requestInfo.user,
+            resultHooks=resultHooks
+        )
+    )
 
     # Add info for job event listeners
     job = asyncResult.job
