@@ -7,7 +7,7 @@ Application to run Danesfield algorithms.
 ## Requirements
 
 - [Girder](https://github.com/girder/girder)
-- [Girder Worker](https://github.com/girder/girder_worker) at revision [ad3e384](https://github.com/girder/girder_worker/commit/ad3e384f4894b8fb747b3bab87e39376e3701049) or later
+- [Girder Worker](https://github.com/girder/girder_worker) at revision [31c28c6](https://github.com/girder/girder_worker/commit/31c28c6db32f56e0a6528cbbc8e38c3000d715e5) or later
 - [Girder Geospatial](https://github.com/OpenGeoscience/girder_geospatial)
 - [Docker](https://www.docker.com/)
 
