@@ -42,6 +42,7 @@ class DanesfieldStep(object):
     UNET_SEMANTIC_SEGMENTATION = 'unet-semantic-segmentation'
     BUILDING_SEGMENTATION = 'building-segmentation'
     CLASSIFY_MATERIALS = 'classify-materials'
+    ROOF_GEON_EXTRACTION = 'roof-geon-extraction'
 
 
 class DockerImage(object):

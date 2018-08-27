@@ -37,6 +37,18 @@ def fileFromItem(item):
     return files[0]
 
 
+def isClsImage(item):
+    """
+    Return true if the item refers to a CLS image.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '_cls' in name and ext.startswith('.tif')
+
+
 def isMsiImage(item):
     """
     Return true if the item refers to an MSI image.
