@@ -54,7 +54,7 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
     :type metadataFiles: list[dict]
     :param modelFile: Model file document.
     :type modelFile: dict
-    :param cuda: Enable CUDA.
+    :param cuda: Enable/disable CUDA; enabled by default.
     :type cuda: bool
     :param batchSize: Number of pixels classified at a time.
     :type batchSize: int
@@ -104,7 +104,7 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
             for metadataFile in correspondingMetadataFiles
         ]
     ))
-    if cuda:
+    if cuda is None or cuda:
         containerArgs.append('--cuda')
     if batchSize is not None:
         containerArgs.extend(['--batch_size', str(batchSize)])
