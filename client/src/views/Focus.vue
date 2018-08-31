@@ -279,10 +279,10 @@ import {
 } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
-import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
-import { summarize } from "../utils/geojsonUtil";
-import { getDefaultGeojsonVizProperties } from "../utils/getDefaultGeojsonVizProperties";
-import GeotiffCustomVizPane from "../components/GeotiffCustomVizPane";
+import VectorCustomVizPane from "resonantgeoview/src/components/VectorCustomVizPane/VectorCustomVizPane";
+import { summarize } from "resonantgeoview/src/utils/geojsonUtil";
+import { getDefaultGeojsonVizProperties } from "resonantgeoview/src/utils/getDefaultGeojsonVizProperties";
+import GeotiffCustomVizPane from "resonantgeoview/src/components/GeotiffCustomVizPane";
 import getLargeImageMeta from "../utils/getLargeImageMeta";
 import FeatureSelector from "../components/FeatureSelector";
 

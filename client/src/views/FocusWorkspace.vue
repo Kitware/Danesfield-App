@@ -79,11 +79,11 @@ import distance from "@turf/distance";
 import sortBy from "lodash-es/sortBy";
 
 import { API_URL } from "../constants";
-import WorkspaceContainer from "../components/Workspace/Container";
-import Workspace from "../components/Workspace/Workspace";
-import WorkspaceAction from "../components/Workspace/Action";
-import GeojsGeojsonDatasetLayer from "../components/geojs/GeojsGeojsonDatasetLayer";
-import StyledGeoTIFFLayer from "../components/geojs/StyledGeoTIFFLayer";
+import WorkspaceContainer from "resonantgeoview/src/components/Workspace/Container";
+import Workspace from "resonantgeoview/src/components/Workspace/Workspace";
+import WorkspaceAction from "resonantgeoview/src/components/Workspace/Action";
+import GeojsGeojsonDatasetLayer from "resonantgeoview/src/components/geojs/GeojsGeojsonDatasetLayer";
+import StyledGeoTIFFLayer from "resonantgeoview/src/components/geojs/StyledGeoTIFFLayer";
 import VTKViewport from "../components/vtk/VTKViewport";
 import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
 import Palette from "../components/vtk/Palette";

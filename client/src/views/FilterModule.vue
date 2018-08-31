@@ -29,7 +29,7 @@
 <script>
 import { mapState, mapMutations } from "vuex";
 
-import NewWithName from "../components/NewWithName";
+import NewWithName from "resonantgeoview/src/components/NewWithName";
 import EditFilter from "../components/EditFilter";
 
 export default {
