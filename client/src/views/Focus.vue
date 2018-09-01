@@ -211,6 +211,7 @@
             :dataset="datasets[customVizDatasetId]"
             :meta="datasetIdMetaMap[customVizDatasetId]"
             :preserve.sync="preserveCustomViz"
+            :palettePickerExtras="{custom:[['blue','red'],['blue','white','red']]}"
             />
         </transition>
       </div>
