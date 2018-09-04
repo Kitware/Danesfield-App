@@ -101,10 +101,15 @@ export default {
     if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
       this.loadDatasets(this.filterId);
     } else {
-      loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
+      if (this.editingWorkingSet._id) {
+        loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
+          this.initialized = true;
+          this.$store.commit("workingSet/setDatasets", datasets);
+        });
+      } else {
         this.initialized = true;
-        this.$store.commit("workingSet/setDatasets", datasets);
-      });
+        this.$store.commit("workingSet/setDatasets", []);
+      }
     }
   },
   computed: {
