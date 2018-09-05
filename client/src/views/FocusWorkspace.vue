@@ -1,73 +1,80 @@
 <template>
-<WorkspaceContainer 
-  :focused="focusedWorkspace"
-  @update:focused="setFocusedWorkspaceKey($event)"
-  :autoResize="true"
-  :max="2">
-  <Workspace
-    v-for="(workspace, key) in workspaces"
-    :key="key"
-    :identifier="key"
-    @split="addWorkspace(workspace)"
-    @close="removeWorkspace(key)"
-    :states="[{name:'Map',value:'map',disabled:workspace.type==='map'},{name:'3D View',value:'vtk',disabled:workspace.type==='vtk'}]"
-    @stateChange="changeWorkspaceType({workspace,type:$event})"
-    >
-    <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
-      class="map"
-      :viewport="viewport"
-      :zoomRange="{ min: 0, max: 18 }"
-      ref="geojsMapViewport">
-      <GeojsTileLayer
-        url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
-        attribution='© OpenStreetMap contributors, © CARTO'
-        :zIndex='0'>
-      </GeojsTileLayer>
-      <template v-for="(layer,i) in orderLayer(workspace.layers)">
-        <GeojsGeojsonDatasetLayer
-          v-if="layer.dataset.geometa.driver==='GeoJSON'"
-          :key="layer.dataset._id"
-          :dataset="layer.dataset"
-          :summary="datasetIdMetaMap[layer.dataset._id].summary"
-          :geojson="datasetIdMetaMap[layer.dataset._id].geojson"
-          :opacity="layer.opacity"
-          :zIndex="i+1">
-        </GeojsGeojsonDatasetLayer>
-        <StyledGeoTIFFLayer
-          v-if="layer.dataset.geometa.driver==='GeoTIFF'"
-          :key="layer.dataset._id"
-          :dataset="layer.dataset"
-          :tileURL="getTileURL(layer.dataset)"
-          :opacity="layer.opacity"
-          :keepLower="false"
-          :zIndex="i+1">
-        </StyledGeoTIFFLayer>
+<div class="root">
+  <WorkspaceContainer 
+    :focused="focusedWorkspace"
+    @update:focused="setFocusedWorkspaceKey($event)"
+    :autoResize="true"
+    :max="2">
+    <Workspace
+      v-for="(workspace, key) in workspaces"
+      :key="key"
+      :identifier="key"
+      @split="addWorkspace(workspace)"
+      @close="removeWorkspace(key)"
+      :states="[{name:'Map',value:'map',disabled:workspace.type==='map'},{name:'3D View',value:'vtk',disabled:workspace.type==='vtk'}]"
+      @stateChange="changeWorkspaceType({workspace,type:$event})"
+      >
+      <GeojsMapViewport v-if="workspace.type==='map'" key="geojs-map"
+        class="map"
+        :viewport="viewport"
+        :zoomRange="{ min: 0, max: 18 }"
+        ref="geojsMapViewport">
+        <GeojsTileLayer
+          url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+          attribution='© OpenStreetMap contributors, © CARTO'
+          :zIndex='0'>
+        </GeojsTileLayer>
+        <template v-for="(layer,i) in orderLayer(workspace.layers)">
+          <GeojsGeojsonDatasetLayer
+            v-if="layer.dataset.geometa.driver==='GeoJSON'"
+            :key="layer.dataset._id"
+            :dataset="layer.dataset"
+            :summary="datasetIdMetaMap[layer.dataset._id].summary"
+            :geojson="datasetIdMetaMap[layer.dataset._id].geojson"
+            :opacity="layer.opacity"
+            :zIndex="i+1"
+            @click='layerClicked(layer, $event)'>
+          </GeojsGeojsonDatasetLayer>
+          <StyledGeoTIFFLayer
+            v-if="layer.dataset.geometa.driver==='GeoTIFF'"
+            :key="layer.dataset._id"
+            :dataset="layer.dataset"
+            :tileURL="getTileURL(layer.dataset)"
+            :opacity="layer.opacity"
+            :keepLower="false"
+            :zIndex="i+1"
+            @click='layerClicked(layer, $event)'>
+          </StyledGeoTIFFLayer>
+        </template>
+      </GeojsMapViewport>
+        <VTKViewport v-if="workspace.type==='vtk'"
+          :background="vtkBGColor">
+          <OBJMultiItemActor
+            v-for="layer in workspace.layers"
+            v-if="layer.dataset.geometa.driver==='OBJ'"
+            :key="layer.dataset._id"
+            :item="layer.dataset" />
+        </VTKViewport>
+      <template slot='actions' v-if="workspace.type==='vtk'">
+        <WorkspaceAction>
+          <v-menu
+            top offset-y
+            origin="center center">
+            <v-icon
+              slot="activator"
+            >palette</v-icon>
+            <v-card width="130px">
+              <Palette :value="vtkBGColor" @input="changeVTKBGColor($event)" />
+            </v-card>
+          </v-menu>
+        </WorkspaceAction>
       </template>
-    </GeojsMapViewport>
-      <VTKViewport v-if="workspace.type==='vtk'"
-        :background="vtkBGColor">
-        <OBJMultiItemActor
-          v-for="layer in workspace.layers"
-          v-if="layer.dataset.geometa.driver==='OBJ'"
-          :key="layer.dataset._id"
-          :item="layer.dataset" />
-      </VTKViewport>
-    <template slot='actions' v-if="workspace.type==='vtk'">
-      <WorkspaceAction>
-        <v-menu
-          top offset-y
-          origin="center center">
-          <v-icon
-            slot="activator"
-          >palette</v-icon>
-          <v-card width="130px">
-            <Palette :value="vtkBGColor" @input="changeVTKBGColor($event)" />
-          </v-card>
-        </v-menu>
-      </WorkspaceAction>
-    </template>
-  </Workspace>
-</WorkspaceContainer>
+    </Workspace>
+  </WorkspaceContainer>
+  <ClickInfoDialog
+    v-model="clickInfoDialog"
+    :datasetClickEvents="datasetClickEvents" />
+</div>
 </template>
 
 <script>
@@ -77,6 +84,8 @@ import bboxPolygon from "@turf/bbox-polygon";
 import buffer from "@turf/buffer";
 import distance from "@turf/distance";
 import sortBy from "lodash-es/sortBy";
+import debounce from "lodash-es/debounce";
+import ClickInfoDialog from "resonantgeoview/src/views/ClickInfoDialog";
 
 import { API_URL } from "../constants";
 import WorkspaceContainer from "resonantgeoview/src/components/Workspace/Container";
@@ -98,7 +107,8 @@ export default {
     StyledGeoTIFFLayer,
     VTKViewport,
     OBJMultiItemActor,
-    Palette
+    Palette,
+    ClickInfoDialog
   },
   props: [
     "boundDatasets",
@@ -114,7 +124,9 @@ export default {
     "changeVTKBGColor"
   ],
   data() {
-    return {};
+    return {
+      datasetClickEvents: []
+    };
   },
   computed: {
     viewport() {
@@ -134,7 +146,7 @@ export default {
         var eligibleDatasets = this.boundDatasets.filter(
           dataset => dataset.geometa && dataset.geometa.bounds
         );
-        if(!eligibleDatasets.length){
+        if (!eligibleDatasets.length) {
           return;
         }
         var bboxOfAllDatasets = bbox(
@@ -162,7 +174,24 @@ export default {
           return viewPort;
         }
       }
+    },
+    clickInfoDialog: {
+      get() {
+        return !!this.datasetClickEvents.length;
+      },
+      set(value) {
+        if (!value) {
+          this.datasetClickEvents = [];
+        }
+      }
     }
+  },
+  created() {
+    this.debounceSetdatasetClickEvents = debounce(() => {
+      this.datasetClickEvents = this.datasetClickEventsAggregator;
+      this.datasetClickEventsAggregator = [];
+    }, 0);
+    this.datasetClickEventsAggregator = [];
   },
   methods: {
     getTileURL(dataset) {
@@ -180,10 +209,22 @@ export default {
       return sortBy(layers, layer => {
         return -orderedDatasetIds.indexOf(layer.dataset._id);
       });
+    },
+    layerClicked(layer, clickEvent) {
+      if (layer.opacity) {
+        this.datasetClickEventsAggregator.push({
+          dataset: layer.dataset,
+          clickEvent: clickEvent
+        });
+        this.debounceSetdatasetClickEvents();
+      }
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
+.root {
+  height: 100%;
+}
 </style>
