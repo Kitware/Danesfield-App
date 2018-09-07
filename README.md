@@ -70,5 +70,12 @@ https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#material-classifi
 to Girder.
 - Set the `danesfield.material_classifier_model_file_id` setting to the ID of that file.
 
+### Roof Geon Extraction
+
+- Upload the model files referenced in the [tool documentation](
+  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#roof-geon-extraction)
+  into a folder on Girder.
+- Set the `danesfield.roof_segmentation_model_folder_id` setting to the ID of that folder.
+
 # Client Setup
 See [here](client/README.md)

@@ -29,6 +29,7 @@ class PluginSettings(object):
     UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID = \
         'danesfield.unet_semantic_segmentation_config_file_id'
     UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID = 'danesfield.unet_semantic_segmentation_model_file_id'
+    ROOF_SEGMENTATION_MODEL_FOLDER_ID = 'danesfield.roof_segmentation_model_folder_id'
 
 
 @setting_utilities.validator(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
@@ -50,6 +51,17 @@ def _validateMaterialClassifierModelFileId(doc):
 
 @setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
 def _defaultMaterialClassifierModelFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.ROOF_SEGMENTATION_MODEL_FOLDER_ID)
+def _validateRoofSegmentationModelFolderId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Roof segmentation model folder ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.ROOF_SEGMENTATION_MODEL_FOLDER_ID)
+def _defaultRoofSegmentationModelFolderId():
     return ''
 
 
