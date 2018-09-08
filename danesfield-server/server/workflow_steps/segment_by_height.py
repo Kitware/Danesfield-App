@@ -17,9 +17,14 @@
 #  limitations under the License.
 ##############################################################################
 
+import os
+
+from girder.models.folder import Folder
+
 from .select_best import SelectBestStep
 from ..algorithms import segmentByHeight
 from ..constants import DanesfieldStep
+from ..settings import PluginSettings
 from ..utilities import getPrefix
 from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
@@ -70,8 +75,25 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         # Get options
         segmentByHeightOptions = getOptions(self.name, jobInfo)
 
+        shapefilesFolder = self.getFolderFromSetting(
+            PluginSettings.SEGMENT_BY_HEIGHT_SHAPEFILES_FOLDER_ID)
+
+        # Get shapefiles prefix
+        shapefiles = list(Folder().childItems(shapefilesFolder, limit=1))
+        if not shapefiles:
+            raise DanesfieldWorkflowException(
+                'Shapefiles for segment by height not found.', step=self.name)
+        shapefilePrefix = os.path.splitext(shapefiles[0]['name'])[0]
+
         # Run algorithm
         segmentByHeight(
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
-            msiImageFile=msiImageFile, **segmentByHeightOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=jobInfo.outputFolder,
+            dsmFile=dsmFile,
+            dtmFile=dtmFile,
+            msiImageFile=msiImageFile,
+            shapefilesFolder=shapefilesFolder,
+            shapefilePrefix=shapefilePrefix,
+            **segmentByHeightOptions)
