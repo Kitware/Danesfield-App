@@ -76,8 +76,9 @@ def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile
         '--msi', GirderFileIdToVolume(msiImageFile['_id'], gc=gc),
         # Normalized Difference Vegetation Index output image
         '--ndvi', ndviOutputVolumePath,
-        '--road-vector-dir', GirderFolderIdToVolume(shapefilesFolder['_id'], gc=gc),
-        '--road-vector-prefix', shapefilePrefix,
+        '--road-vector-shapefile-dir', GirderFolderIdToVolume(
+            shapefilesFolder['_id'], gc=gc),
+        '--road-vector-shapefile-prefix', shapefilePrefix,
         '--road-rasterized', roadRasterOutputVolumePath,
         '--road-rasterized-bridge', roadBridgeRasterOutputVolumePath
     ]
