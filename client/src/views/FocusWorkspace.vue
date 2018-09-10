@@ -19,6 +19,9 @@
         :viewport="viewport"
         :zoomRange="{ min: 0, max: 18 }"
         ref="geojsMapViewport">
+        <AdaptedColorLegendLayer
+          :layers="orderLayer(workspace.layers)"
+          :datasetIdMetaMap="datasetIdMetaMap" />
         <GeojsTileLayer
           url='https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
           attribution='© OpenStreetMap contributors, © CARTO'
@@ -93,6 +96,7 @@ import Workspace from "resonantgeoview/src/components/Workspace/Workspace";
 import WorkspaceAction from "resonantgeoview/src/components/Workspace/Action";
 import GeojsGeojsonDatasetLayer from "resonantgeoview/src/components/geojs/GeojsGeojsonDatasetLayer";
 import StyledGeoTIFFLayer from "resonantgeoview/src/components/geojs/StyledGeoTIFFLayer";
+import AdaptedColorLegendLayer from "resonantgeoview/src/components/geojs/AdaptedColorLegendLayer";
 import VTKViewport from "../components/vtk/VTKViewport";
 import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
 import Palette from "../components/vtk/Palette";
@@ -105,6 +109,7 @@ export default {
     WorkspaceAction,
     GeojsGeojsonDatasetLayer,
     StyledGeoTIFFLayer,
+    AdaptedColorLegendLayer,
     VTKViewport,
     OBJMultiItemActor,
     Palette,
