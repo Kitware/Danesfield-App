@@ -43,7 +43,7 @@
               :items="workingSets"
               :value="selectedWorkingSetId"
               @change="change"
-              class="working-set-selector py-1 px-2"
+              class="working-set-selector px-2"
               item-text="name"
               item-value='_id'
               label="Select"
@@ -211,6 +211,7 @@
             :dataset="datasets[customVizDatasetId]"
             :meta="datasetIdMetaMap[customVizDatasetId]"
             :preserve.sync="preserveCustomViz"
+            :palettePickerExtras="palettePickerExtras"
             />
         </transition>
       </div>
@@ -270,6 +271,10 @@ import bbox from "@turf/bbox";
 import bboxPolygon from "@turf/bbox-polygon";
 import center from "@turf/center";
 import { featureCollection } from "@turf/helpers";
+import VectorCustomVizPane from "resonantgeoview/src/components/VectorCustomVizPane/VectorCustomVizPane";
+import { getDefaultGeojsonVizProperties } from "resonantgeoview/src/utils/getDefaultGeojsonVizProperties";
+import GeotiffCustomVizPane from "resonantgeoview/src/components/GeotiffCustomVizPane";
+import { summarize } from "resonantgeoview/src/utils/geojsonUtil";
 
 import girder from "../girder";
 import { API_URL } from "../constants";
@@ -279,12 +284,9 @@ import {
 } from "../utils/loadDataset";
 import loadDatasetData from "../utils/loadDatasetData";
 import FocusWorkspace from "./FocusWorkspace";
-import VectorCustomVizPane from "../components/VectorCustomVizPane/VectorCustomVizPane";
-import { summarize } from "../utils/geojsonUtil";
-import { getDefaultGeojsonVizProperties } from "../utils/getDefaultGeojsonVizProperties";
-import GeotiffCustomVizPane from "../components/GeotiffCustomVizPane";
 import getLargeImageMeta from "../utils/getLargeImageMeta";
 import FeatureSelector from "../components/FeatureSelector";
+import { palette } from "../utils/materialClassificationMapping";
 
 export default {
   name: "Focus",
@@ -307,7 +309,11 @@ export default {
       transitionName: "fade-group",
       customVizDatasetId: null,
       preserveCustomViz: false,
-      pointCloudFeature: null
+      pointCloudFeature: null,
+      palettePickerExtras: {
+        Custom: [["blue", "red"], ["blue", "white", "red"]],
+        "Material Classification": [palette]
+      }
     };
   },
   computed: {

@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 
 import girder from '../girder';
-import prompt from "../components/prompt/module";
+import prompt from "resonantgeoview/src/components/prompt/module";
 import filter from './modules/filter';
 import workingSet from './modules/workingSet';
 import paletteColors from '../components/vtk/paletteColors';

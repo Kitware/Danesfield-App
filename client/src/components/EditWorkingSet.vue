@@ -29,11 +29,14 @@
             <div class='body-2'>Datasets</div>
             <transition-group name="slide-fade-group" tag="div">
               <div v-for="dataset in datasets" :key="dataset._id">
-                <v-chip outline close color="primary" class='dataset'
-                  @input="removeDataset(dataset)"
-                  @mouseenter.native="setSelectedDataset(dataset)"
-                  @mouseleave.native="setSelectedDataset(null)"
-                ><span>{{dataset.name}}</span></v-chip>
+                <v-tooltip top open-delay="1000">
+                  <span>{{dataset.name}}</span>
+                  <v-chip slot="activator" outline close color="primary" class='dataset'
+                    @input="removeDataset(dataset)"
+                    @mouseenter.native="setSelectedDataset(dataset)"
+                    @mouseleave.native="setSelectedDataset(null)"
+                  ><span>{{dataset.name}}</span></v-chip>
+                </v-tooltip>
               </div>
             </transition-group>
           </v-flex>
@@ -98,10 +101,15 @@ export default {
     if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
       this.loadDatasets(this.filterId);
     } else {
-      loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
+      if (this.editingWorkingSet._id) {
+        loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
+          this.initialized = true;
+          this.$store.commit("workingSet/setDatasets", datasets);
+        });
+      } else {
         this.initialized = true;
-        this.$store.commit("workingSet/setDatasets", datasets);
-      });
+        this.$store.commit("workingSet/setDatasets", []);
+      }
     }
   },
   computed: {

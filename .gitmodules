@@ -1,0 +1,3 @@
+[submodule "client/resonantgeoview"]
+	path = client/resonantgeoview
+	url = https://github.com/OpenGeoscience/resonantgeoview.git

@@ -17,12 +17,15 @@
           <v-flex xs12>
             <div class='datasets' v-if="datasets.length">
               <div class='body-2'>Datasets</div>
-              <v-chip outline color="primary" 
-                v-for="(dataset, i) in datasets" 
-                :key="i"
-                @mouseenter.native="setSelectedDataset(dataset)"
-                @mouseleave.native="setSelectedDataset(null)"
-              >{{dataset.name}}</v-chip>
+              <span v-for="dataset in datasets" :key="dataset._id">
+                <v-tooltip top open-delay="1000">
+                  <span>{{dataset.name}}</span>
+                  <v-chip  slot="activator" outline color="primary" 
+                    @mouseenter.native="setSelectedDataset(dataset)"
+                    @mouseleave.native="setSelectedDataset(null)"
+                  >{{dataset.name}}</v-chip>
+                </v-tooltip>
+              </span>
             </div>
           </v-flex>
         </transition>

@@ -34,7 +34,7 @@
 import { mapState, mapMutations } from "vuex";
 
 import EditWorkingSet from "../components/EditWorkingSet";
-import NewWithName from "../components/NewWithName";
+import NewWithName from "resonantgeoview/src/components/NewWithName";
 
 export default {
   name: "WorkingSetModule",

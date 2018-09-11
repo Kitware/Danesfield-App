@@ -67,7 +67,7 @@
 import { mapActions } from "vuex";
 
 import girder from "./girder";
-import Prompt from "./components/prompt/Prompt";
+import Prompt from "resonantgeoview/src/components/prompt/Prompt";
 import { status } from "resonantgeo/src/components/girder/jobs";
 import { GIRDER_URL } from "./constants";
 
