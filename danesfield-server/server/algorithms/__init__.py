@@ -29,3 +29,4 @@ from .roof_geon_extraction import roofGeonExtraction  # noqa: F401
 from .segment_by_height import segmentByHeight  # noqa: F401
 from .select_best import selectBest  # noqa: F401
 from .unet_semantic_segmentation import unetSemanticSegmentation  # noqa: F401
+from .buildings_to_dsm import buildingsToDsm  # noqa: F401
