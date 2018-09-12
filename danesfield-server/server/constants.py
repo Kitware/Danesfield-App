@@ -43,6 +43,7 @@ class DanesfieldStep(object):
     BUILDING_SEGMENTATION = 'building-segmentation'
     CLASSIFY_MATERIALS = 'classify-materials'
     ROOF_GEON_EXTRACTION = 'roof-geon-extraction'
+    BUILDINGS_TO_DSM = 'buildings-to-dsm'
 
 
 class DockerImage(object):

@@ -23,6 +23,7 @@ from .workflow_steps import (
     SegmentByHeightStep,
     SelectBestStep,
     UNetSemanticSegmentationStep,
+    BuildingsToDsmStep,
 )
 
 
@@ -45,6 +46,7 @@ def createWorkflow():
         SegmentByHeightStep,
         SelectBestStep,
         UNetSemanticSegmentationStep,
+        BuildingsToDsmStep,
     ]:
         workflow.addStep(step())
 
