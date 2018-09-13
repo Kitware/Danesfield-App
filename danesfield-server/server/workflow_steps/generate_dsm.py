@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import re
+
 from ..algorithms import generateDsm
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
@@ -45,8 +47,11 @@ class GenerateDsmStep(DanesfieldWorkflowStep):
         # Get options
         generateDsmOptions = getOptions(self.name, jobInfo)
 
+        # Set output prefix; replacing whitespace with underscores
+        outputPrefix = re.sub("\\s", "_", initWorkingSet['name'])
+
         # Run algorithm
         generateDsm(
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, pointCloudFile=pointCloudFile,
-            outputPrefix=initWorkingSet['name'], **generateDsmOptions)
+            outputPrefix=outputPrefix, **generateDsmOptions)
