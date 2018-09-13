@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import re
+
 from ..algorithms import fitDtm
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
@@ -46,8 +48,11 @@ class FitDtmStep(DanesfieldWorkflowStep):
         # Get options
         fitDtmOptions = getOptions(self.name, jobInfo)
 
+        # Set output prefix; replacing whitespace with underscores
+        outputPrefix = re.sub("\\s", "_", initWorkingSet['name'])
+
         # Run algorithm
         fitDtm(
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, dsmFile=dsmFile,
-            outputPrefix=initWorkingSet['name'], **fitDtmOptions)
+            outputPrefix=outputPrefix, **fitDtmOptions)

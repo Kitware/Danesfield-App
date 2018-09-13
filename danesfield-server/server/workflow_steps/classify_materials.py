@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import re
+
 from ..algorithms import classifyMaterials
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
@@ -54,8 +56,8 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         # Get model file from setting
         modelFile = self.getFileFromSetting(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
 
-        # Set outfile prefix
-        outfilePrefix = initWorkingSet['name']
+        # Set outfile prefix; replacing whitespace with underscores
+        outfilePrefix = re.sub("\\s", "_", initWorkingSet['name'])
 
         # Run algorithm
         classifyMaterials(
