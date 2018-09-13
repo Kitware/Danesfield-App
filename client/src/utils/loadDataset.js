@@ -19,7 +19,7 @@ export const loadDatasetByFilterConditions = async (conditions) => {
         result = await girder.girder.get('item/geometa', {
             params: {
                 geojson: geometryCollection,
-                relation: 'within'
+                relation: 'intersects'
             }
         });
     } else {
