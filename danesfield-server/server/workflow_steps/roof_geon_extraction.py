@@ -57,7 +57,7 @@ class RoofGeonExtractionStep(DanesfieldWorkflowStep):
             jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         buildingSegmentationWorkingSet = getWorkingSet(
-            DanesfieldStep.UNET_SEMANTIC_SEGMENTATION, jobInfo)
+            DanesfieldStep.SEGMENT_BY_HEIGHT, jobInfo)
 
         # Get point cloud file
         pointCloudFile = self.getSingleFile(pointCloudWorkingSet, isPointCloud)
