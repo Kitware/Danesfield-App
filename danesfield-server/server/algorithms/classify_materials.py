@@ -33,7 +33,8 @@ from ..workflow import DanesfieldWorkflowException
 
 
 def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
-                      metadataFiles, modelFile, cuda=None, batchSize=None):
+                      metadataFiles, modelFile, outfilePrefix, cuda=None,
+                      batchSize=None):
     """
     Run a Girder Worker job to classify materials in an orthorectified image.
 
@@ -54,6 +55,8 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
     :type metadataFiles: list[dict]
     :param modelFile: Model file document.
     :type modelFile: dict
+    :param outfilePrefix: Prefix for output filename
+    :type outfilePrefix: str
     :param cuda: Enable/disable CUDA; enabled by default.
     :type cuda: bool
     :param batchSize: Number of pixels classified at a time.
@@ -90,7 +93,8 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
             'danesfield/tools/material_classifier.py',
             '--model_path', GirderFileIdToVolume(modelFile['_id'], gc=gc),
             '--output_dir', outputVolumePath,
-            '--image_paths'
+            '--image_paths',
+            '--outfile_prefix', outfilePrefix
         ],
         [
             GirderFileIdToVolume(imageFile['_id'], gc=gc)
