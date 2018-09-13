@@ -11,7 +11,7 @@ from .workflow_manager import DanesfieldWorkflowManager
 from .client_webroot import ClientWebroot
 
 from .workflow_steps import (
-    BuildingSegmentationStep,
+    # BuildingSegmentationStep,
     ClassifyMaterialsStep,
     FitDtmStep,
     GenerateDsmStep,
@@ -22,7 +22,7 @@ from .workflow_steps import (
     RoofGeonExtractionStep,
     SegmentByHeightStep,
     SelectBestStep,
-    UNetSemanticSegmentationStep,
+    # UNetSemanticSegmentationStep,
     BuildingsToDsmStep,
 )
 
@@ -34,7 +34,7 @@ def createWorkflow():
     workflow = DanesfieldWorkflow()
 
     for step in [
-        BuildingSegmentationStep,
+        # BuildingSegmentationStep,
         ClassifyMaterialsStep,
         FitDtmStep,
         GenerateDsmStep,
@@ -45,7 +45,7 @@ def createWorkflow():
         RoofGeonExtractionStep,
         SegmentByHeightStep,
         SelectBestStep,
-        UNetSemanticSegmentationStep,
+        # UNetSemanticSegmentationStep,
         BuildingsToDsmStep,
     ]:
         workflow.addStep(step())
