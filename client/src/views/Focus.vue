@@ -48,7 +48,7 @@
               item-value='_id'
               label="Select"
               hide-details></v-select>
-            <v-list dense class="datasets">
+            <v-list dense class="datasets" ref="datasetsContainer">
               <draggable v-model="listingDatasetIdAndWorkingSets" :options="{
                   draggable:'.dataset',
                   handle:'.dataset',
@@ -514,6 +514,9 @@ export default {
             this.listingDatasetIdAndWorkingSets.push({ datasetId, workingSet });
           }
         });
+        setTimeout(() => {
+          this.$refs.datasetsContainer.$el.scrollTop = this.$refs.datasetsContainer.$el.scrollHeight;
+        }, 0);
       } else {
         // Remove
         let index = this.includedChildrenWorkingSets.indexOf(workingSet);
@@ -527,6 +530,17 @@ export default {
           );
           if (index !== -1) {
             this.listingDatasetIdAndWorkingSets.splice(index, 1);
+          }
+          // Remove from workspace if being visualized
+          if (
+            this.focusedWorkspace.layers
+              .map(layer => layer.dataset)
+              .indexOf(this.datasets[datasetId]) !== -1
+          ) {
+            this.removeDatasetFromWorkspace({
+              dataset: this.datasets[datasetId],
+              workspace: this.focusedWorkspace
+            });
           }
         });
       }
@@ -683,7 +697,7 @@ export default {
   }
 
   .results {
-    max-height: 60%;
+    max-height: 50%;
     flex: 0 0 auto;
     overflow-y: auto;
 
