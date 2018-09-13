@@ -54,8 +54,11 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         # Get model file from setting
         modelFile = self.getFileFromSetting(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
 
+        # Set outfile prefix
+        outfilePrefix = initWorkingSet['name']
+
         # Run algorithm
         classifyMaterials(
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
-            modelFile=modelFile, **classifyMaterialsOptions)
+            modelFile=modelFile, outfilePrefix=outfilePrefix, **classifyMaterialsOptions)
