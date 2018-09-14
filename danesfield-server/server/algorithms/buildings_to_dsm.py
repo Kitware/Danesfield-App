@@ -77,11 +77,9 @@ def buildingsToDsm(stepName,
     # of files as a fix.
     containerArgsDSM = [
         'danesfield/tools/buildings_to_dsm.py',
-        TemporaryVolume.default,
         GirderFileIdToVolume(dtmFile['_id'], gc=gc),
         outputDSMVolumePath,
-        '&&',
-        'echo'
+        '--input_obj_paths'
     ]
     containerArgsDSM.extend([GirderFileIdToVolume(f['_id'], gc=gc)
                              for f in objFiles])
@@ -96,12 +94,10 @@ def buildingsToDsm(stepName,
     # of files as a fix.
     containerArgsCLS = [
         'danesfield/tools/buildings_to_dsm.py',
-        TemporaryVolume.default,
         GirderFileIdToVolume(dtmFile['_id'], gc=gc),
         outputCLSVolumePath,
         '--render_cls',
-        '&&',
-        'echo'
+        '--input_obj_paths'
     ]
     containerArgsCLS.extend([GirderFileIdToVolume(f['_id'], gc=gc)
                              for f in objFiles])
