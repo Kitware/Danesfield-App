@@ -23,7 +23,8 @@ from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
     getOptions,
-    getWorkingSet)
+    getWorkingSet,
+    isObj)
 
 
 class BuildingsToDsmStep(DanesfieldWorkflowStep):
@@ -46,15 +47,8 @@ class BuildingsToDsmStep(DanesfieldWorkflowStep):
             jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
 
-        # Get OBJs folder
-        objsFolder = \
-            self.getSingleFile(roofGeonExtractionWorkingSet,
-                               lambda item: item['name'] == "output_obj")
-
-        if not objsFolder:
-            raise DanesfieldWorkflowException(
-                'Unable to get "output_obj" folder',
-                step=self.name)
+        # Get OBJ files
+        objFiles = self.getFiles(roofGeonExtractionWorkingSet, isObj)
 
         # Get DTM
         dtmFile = self.getSingleFile(dtmWorkingSet)
@@ -68,6 +62,6 @@ class BuildingsToDsmStep(DanesfieldWorkflowStep):
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder,
-            objsFolder=objsFolder,
+            objFiles=objFiles,
             dtmFile=dtmFile,
             **buildingsToDsmOptions)
