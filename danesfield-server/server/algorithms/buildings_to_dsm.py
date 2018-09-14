@@ -17,8 +17,6 @@
 #  limitations under the License.
 ##############################################################################
 
-import os
-
 from celery import group
 
 from girder_worker.docker.tasks import docker_run
@@ -27,6 +25,8 @@ from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume,
     GirderUploadVolumePathToFolder,
     GirderFolderIdToVolume)
+
+from girder_worker.docker.transforms import TemporaryVolume
 
 from .common import (
     addJobInfo,
@@ -42,7 +42,7 @@ def buildingsToDsm(stepName,
                    requestInfo,
                    jobId,
                    outputFolder,
-                   objsFolder,
+                   objFiles,
                    dtmFile):
     """
     Run a Girder Worker job to run Purdue and Columbia's roof geon
@@ -59,42 +59,67 @@ def buildingsToDsm(stepName,
     :type jobId: str
     :param outputFolder: Output folder document.
     :type outputFolder: dict
-    :param objsFolder: Folder containing OBJ files.
-    :type objsFolder: dict
+    :param objFiles: List of OBJ files.
+    :type objFiles: list[dict]
     :param dtmFile: DTM file document.
     :type dtmFile: dict
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
 
-    # Set output directory
-    outputVolumePath = VolumePath('__output__')
+    # Set output path for DSM
+    outputDSMVolumePath = VolumePath('buildings_to_dsm_DSM.tif')
 
-    # Docker container arguments
+    # Docker container arguments; FIXME: currently have to hack on the
+    # individual GirderFileIdToVolume calls, so that we can get the
+    # files we need in the same directory and pass into
+    # buildings_to_dsm.  Could change buildings_to_dsm.py to take list
+    # of files as a fix.
     containerArgsDSM = [
         'danesfield/tools/buildings_to_dsm.py',
-        os.path.join(GirderFolderIdToVolume(objsFolder['_id'], gc=gc),
-                     "output_obj"),
+        TemporaryVolume.default,
         GirderFileIdToVolume(dtmFile['_id'], gc=gc),
-        os.path.join(outputVolumePath, "buildings_to_dsm_DSM.tif")
+        outputDSMVolumePath,
+        '&&',
+        'echo'
     ]
+    containerArgsDSM.extend([GirderFileIdToVolume(f['_id'], gc=gc)
+                             for f in objFiles])
 
+    # Set output path for CLS
+    outputCLSVolumePath = VolumePath('buildings_to_dsm_CLS.tif')
+
+    # Docker container arguments; FIXME: currently have to hack on the
+    # individual GirderFileIdToVolume calls, so that we can get the
+    # files we need in the same directory and pass into
+    # buildings_to_dsm.  Could change buildings_to_dsm.py to take list
+    # of files as a fix.
     containerArgsCLS = [
         'danesfield/tools/buildings_to_dsm.py',
-        os.path.join(GirderFolderIdToVolume(objsFolder['_id'], gc=gc),
-                     "output_obj"),
+        TemporaryVolume.default,
         GirderFileIdToVolume(dtmFile['_id'], gc=gc),
-        os.path.join(outputVolumePath, "buildings_to_dsm_CLS.tif"),
-        '--render_cls'
+        outputCLSVolumePath,
+        '--render_cls',
+        '&&',
+        'echo'
     ]
+    containerArgsCLS.extend([GirderFileIdToVolume(f['_id'], gc=gc)
+                             for f in objFiles])
 
     # Result hooks
     # - Upload output files to output folder
     # - Provide upload metadata
     upload_kwargs = createUploadMetadata(jobId, stepName)
-    resultHooks = [
+    dsmResultHooks = [
         GirderUploadVolumePathToFolder(
-            outputVolumePath,
+            outputDSMVolumePath,
+            outputFolder['_id'],
+            upload_kwargs=upload_kwargs,
+            gc=gc)
+    ]
+    clsResultHooks = [
+        GirderUploadVolumePathToFolder(
+            outputCLSVolumePath,
             outputFolder['_id'],
             upload_kwargs=upload_kwargs,
             gc=gc)
@@ -108,7 +133,7 @@ def buildingsToDsm(stepName,
                 jobTitle='Buildings to DSM: DSM generation',
                 jobType=stepName,
                 user=requestInfo.user,
-                resultHooks=resultHooks
+                resultHooks=dsmResultHooks
             )
         ),
         docker_run.s(
@@ -118,7 +143,7 @@ def buildingsToDsm(stepName,
                 jobTitle='Buildings to DSM: CLS generation',
                 jobType=stepName,
                 user=requestInfo.user,
-                resultHooks=resultHooks
+                resultHooks=clsResultHooks
             )
         )
     ]

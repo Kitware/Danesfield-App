@@ -105,6 +105,16 @@ def isRpc(item):
     return hasExtension(item, '.rpc')
 
 
+def isObj(item):
+    """
+    Return true if the item refers to an OBJ file.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    return hasExtension(item, '.obj')
+
+
 def getWorkingSet(stepName, jobInfo):
     """
     Get a specific working set by step name. Raise an error if the working set is not found.
