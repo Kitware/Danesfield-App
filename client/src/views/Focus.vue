@@ -176,6 +176,13 @@
                           <v-icon>more_vert</v-icon>
                         </v-btn>
                         <v-list>
+                          <v-list-tile v-if="includedChildrenWorkingSets.indexOf(workingSet)===-1" @click="childrenWorkingSetChecked(true,workingSet)">
+                            <v-list-tile-title>Include</v-list-tile-title>
+                          </v-list-tile>
+                          <v-list-tile v-else @click="childrenWorkingSetChecked(false,workingSet)">
+                            <v-list-tile-title>Exclude</v-list-tile-title>
+                          </v-list-tile>
+                          <v-divider />
                           <v-list-tile @click="change(workingSet._id)">
                             <v-list-tile-title>Focus</v-list-tile-title>
                           </v-list-tile>
@@ -611,7 +618,7 @@ export default {
           range: [min, max],
           type: "linear"
         };
-      //TODO: *CLS.tif - discrete labels (2, 6, 17), pick a color for each.
+        //TODO: *CLS.tif - discrete labels (2, 6, 17), pick a color for each.
       } else {
         if (Object.keys(meta.bands).length === 1) {
           vizProperties = {
@@ -756,7 +763,7 @@ export default {
       }
 
       .v-list__tile {
-        padding-right: 0;
+        padding-right: 2px;
       }
     }
     .v-list__group__header__append-icon {
