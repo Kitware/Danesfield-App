@@ -10,8 +10,10 @@ from shapely.geometry import MultiPoint
 from girder.models.item import Item
 from girder.models.file import File
 
+
 class OBJSchema(BaseSchema):
     driver = fields.String(required=True)
+
 
 def readObjFileVertices(name):
     """
@@ -49,6 +51,9 @@ def getOBJBounds(objFileName, offset):
 
 
 def handler(path, girder_item, girder_file):
+    if ".obj" not in girder_file['name'] and \
+            ".OBJ" not in girder_file['name']:
+        raise CannotHandleError(girder_file['name'] + ' is not an OBJ file')
     try:
         jsonItem = Item().findOne({'name': girder_file['name'].replace(
             "obj", "json"), 'folderId': girder_item['folderId']})
