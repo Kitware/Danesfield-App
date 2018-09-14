@@ -93,8 +93,8 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
             'danesfield/tools/material_classifier.py',
             '--model_path', GirderFileIdToVolume(modelFile['_id'], gc=gc),
             '--output_dir', outputVolumePath,
-            '--image_paths',
-            '--outfile_prefix', outfilePrefix
+            '--outfile_prefix', outfilePrefix,
+            '--image_paths'
         ],
         [
             GirderFileIdToVolume(imageFile['_id'], gc=gc)
