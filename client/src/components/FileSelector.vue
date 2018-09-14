@@ -22,7 +22,7 @@ export default {
     },
     label: {
       type: String,
-      default: "choose_file"
+      default: "choose file"
     },
     required: {
       type: Boolean,

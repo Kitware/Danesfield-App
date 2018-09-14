@@ -231,7 +231,7 @@
         <v-card-text>
           A pipeline will be started with datasets within the current working set as input data. Multiple result working sets will be created.
           <div class="pointcloud-params mt-2 ml-2">
-            <div class="subheading">Point cloud paremeters</div>
+            <div class="subheading">Point cloud parameters:</div>
             <template v-if="pointCloudParams">
               <div>Center: {{pointCloudParams.longitude.toFixed(6)}}, {{pointCloudParams.latitude.toFixed(6)}}</div>
               <div>Dimensions: {{pointCloudParams.longitudeWidth.toFixed(6)}}, {{pointCloudParams.latitudeWidth.toFixed(6)}}</div>
