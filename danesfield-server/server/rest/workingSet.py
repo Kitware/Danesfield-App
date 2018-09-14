@@ -17,9 +17,11 @@
 #  limitations under the License.
 ##############################################################################
 
+from bson.objectid import ObjectId
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import Resource
+from girder.models.item import Item
 from ..models.workingSet import WorkingSet
 
 
@@ -62,6 +64,18 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def create(self, data, params):
+        tarItemIds = []
+        # //TODO: improve this .tar  including logic
+        for datasetId in data['datasetIds']:
+            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
+            if not datasetItem['name'].endswith('.NTF'):
+                continue
+            tarItem = Item().findOne({
+                'name': datasetItem['name'].replace(".NTF", ".tar"),
+                'folderId': datasetItem['folderId']})
+            if tarItem:
+                tarItemIds.append(str(tarItem['_id']))
+        data['datasetIds'] = data['datasetIds'] + tarItemIds
         return WorkingSet().save(data)
 
     @autoDescribeRoute(
