@@ -287,6 +287,7 @@ import FocusWorkspace from "./FocusWorkspace";
 import getLargeImageMeta from "../utils/getLargeImageMeta";
 import FeatureSelector from "../components/FeatureSelector";
 import { palette } from "../utils/materialClassificationMapping";
+import { blueRed, blueWhiteRed, blackWhite } from "../utils/extraPalettes";
 
 export default {
   name: "Focus",
@@ -311,7 +312,7 @@ export default {
       preserveCustomViz: false,
       pointCloudFeature: null,
       palettePickerExtras: {
-        Custom: [["blue", "red"], ["blue", "white", "red"]],
+        Custom: [blueRed, blueWhiteRed],
         "Material Classification": [palette]
       }
     };
@@ -553,10 +554,17 @@ export default {
     },
     async getDatasetMeta(dataset) {
       if (!(dataset._id in this.datasetIdMetaMap)) {
-        if (dataset.geometa.driver === "GeoJSON") {
-          var geojson = await loadDatasetData(dataset);
-          var summary = summarize(geojson);
-          this.$set(this.datasetIdMetaMap, dataset._id, { geojson, summary });
+        switch (dataset.geometa.driver) {
+          case "GeoJSON":
+            var geojson = await loadDatasetData(dataset);
+            var summary = summarize(geojson);
+            this.$set(this.datasetIdMetaMap, dataset._id, { geojson, summary });
+            break;
+          case "GeoTIFF":
+            var meta = await getLargeImageMeta(dataset);
+            this.tryApplyDefaultVizProperties(dataset, meta);
+            this.$set(this.datasetIdMetaMap, dataset._id, meta);
+            break;
         }
       }
     },
@@ -565,18 +573,6 @@ export default {
       this.addDatasetToWorkspace({ dataset, workspace });
     },
     async customDatasetVisualization(dataset) {
-      if (dataset.geometa.driver === "GeoJSON") {
-        await this.getDatasetMeta(dataset);
-      }
-      if (dataset.geometa.driver === "GeoTIFF") {
-        if (!(dataset._id in this.datasetIdMetaMap)) {
-          this.$set(
-            this.datasetIdMetaMap,
-            dataset._id,
-            await getLargeImageMeta(dataset)
-          );
-        }
-      }
       this.customVizDatasetId = dataset._id;
     },
     returnFromCustomViz() {
@@ -585,6 +581,52 @@ export default {
       if (this.preserveCustomViz) {
         this.preserveCustomViz = false;
         saveDatasetMetadata(dataset);
+      }
+    },
+    tryApplyDefaultVizProperties(dataset, meta) {
+      var bandName = Object.keys(meta.bands)[0];
+      var min = parseInt(meta.bands[bandName].min.toFixed(0));
+      var max = parseInt(meta.bands[bandName].max.toFixed(0));
+      if (dataset.meta && dataset.meta.vizProperties) {
+        return;
+      }
+      var vizProperties = null;
+      // *MTL.tif - discrete labels, you already have this color map.
+      if (dataset.name.endsWith("MTL.tif")) {
+        vizProperties = {
+          band: bandName,
+          palette: palette,
+          range: [0, 11],
+          type: "discrete"
+        };
+      } else if (
+        // DSM.tif - continuous, fit range
+        // *DTM.tif - continuous, fit range
+        dataset.name.endsWith("DSM.tif") ||
+        dataset.name.endsWith("DTM.tif")
+      ) {
+        vizProperties = {
+          band: bandName,
+          palette: blueWhiteRed,
+          range: [min, max],
+          type: "linear"
+        };
+      //TODO: *CLS.tif - discrete labels (2, 6, 17), pick a color for each.
+      } else {
+        if (Object.keys(meta.bands).length === 1) {
+          vizProperties = {
+            band: bandName,
+            palette: blueWhiteRed,
+            range: [min, max],
+            type: "linear"
+          };
+        }
+      }
+      if (vizProperties) {
+        dataset.meta = {
+          ...dataset.meta,
+          ...{ vizProperties }
+        };
       }
     },
     ...mapMutations([
