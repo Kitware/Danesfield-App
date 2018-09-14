@@ -5,6 +5,7 @@ from girder.api.describe import autoDescribeRoute, Description
 from girder.constants import AccessType
 from girder.api.rest import Resource
 from girder.models.item import Item
+from girder.plugins.girder_geospatial import geometa_search_handler
 from ..models.workingSet import WorkingSet
 
 
@@ -15,9 +16,10 @@ class DatasetResource(Resource):
 
         self.resourceName = 'dataset'
         self.route('GET', (), self.getAll)
+        self.route('GET', ('search',), self.search)
         self.route('GET', (':id',), self.get)
         self.route('GET', ('bounds',), self.getAllBounds)
-        self.route('GET', ('workingset',':id',), self.getWorkingSetDatasets)
+        self.route('GET', ('workingset', ':id',), self.getWorkingSetDatasets)
 
     @autoDescribeRoute(
         Description('')
@@ -30,8 +32,8 @@ class DatasetResource(Resource):
 
     def _getAll(self):
         datasetItems = list(Item().find(
-            {'$or':[{'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF', 'OBJ', 'National Imagery Transmission Format']}},{'geometa.subDatasets.driver':'National Imagery Transmission Format'}]}))
-        return datasetItems
+            {'$and': [{'name': {'$regex': '.NTF$'}}, {'$or': [{'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF', 'OBJ', 'National Imagery Transmission Format']}}, {'geometa.subDatasets.driver': 'National Imagery Transmission Format'}]}]}))
+        return self.filterInputNTF(datasetItems)
 
     @autoDescribeRoute(
         Description('')
@@ -66,5 +68,28 @@ class DatasetResource(Resource):
     @access.user
     def getWorkingSetDatasets(self, workingSet, params):
         datasetItems = list(Item().find(
-            {"_id":{"$in":[ObjectId(id) for id in workingSet['datasetIds']]}}))
+            {"_id": {"$in": [ObjectId(id) for id in workingSet['datasetIds']]}}))
         return datasetItems
+
+    @autoDescribeRoute(
+        Description('')
+        .param('geojson', '', required=True)
+        .param('relation', '', required=True)
+        .errorResponse()
+        .errorResponse('Read access was denied on the item.', 403)
+    )
+    def search(self, geojson, relation):
+        return self.filterInputNTF(geometa_search_handler({
+            "geojson": geojson,
+            "relation": relation
+        }))
+
+    def filterInputNTF(self, datasets):
+        filteredDatasets = []
+        for dataset in datasets:
+            if not dataset['name'].endswith('.NTF'):
+                continue
+            if 'M1BS' in dataset['name'] or \
+                    'P1BS' in dataset['name']:
+                filteredDatasets.append(dataset)
+        return filteredDatasets

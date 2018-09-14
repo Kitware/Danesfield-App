@@ -14,18 +14,18 @@ export const loadDatasetByFilterConditions = async (conditions) => {
             return collection;
         }, { type: 'GeometryCollection', geometries: [] })
 
-    var result;
     if (geometryCollection.geometries.length) {
-        result = await girder.girder.get('item/geometa', {
+        let { data: datasets } = await girder.girder.get('dataset/search', {
             params: {
                 geojson: geometryCollection,
                 relation: 'intersects'
             }
         });
+        return datasets;
     } else {
-        result = await girder.girder.get('dataset');
+        let { data: datasets } = await girder.girder.get('dataset');
+        return datasets;
     }
-    return result.data;
 }
 
 export const loadDatasetByIds = (ids) => {
