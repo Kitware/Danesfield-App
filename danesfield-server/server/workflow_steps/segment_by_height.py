@@ -51,26 +51,27 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
-        # Get prefix of best image set
-        selectBestStandardOutput = getStandardOutput(DanesfieldStep.SELECT_BEST, jobInfo)
-        prefix = next(SelectBestStep.getImagePrefixes(selectBestStandardOutput), None)
-        if prefix is None:
-            raise DanesfieldWorkflowException('Error looking up best image set', step=self.name)
-
         # Get DSM
         dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get DTM
         dtmFile = self.getSingleFile(dtmWorkingSet)
 
-        # Get the best pansharpened MSI image
-        msiImageFiles = self.getFiles(
-            pansharpenWorkingSet,
-            lambda item: getPrefix(item['name']) == prefix)
-        if not msiImageFiles:
+        # Get best image set
+        msiImageFile = None
+        selectBestStandardOutput = getStandardOutput(DanesfieldStep.SELECT_BEST, jobInfo)
+        for prefix in SelectBestStep.getImagePrefixes(selectBestStandardOutput):
+            # Get the best pansharpened MSI image
+            msiImageFiles = self.getFiles(
+                pansharpenWorkingSet,
+                lambda item: getPrefix(item['name']) == prefix)
+            if msiImageFiles:
+                msiImageFile = msiImageFiles[0]
+                break
+
+        if not msiImageFile:
             raise DanesfieldWorkflowException(
-                'Unable to find best pansharpened image', step=self.name)
-        msiImageFile = msiImageFiles[0]
+                'Unable to find a best pansharpened image', step=self.name)
 
         # Get options
         segmentByHeightOptions = getOptions(self.name, jobInfo)
