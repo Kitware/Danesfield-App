@@ -4,7 +4,8 @@
       <v-expansion-panel>
         <v-expansion-panel-content
           v-for="workingSet in workingSets"
-          :key="workingSet._id">
+          :key="workingSet._id"
+          :class="{derived:workingSet.parentWorkingSetId}">
           <div slot='header'>{{workingSet.name}}</div>
             <v-layout>
               <v-flex xs2 offset-xs1>
@@ -26,9 +27,6 @@
     <EditWorkingSet v-else />
   </transition>
 </template>
-
-<style lang="scss" scoped>
-</style>
 
 <script>
 import { mapState, mapMutations } from "vuex";
@@ -62,3 +60,9 @@ export default {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.theme--light.v-expansion-panel .v-expansion-panel__container.derived {
+  background-color: #efefef;
+}
+</style>
