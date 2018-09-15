@@ -79,11 +79,16 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
             PluginSettings.SEGMENT_BY_HEIGHT_SHAPEFILES_FOLDER_ID)
 
         # Get shapefiles prefix
-        shapefiles = list(Folder().childItems(shapefilesFolder, limit=1))
-        if not shapefiles:
-            raise DanesfieldWorkflowException(
-                'Shapefiles for segment by height not found.', step=self.name)
-        shapefilePrefix = os.path.splitext(shapefiles[0]['name'])[0]
+        # shapefiles = list(Folder().childItems(shapefilesFolder, limit=1))
+        # if not shapefiles:
+        #     raise DanesfieldWorkflowException(
+        #         'Shapefiles for segment by height not found.', step=self.name)
+        # shapefilePrefix = os.path.splitext(shapefiles[0]['name'])[0]
+
+        # FIXME: Hardcoding the shapefilePrefix for D4 for now, as
+        # it's the only AOI with road data.  Need to come up with a
+        # solution where this is selected based on the AOI
+        shapefilePrefix = "ex_FgMKU8FtfzgKJNgmUTE7T3Y5E1cgb_osm_roads_gen1"
 
         # Run algorithm
         segmentByHeight(
