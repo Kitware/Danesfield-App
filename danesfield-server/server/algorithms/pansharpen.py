@@ -19,6 +19,7 @@
 
 from celery import group
 
+from girder import logprint
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -110,18 +111,23 @@ def pansharpen(stepName, requestInfo, jobId, outputFolder, imageFiles):
                 'Unrecognized image: {}'.format(imageFile['name']), step=stepName)
 
     # Ensure that both types of images exist for each prefix
-    for files in pairs.values():
+    # Logging a warning for now and skipping rather than treating this
+    # as an exception
+    for prefix, files in pairs.items():
         panFile = files['pan']
         msiFile = files['msi']
         if not panFile or not msiFile:
-            raise DanesfieldWorkflowException(
-                'Corresponding PAN and MSI orthorectified images not found')
+            logprint.info("Step: {} -- Warning: Don't have both PAN and MSI \
+images for: {}".format(stepName, prefix))
+            # raise DanesfieldWorkflowException(
+            #     'Corresponding PAN and MSI orthorectified images not found')
 
     # Run tasks in parallel using a group
     tasks = [
         createPansharpenTask(imagePrefix, files['pan'], files['msi'])
         for imagePrefix, files
         in pairs.items()
+        if files['pan'] and files['msi']
     ]
     groupResult = group(tasks).delay()
 
