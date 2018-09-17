@@ -64,18 +64,28 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def create(self, data, params):
-        tarItemIds = []
-        # //TODO: improve this .tar  including logic
+        datasetIds = set(data['datasetIds'])
         for datasetId in data['datasetIds']:
             datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
             if not datasetItem['name'].endswith('.NTF'):
                 continue
+            # Include conresponding TAR files
             tarItem = Item().findOne({
                 'name': datasetItem['name'].replace(".NTF", ".tar"),
                 'folderId': datasetItem['folderId']})
             if tarItem:
-                tarItemIds.append(str(tarItem['_id']))
-        data['datasetIds'] = data['datasetIds'] + tarItemIds
+                datasetIds.add(str(tarItem['_id']))
+            # Try to include coresponding MSI or PAN file
+            msiOrPans =\
+                list(Item().find(
+                    {'$and':
+                     [{'_id': {'$ne': ObjectId(datasetId)}},
+                      {'name': {'$regex': '^' + datasetItem['name'].split('_')[0] + '.^.NTF$'}}]
+                     }))
+            if len(msiOrPans) == 1:
+                datasetIds.add(str(msiOrPans[0]['_id']))
+
+        data['datasetIds'] = list(datasetIds)
         return WorkingSet().save(data)
 
     @autoDescribeRoute(
