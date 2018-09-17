@@ -43,7 +43,8 @@ def buildingsToDsm(stepName,
                    jobId,
                    outputFolder,
                    objFiles,
-                   dtmFile):
+                   dtmFile,
+                   outputPrefix):
     """
     Run a Girder Worker job to run Purdue and Columbia's roof geon
     extraction pipeline.
@@ -63,12 +64,15 @@ def buildingsToDsm(stepName,
     :type objFiles: list[dict]
     :param dtmFile: DTM file document.
     :type dtmFile: dict
+    :param outputPrefix: The prefix of the output file name.
+    :type outputPrefix: str
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
 
     # Set output path for DSM
-    outputDSMVolumePath = VolumePath('buildings_to_dsm_DSM.tif')
+    outputDSMName = outputPrefix + '_rendered_DSM.tif'
+    outputDSMVolumePath = VolumePath(outputDSMName)
 
     # Docker container arguments; FIXME: currently have to hack on the
     # individual GirderFileIdToVolume calls, so that we can get the
@@ -85,7 +89,8 @@ def buildingsToDsm(stepName,
                              for f in objFiles])
 
     # Set output path for CLS
-    outputCLSVolumePath = VolumePath('buildings_to_dsm_CLS.tif')
+    outputCLSName = outputPrefix + '_rendered_CLS.tif'
+    outputCLSVolumePath = VolumePath(outputCLSName)
 
     # Docker container arguments; FIXME: currently have to hack on the
     # individual GirderFileIdToVolume calls, so that we can get the
