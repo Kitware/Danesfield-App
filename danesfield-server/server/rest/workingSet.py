@@ -64,28 +64,7 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def create(self, data, params):
-        datasetIds = set(data['datasetIds'])
-        for datasetId in data['datasetIds']:
-            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
-            if not datasetItem['name'].endswith('.NTF'):
-                continue
-            # Include conresponding TAR files
-            tarItem = Item().findOne({
-                'name': datasetItem['name'].replace(".NTF", ".tar"),
-                'folderId': datasetItem['folderId']})
-            if tarItem:
-                datasetIds.add(str(tarItem['_id']))
-            # Try to include coresponding MSI or PAN file
-            msiOrPans =\
-                list(Item().find(
-                    {'$and':
-                     [{'_id': {'$ne': ObjectId(datasetId)}},
-                      {'name': {'$regex': '^' + datasetItem['name'].split('_')[0] + '.^.NTF$'}}]
-                     }))
-            if len(msiOrPans) == 1:
-                datasetIds.add(str(msiOrPans[0]['_id']))
-
-        data['datasetIds'] = list(datasetIds)
+        data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
         return WorkingSet().save(data)
 
     @autoDescribeRoute(
@@ -98,6 +77,7 @@ class WorkingSetResource(Resource):
     @access.user
     def edit(self, workingSet, data, params):
         data.pop('_id', None)
+        data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
         workingSet.update(data)
         return WorkingSet().save(workingSet)
 
@@ -111,3 +91,34 @@ class WorkingSetResource(Resource):
     def delete(self, workingSet, params):
         WorkingSet().remove(workingSet)
         return
+
+    def normalizeworkingSetDatasets(self, datasetIds):
+        datasetIdsSet = set(datasetIds)
+        for datasetId in datasetIds:
+            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
+            # first remove all tar items
+            if datasetItem['name'].endswith('.tar'):
+                datasetIdsSet.remove(datasetId)
+            elif datasetItem['name'].endswith('.NTF'):
+                # Try to include coresponding MSI or PAN item
+                msiOrPans =\
+                    list(Item().find(
+                        {'$and':
+                         [{'_id': {'$ne': ObjectId(datasetId)}},
+                          {'name': {'$regex': '^' + datasetItem['name'].split('-')[0] + '.*.NTF$'}}]
+                         }))
+                if len(msiOrPans) == 1:
+                    datasetIdsSet.add(str(msiOrPans[0]['_id']))
+        
+        for datasetId in list(datasetIdsSet):
+            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
+            if datasetItem['name'].endswith('.NTF'):
+                # Include conresponding TAR items
+                tarItem = Item().findOne({
+                    'name': datasetItem['name'].replace(".NTF", ".tar"),
+                    'folderId': datasetItem['folderId']})
+                if tarItem:
+                    datasetIdsSet.add(str(tarItem['_id']))
+
+
+        return list(datasetIdsSet)

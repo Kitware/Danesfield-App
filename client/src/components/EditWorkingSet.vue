@@ -28,7 +28,7 @@
           <v-flex xs12 class='datasets' v-if="datasets.length">
             <div class='body-2'>Datasets</div>
             <transition-group name="slide-fade-group" tag="div">
-              <div v-for="dataset in datasets" :key="dataset._id">
+              <div v-for="dataset in filteredDatasets" :key="dataset._id">
                 <v-tooltip top open-delay="1000">
                   <span>{{dataset.name}}</span>
                   <v-chip slot="activator" outline close color="primary" class='dataset'
@@ -95,23 +95,6 @@ export default {
       filterId: null
     };
   },
-  created() {
-    this.name = this.editingWorkingSet.name;
-    this.filterId = this.editingWorkingSet.filterId;
-    if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
-      this.loadDatasets(this.filterId);
-    } else {
-      if (this.editingWorkingSet._id) {
-        loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
-          this.initialized = true;
-          this.$store.commit("workingSet/setDatasets", datasets);
-        });
-      } else {
-        this.initialized = true;
-        this.$store.commit("workingSet/setDatasets", []);
-      }
-    }
-  },
   computed: {
     regionFilters() {
       return this.workingSet.filters.filter(filter => filter.type === "region");
@@ -131,6 +114,13 @@ export default {
         }
       }
     },
+    filteredDatasets() {
+      if (!this.datasets) {
+        return;
+      } else {
+        return this.datasets.filter(dataset => !dataset.name.endsWith(".tar"));
+      }
+    },
     ...mapState(["filters"]),
     ...mapState("workingSet", [
       "editingWorkingSet",
@@ -147,6 +137,23 @@ export default {
         return;
       }
       this.loadDatasets(filterId);
+    }
+  },
+  created() {
+    this.name = this.editingWorkingSet.name;
+    this.filterId = this.editingWorkingSet.filterId;
+    if (this.filterId && this.editingWorkingSet.datasetIds.length === 0) {
+      this.loadDatasets(this.filterId);
+    } else {
+      if (this.editingWorkingSet._id) {
+        loadDatasetByWorkingSetId(this.editingWorkingSet._id).then(datasets => {
+          this.initialized = true;
+          this.$store.commit("workingSet/setDatasets", datasets);
+        });
+      } else {
+        this.initialized = true;
+        this.$store.commit("workingSet/setDatasets", []);
+      }
     }
   },
   methods: {

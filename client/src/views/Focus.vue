@@ -481,30 +481,32 @@ export default {
       return false;
     },
     addDatasets(datasets) {
-      for (let dataset of datasets) {
-        if (!dataset.geometa) {
-          dataset.geometa = {};
-        } else {
-          switch (dataset.geometa.driver) {
-            case "GeoJSON":
-              if (!dataset.meta || !dataset.meta.vizProperties) {
-                dataset = {
-                  ...dataset,
-                  ...{
-                    meta: { vizProperties: getDefaultGeojsonVizProperties() }
-                  }
-                };
-              }
-              break;
-            case "GeoTIFF":
-              if (!dataset.meta) {
-                dataset.meta = {};
-              }
-              break;
+      datasets
+        .filter(dataset => !dataset.name.endsWith(".tar"))
+        .map(dataset => {
+          if (!dataset.geometa) {
+            dataset.geometa = {};
+          } else {
+            switch (dataset.geometa.driver) {
+              case "GeoJSON":
+                if (!dataset.meta || !dataset.meta.vizProperties) {
+                  dataset = {
+                    ...dataset,
+                    ...{
+                      meta: { vizProperties: getDefaultGeojsonVizProperties() }
+                    }
+                  };
+                }
+                break;
+              case "GeoTIFF":
+                if (!dataset.meta) {
+                  dataset.meta = {};
+                }
+                break;
+            }
           }
-        }
-        this.$set(this.datasets, dataset._id, dataset);
-      }
+          this.$set(this.datasets, dataset._id, dataset);
+        });
     },
     childrenWorkingSetChecked(value, workingSet) {
       if (value) {
