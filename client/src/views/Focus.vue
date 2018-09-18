@@ -34,6 +34,22 @@
           </v-btn>
           <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
           <v-toolbar-title v-else class="caption">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-menu 
+            v-if="!customVizDatasetId" 
+            offset-y>
+            <v-btn
+              slot="activator"
+              icon>
+              <v-icon>more_vert</v-icon>
+            </v-btn>
+            <v-list>
+              <v-list-tile
+                @click="datasetDetailDialog=true">
+                <v-list-tile-title>Datasets detail</v-list-tile-title>
+              </v-list-tile>
+            </v-list>
+          </v-menu>
         </v-toolbar>
       </template>
       <div class="main">
@@ -124,7 +140,7 @@
                               Opacity
                             </v-flex>
                             <v-flex>
-                              <v-slider class="opacity-slider pr-3"
+                              <v-slider class="opacity-slider pl-1 pr-3"
                                 hide-details
                                 :min="0"
                                 :max="1"
@@ -224,6 +240,30 @@
       </div>
     </SidePanel>
     <v-dialog
+      v-model="datasetDetailDialog"
+      scrollable
+      max-width="80%">
+      <v-card>
+        <v-card-title class="">Datasets</v-card-title>
+        <v-card-text>
+          <v-data-table
+            :headers="[
+              { text: 'Name', value: 'name' },
+              { text: 'Size', value: 'size' }
+            ]"
+            :items="listingDatasetIdAndWorkingSets.map(item=>datasets[item.datasetId])"
+            hide-actions>
+            <template slot="items" slot-scope="{item}">
+              <tr @click="datasetDetailClicked(item)">
+                <td>{{ item.name }}</td>
+                <td>{{ item.size }}</td>
+              </tr>
+            </template>
+          </v-data-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="processConfirmDialog"
       max-width="400">
       <v-card class="start-processing">
@@ -284,7 +324,7 @@ import GeotiffCustomVizPane from "resonantgeoview/src/components/GeotiffCustomVi
 import { summarize } from "resonantgeoview/src/utils/geojsonUtil";
 
 import girder from "../girder";
-import { API_URL } from "../constants";
+import { API_URL, GIRDER_URL } from "../constants";
 import {
   loadDatasetByWorkingSetId,
   saveDatasetMetadata
@@ -318,6 +358,7 @@ export default {
       customVizDatasetId: null,
       preserveCustomViz: false,
       pointCloudFeature: null,
+      datasetDetailDialog: false,
       palettePickerExtras: {
         Custom: [blueRed, blueWhiteRed],
         "Material Classification": [palette]
@@ -637,6 +678,9 @@ export default {
           ...{ vizProperties }
         };
       }
+    },
+    datasetDetailClicked(dataset) {
+      window.open(`${GIRDER_URL}#item/${dataset._id}`, "_blank");
     },
     ...mapMutations([
       "addWorkspace",
