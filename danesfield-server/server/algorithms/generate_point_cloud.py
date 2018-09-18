@@ -78,7 +78,7 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFiles,
             '--longitudeWidth', str(longitudeWidth),
             '--latitudeWidth', str(latitudeWidth),
             '--firstProc', '0',
-            '--threads', '2',
+            '--threads', '8',
             '--images'
         ],
         [GirderFileIdToVolume(imageFile['_id'], gc=gc) for imageFile in imageFiles],
