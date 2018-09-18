@@ -19,6 +19,7 @@
 
 import threading
 import uuid
+import re
 
 from girder import logprint
 
@@ -79,7 +80,7 @@ class DanesfieldWorkflowManager(object):
             raise DanesfieldWorkflowException('Invalid job ID: \'{}\''.format(jobId))
         return jobData
 
-    def initJob(self, requestInfo, workingSet, outputFolder, options):
+    def initJob(self, requestInfo, workingSet, outputFolder, options, previousWorkingSet=None):
         """
         Initialize a new job to run the workflow.
 
@@ -100,7 +101,7 @@ class DanesfieldWorkflowManager(object):
             jobId = self._createJobId()
 
             # TODO: Improve job data storage
-            self._jobData[jobId] = {
+            jobData = {
                 # Running steps
                 'runningSteps': set(),
                 # Completed steps
@@ -128,6 +129,42 @@ class DanesfieldWorkflowManager(object):
 
             logprint.info('DanesfieldWorkflowManager.initJob Job={} WorkingSet={}'.format(
                 jobId, workingSet['_id']))
+
+            # If this argument is provided, copy all child working
+            # sets and flag steps for those working sets as being
+            # complete
+            if previousWorkingSet:
+                initialWorkingSet = workingSet
+
+                step_name_re = re.compile(".*:\\s(.*)")
+
+                # If a workingSet exists we assume the step for that
+                # workingSet succeeded
+                for ws in WorkingSet().find({'parentWorkingSetId': initialWorkingSet['_id']}):
+                    match = re.match(step_name_re, ws['name'])
+                    if match:
+                        stepName = match[1]
+                        newWorkingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
+                        # Create a copy of the previously generated working set
+                        newWorkingSet = WorkingSet().createWorkingSet(
+                            name=newWorkingSetName,
+                            parentWorkingSet=initialWorkingSet,
+                            datasetIds=ws['datasetIds']
+                        )
+                        jobData['workingSets'][stepName] = newWorkingSet
+                        logprint.info('DanesfieldWorkflowManager.duplicatedWorkingSet Job={} '
+                                      'OldWorkingSetName={} NewWorkingSetName={}'
+                                      .format(jobId, ws['name'], newWorkingSetName))
+
+                        # Set the skipped job as completed
+                        jobData['completedSteps'].add(stepName)
+                        logprint.info('DanesfieldWorkflowManager.skippingStep Job={} '
+                                      'StepName={}'.format(jobId, stepName))
+                    else:
+                        logprint.warning('DanesfieldWorkflowManager.unableToParseStepName '
+                                         'Job={} WorkingSetName={}'.format(jobId, ws['name']))
+
+            self._jobData[jobId] = jobData
 
             return jobId
 
