@@ -87,11 +87,10 @@ class ProcessingResource(Resource):
                     paramType='query')
         .jsonParam('options', 'Processing options keyed by step name.', requireObject=True,
                    required=False)
-        .param('previousWorkingSet', 'The ID of a previous run working set.', required=False)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
-    def process(self, workingSet, options, params, previousWorkingSet=None):
+    def process(self, workingSet, options, params):
         """
         Run the complete processing workflow.
         """
@@ -103,5 +102,5 @@ class ProcessingResource(Resource):
         requestInfo = RequestInfo(user=user, apiUrl=apiUrl, token=token)
 
         workflowManager = DanesfieldWorkflowManager.instance()
-        jobId = workflowManager.initJob(requestInfo, workingSet, outputFolder, options, previousWorkingSet)
+        jobId = workflowManager.initJob(requestInfo, workingSet, outputFolder, options)
         workflowManager.advance(jobId=jobId)
