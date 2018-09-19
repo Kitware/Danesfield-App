@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import re
+
 from ..algorithms import buildingsToDsm
 from ..constants import DanesfieldStep
 from ..workflow import DanesfieldWorkflowException
@@ -42,6 +44,7 @@ class BuildingsToDsmStep(DanesfieldWorkflowStep):
 
     def run(self, jobInfo):
         # Get working sets
+        initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         roofGeonExtractionWorkingSet = getWorkingSet(
             DanesfieldStep.ROOF_GEON_EXTRACTION,
             jobInfo)
@@ -56,6 +59,9 @@ class BuildingsToDsmStep(DanesfieldWorkflowStep):
         # Get options
         buildingsToDsmOptions = getOptions(self.name, jobInfo)
 
+        # Set output prefix; replacing whitespace with underscores
+        outputPrefix = re.sub("\\s", "_", initWorkingSet['name'])
+
         # Run algorithm
         buildingsToDsm(
             stepName=self.name,
@@ -64,4 +70,5 @@ class BuildingsToDsmStep(DanesfieldWorkflowStep):
             outputFolder=jobInfo.outputFolder,
             objFiles=objFiles,
             dtmFile=dtmFile,
+            outputPrefix=outputPrefix,
             **buildingsToDsmOptions)
