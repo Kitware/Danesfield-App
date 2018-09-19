@@ -36,6 +36,7 @@ class WorkingSetResource(Resource):
         self.route('POST', (), self.create)
         self.route('PUT', (':id',), self.edit)
         self.route('DELETE', (':id',), self.delete)
+        self.route('GET', (':id', 'evaluationItems',), self.getEvaluationItems)
 
     @autoDescribeRoute(
         Description('')
@@ -64,18 +65,7 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def create(self, data, params):
-        tarItemIds = []
-        # //TODO: improve this .tar  including logic
-        for datasetId in data['datasetIds']:
-            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
-            if not datasetItem['name'].endswith('.NTF'):
-                continue
-            tarItem = Item().findOne({
-                'name': datasetItem['name'].replace(".NTF", ".tar"),
-                'folderId': datasetItem['folderId']})
-            if tarItem:
-                tarItemIds.append(str(tarItem['_id']))
-        data['datasetIds'] = data['datasetIds'] + tarItemIds
+        data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
         return WorkingSet().save(data)
 
     @autoDescribeRoute(
@@ -88,6 +78,7 @@ class WorkingSetResource(Resource):
     @access.user
     def edit(self, workingSet, data, params):
         data.pop('_id', None)
+        data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
         workingSet.update(data)
         return WorkingSet().save(workingSet)
 
@@ -101,3 +92,59 @@ class WorkingSetResource(Resource):
     def delete(self, workingSet, params):
         WorkingSet().remove(workingSet)
         return
+
+    def normalizeworkingSetDatasets(self, datasetIds):
+        datasetIdsSet = set(datasetIds)
+        for datasetId in datasetIds:
+            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
+            # first remove all tar items
+            if datasetItem['name'].endswith('.tar'):
+                datasetIdsSet.remove(datasetId)
+            elif datasetItem['name'].endswith('.NTF'):
+                # Try to include coresponding MSI or PAN item
+                msiOrPans =\
+                    list(Item().find(
+                        {'$and':
+                         [{'_id': {'$ne': ObjectId(datasetId)}},
+                          {'name': {'$regex': '^' + datasetItem['name'].split('-')[0] + '.*.NTF$'}}]
+                         }))
+                if len(msiOrPans) == 1:
+                    datasetIdsSet.add(str(msiOrPans[0]['_id']))
+
+        for datasetId in list(datasetIdsSet):
+            datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
+            if datasetItem['name'].endswith('.NTF'):
+                # Include conresponding TAR items
+                tarItem = Item().findOne({
+                    'name': datasetItem['name'].replace(".NTF", ".tar"),
+                    'folderId': datasetItem['folderId']})
+                if tarItem:
+                    datasetIdsSet.add(str(tarItem['_id']))
+
+        return list(datasetIdsSet)
+
+    @autoDescribeRoute(
+        Description('')
+        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .errorResponse()
+        .errorResponse('Read access was denied on the item.', 403)
+    )
+    @access.user
+    def getEvaluationItems(self, workingSet, params):
+        if not workingSet['datasetIds']:
+            return []
+        datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
+        if not datasetItem:
+            return []
+        evaluationDatasets = list(Item().find(
+            {'$and': [
+                {'folderId': datasetItem['folderId']},
+                {'$or': [
+                    {'name': {'$regex': '_DTM.tif$'}},
+                    {'name': {'$regex': '_MTL.tif$'}},
+                    {'name': {'$regex': '_CLS.tif$'}},
+                    {'name': {'$regex': '_DSM.tif$'}}
+                ]}
+            ]}
+        ))
+        return evaluationDatasets

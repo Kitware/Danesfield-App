@@ -54,7 +54,7 @@
           :background="vtkBGColor">
           <OBJMultiItemActor
             v-for="layer in workspace.layers"
-            v-if="layer.dataset.geometa.driver==='OBJ'"
+            v-if="isOBJItem(layer.dataset)"
             :key="layer.dataset._id"
             :item="layer.dataset" />
         </VTKViewport>
@@ -89,16 +89,17 @@ import distance from "@turf/distance";
 import sortBy from "lodash-es/sortBy";
 import debounce from "lodash-es/debounce";
 import ClickInfoDialog from "resonantgeoview/src/views/ClickInfoDialog";
-
-import { API_URL } from "../constants";
 import WorkspaceContainer from "resonantgeoview/src/components/Workspace/Container";
 import Workspace from "resonantgeoview/src/components/Workspace/Workspace";
 import WorkspaceAction from "resonantgeoview/src/components/Workspace/Action";
 import GeojsGeojsonDatasetLayer from "resonantgeoview/src/components/geojs/GeojsGeojsonDatasetLayer";
 import StyledGeoTIFFLayer from "resonantgeoview/src/components/geojs/StyledGeoTIFFLayer";
 import AdaptedColorLegendLayer from "resonantgeoview/src/components/geojs/AdaptedColorLegendLayer";
+
+import { API_URL } from "../constants";
 import VTKViewport from "../components/vtk/VTKViewport";
 import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
+import isOBJItem from "../utils/isOBJItem";
 import Palette from "../components/vtk/Palette";
 
 export default {
@@ -130,6 +131,7 @@ export default {
   ],
   data() {
     return {
+      isOBJItem,
       datasetClickEvents: []
     };
   },

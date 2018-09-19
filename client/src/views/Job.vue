@@ -1,12 +1,19 @@
 <template>
   <div class="full-screen">
-    <GirderJobList />
+    <GirderJobList @job-click="jobClick" />
   </div>
 </template>
 
 <script>
+import { GIRDER_URL } from "../constants";
+
 export default {
-  name: "Job"
+  name: "Job",
+  methods: {
+    jobClick(e, job) {
+      window.open(`${GIRDER_URL}#job/${job._id}`, "_blank");
+    }
+  }
 };
 </script>
 

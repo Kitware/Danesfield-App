@@ -34,6 +34,28 @@
           </v-btn>
           <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
           <v-toolbar-title v-else class="caption">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-menu 
+            v-if="!customVizDatasetId" 
+            offset-y>
+            <v-btn
+              slot="activator"
+              icon>
+              <v-icon>more_vert</v-icon>
+            </v-btn>
+            <v-list>
+              <v-list-tile
+                @click="datasetDetailDialog=true">
+                <v-list-tile-title>Datasets detail</v-list-tile-title>
+              </v-list-tile>
+              <v-divider />
+              <v-list-tile
+                :disabled="!evaluationItems.length"
+                @click="downloadCombinedResult">
+                <v-list-tile-title>Download evaluation datasets</v-list-tile-title>
+              </v-list-tile>
+            </v-list>
+          </v-menu>
         </v-toolbar>
       </template>
       <div class="main">
@@ -124,7 +146,7 @@
                               Opacity
                             </v-flex>
                             <v-flex>
-                              <v-slider class="opacity-slider pr-3"
+                              <v-slider class="opacity-slider pl-1 pr-3"
                                 hide-details
                                 :min="0"
                                 :max="1"
@@ -224,6 +246,30 @@
       </div>
     </SidePanel>
     <v-dialog
+      v-model="datasetDetailDialog"
+      scrollable
+      max-width="80%">
+      <v-card>
+        <v-card-title class="">Datasets ({{listingDatasetIdAndWorkingSets.length}})</v-card-title>
+        <v-card-text>
+          <v-data-table
+            :headers="[
+              { text: 'Name', value: 'name' },
+              { text: 'Size', value: 'size' }
+            ]"
+            :items="listingDatasetIdAndWorkingSets.map(item=>datasets[item.datasetId]).filter(dataset=>dataset)"
+            hide-actions>
+            <template slot="items" slot-scope="{item}">
+              <tr @click="datasetDetailClicked(item)">
+                <td>{{ item.name }}</td>
+                <td>{{ item.size }}</td>
+              </tr>
+            </template>
+          </v-data-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="processConfirmDialog"
       max-width="400">
       <v-card class="start-processing">
@@ -284,7 +330,7 @@ import GeotiffCustomVizPane from "resonantgeoview/src/components/GeotiffCustomVi
 import { summarize } from "resonantgeoview/src/utils/geojsonUtil";
 
 import girder from "../girder";
-import { API_URL } from "../constants";
+import { API_URL, GIRDER_URL } from "../constants";
 import {
   loadDatasetByWorkingSetId,
   saveDatasetMetadata
@@ -295,6 +341,8 @@ import getLargeImageMeta from "../utils/getLargeImageMeta";
 import FeatureSelector from "../components/FeatureSelector";
 import { palette } from "../utils/materialClassificationMapping";
 import { blueRed, blueWhiteRed, blackWhite } from "../utils/extraPalettes";
+import postDownload from "../utils/postDownload";
+import isOBJItem from "../utils/isOBJItem";
 
 export default {
   name: "Focus",
@@ -318,6 +366,8 @@ export default {
       customVizDatasetId: null,
       preserveCustomViz: false,
       pointCloudFeature: null,
+      datasetDetailDialog: false,
+      evaluationItems: [],
       palettePickerExtras: {
         Custom: [blueRed, blueWhiteRed],
         "Material Classification": [palette]
@@ -443,6 +493,11 @@ export default {
         return;
       }
       return Promise.all([
+        this.getEvaluationDataset(this.selectedWorkingSet._id).then(
+          evaluationItems => {
+            this.evaluationItems = evaluationItems;
+          }
+        ),
         loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(
           datasets => {
             this.addDatasets(datasets);
@@ -474,37 +529,39 @@ export default {
           return true;
         }
       } else if (workspace.type === "vtk") {
-        if (["OBJ"].indexOf(dataset.geometa.driver) !== -1) {
+        if(isOBJItem(dataset)){
           return true;
         }
       }
       return false;
     },
     addDatasets(datasets) {
-      for (let dataset of datasets) {
-        if (!dataset.geometa) {
-          dataset.geometa = {};
-        } else {
-          switch (dataset.geometa.driver) {
-            case "GeoJSON":
-              if (!dataset.meta || !dataset.meta.vizProperties) {
-                dataset = {
-                  ...dataset,
-                  ...{
-                    meta: { vizProperties: getDefaultGeojsonVizProperties() }
-                  }
-                };
-              }
-              break;
-            case "GeoTIFF":
-              if (!dataset.meta) {
-                dataset.meta = {};
-              }
-              break;
+      datasets
+        .filter(dataset => !dataset.name.endsWith(".tar"))
+        .map(dataset => {
+          if (!dataset.geometa) {
+            dataset.geometa = {};
+          } else {
+            switch (dataset.geometa.driver) {
+              case "GeoJSON":
+                if (!dataset.meta || !dataset.meta.vizProperties) {
+                  dataset = {
+                    ...dataset,
+                    ...{
+                      meta: { vizProperties: getDefaultGeojsonVizProperties() }
+                    }
+                  };
+                }
+                break;
+              case "GeoTIFF":
+                if (!dataset.meta) {
+                  dataset.meta = {};
+                }
+                break;
+            }
           }
-        }
-        this.$set(this.datasets, dataset._id, dataset);
-      }
+          this.$set(this.datasets, dataset._id, dataset);
+        });
     },
     childrenWorkingSetChecked(value, workingSet) {
       if (value) {
@@ -635,6 +692,24 @@ export default {
           ...{ vizProperties }
         };
       }
+    },
+    datasetDetailClicked(dataset) {
+      window.open(`${GIRDER_URL}#item/${dataset._id}`, "_blank");
+    },
+    async getEvaluationDataset(workingSetId) {
+      var { data: evaluationItems } = await this.$girder.get(
+        `workingSet/${workingSetId}/evaluationItems`
+      );
+      return evaluationItems;
+    },
+    async downloadCombinedResult() {
+      postDownload(`${API_URL}/resource/download`, {
+        resources: JSON.stringify({
+          item: (await this.getEvaluationDataset(
+            this.selectedWorkingSet._id
+          )).map(dataset => dataset._id)
+        })
+      });
     },
     ...mapMutations([
       "addWorkspace",
