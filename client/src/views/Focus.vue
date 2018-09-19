@@ -250,7 +250,7 @@
       scrollable
       max-width="80%">
       <v-card>
-        <v-card-title class="">Datasets</v-card-title>
+        <v-card-title class="">Datasets ({{listingDatasetIdAndWorkingSets.length}})</v-card-title>
         <v-card-text>
           <v-data-table
             :headers="[
@@ -342,6 +342,7 @@ import FeatureSelector from "../components/FeatureSelector";
 import { palette } from "../utils/materialClassificationMapping";
 import { blueRed, blueWhiteRed, blackWhite } from "../utils/extraPalettes";
 import postDownload from "../utils/postDownload";
+import isOBJItem from "../utils/isOBJItem";
 
 export default {
   name: "Focus",
@@ -528,7 +529,7 @@ export default {
           return true;
         }
       } else if (workspace.type === "vtk") {
-        if (["OBJ"].indexOf(dataset.geometa.driver) !== -1) {
+        if(isOBJItem(dataset)){
           return true;
         }
       }
