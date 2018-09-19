@@ -36,6 +36,7 @@ class WorkingSetResource(Resource):
         self.route('POST', (), self.create)
         self.route('PUT', (':id',), self.edit)
         self.route('DELETE', (':id',), self.delete)
+        self.route('GET', (':id', 'evaluationItems',), self.getEvaluationItems)
 
     @autoDescribeRoute(
         Description('')
@@ -109,7 +110,7 @@ class WorkingSetResource(Resource):
                          }))
                 if len(msiOrPans) == 1:
                     datasetIdsSet.add(str(msiOrPans[0]['_id']))
-        
+
         for datasetId in list(datasetIdsSet):
             datasetItem = Item().findOne({'_id': ObjectId(datasetId)})
             if datasetItem['name'].endswith('.NTF'):
@@ -120,5 +121,30 @@ class WorkingSetResource(Resource):
                 if tarItem:
                     datasetIdsSet.add(str(tarItem['_id']))
 
-
         return list(datasetIdsSet)
+
+    @autoDescribeRoute(
+        Description('')
+        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .errorResponse()
+        .errorResponse('Read access was denied on the item.', 403)
+    )
+    @access.user
+    def getEvaluationItems(self, workingSet, params):
+        if not workingSet['datasetIds']:
+            return []
+        datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
+        if not datasetItem:
+            return []
+        evaluationDatasets = list(Item().find(
+            {'$and': [
+                {'folderId': datasetItem['folderId']},
+                {'$or': [
+                    {'name': {'$regex': '_DTM.tif$'}},
+                    {'name': {'$regex': '_MTL.tif$'}},
+                    {'name': {'$regex': '_CLS.tif$'}},
+                    {'name': {'$regex': '_DSM.tif$'}}
+                ]}
+            ]}
+        ))
+        return evaluationDatasets

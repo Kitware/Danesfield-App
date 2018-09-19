@@ -48,6 +48,12 @@
                 @click="datasetDetailDialog=true">
                 <v-list-tile-title>Datasets detail</v-list-tile-title>
               </v-list-tile>
+              <v-divider />
+              <v-list-tile
+                :disabled="!evaluationItems.length"
+                @click="downloadCombinedResult">
+                <v-list-tile-title>Download evaluation datasets</v-list-tile-title>
+              </v-list-tile>
             </v-list>
           </v-menu>
         </v-toolbar>
@@ -251,7 +257,7 @@
               { text: 'Name', value: 'name' },
               { text: 'Size', value: 'size' }
             ]"
-            :items="listingDatasetIdAndWorkingSets.map(item=>datasets[item.datasetId])"
+            :items="listingDatasetIdAndWorkingSets.map(item=>datasets[item.datasetId]).filter(dataset=>dataset)"
             hide-actions>
             <template slot="items" slot-scope="{item}">
               <tr @click="datasetDetailClicked(item)">
@@ -335,6 +341,7 @@ import getLargeImageMeta from "../utils/getLargeImageMeta";
 import FeatureSelector from "../components/FeatureSelector";
 import { palette } from "../utils/materialClassificationMapping";
 import { blueRed, blueWhiteRed, blackWhite } from "../utils/extraPalettes";
+import postDownload from "../utils/postDownload";
 
 export default {
   name: "Focus",
@@ -359,6 +366,7 @@ export default {
       preserveCustomViz: false,
       pointCloudFeature: null,
       datasetDetailDialog: false,
+      evaluationItems: [],
       palettePickerExtras: {
         Custom: [blueRed, blueWhiteRed],
         "Material Classification": [palette]
@@ -484,6 +492,11 @@ export default {
         return;
       }
       return Promise.all([
+        this.getEvaluationDataset(this.selectedWorkingSet._id).then(
+          evaluationItems => {
+            this.evaluationItems = evaluationItems;
+          }
+        ),
         loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(
           datasets => {
             this.addDatasets(datasets);
@@ -681,6 +694,21 @@ export default {
     },
     datasetDetailClicked(dataset) {
       window.open(`${GIRDER_URL}#item/${dataset._id}`, "_blank");
+    },
+    async getEvaluationDataset(workingSetId) {
+      var { data: evaluationItems } = await this.$girder.get(
+        `workingSet/${workingSetId}/evaluationItems`
+      );
+      return evaluationItems;
+    },
+    async downloadCombinedResult() {
+      postDownload(`${API_URL}/resource/download`, {
+        resources: JSON.stringify({
+          item: (await this.getEvaluationDataset(
+            this.selectedWorkingSet._id
+          )).map(dataset => dataset._id)
+        })
+      });
     },
     ...mapMutations([
       "addWorkspace",
