@@ -26,13 +26,15 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient
 from ..constants import DockerImage
 
 
-def selectBest(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile):
+def selectBest(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile):
     """
     Run a Girder Worker job to select the best image pair.
 
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -65,7 +67,7 @@ def selectBest(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile):
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Select best',
+            jobTitle='[%s] Select best' % initWorkingSetName,
             jobType=stepName,
             user=requestInfo.user
         )

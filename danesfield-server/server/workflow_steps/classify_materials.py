@@ -61,6 +61,7 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         classifyMaterials(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
             modelFile=modelFile, outfilePrefix=outfilePrefix, **classifyMaterialsOptions)

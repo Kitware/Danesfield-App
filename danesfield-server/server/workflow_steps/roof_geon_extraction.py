@@ -52,6 +52,7 @@ class RoofGeonExtractionStep(DanesfieldWorkflowStep):
 
     def run(self, jobInfo):
         # Get working sets
+        initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         pointCloudWorkingSet = getWorkingSet(
             DanesfieldStep.GENERATE_POINT_CLOUD,
             jobInfo)
@@ -91,6 +92,7 @@ class RoofGeonExtractionStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         roofGeonExtraction(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,

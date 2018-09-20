@@ -34,7 +34,8 @@ from .common import (
 from ..constants import DockerImage
 
 
-def roofGeonExtraction(stepName,
+def roofGeonExtraction(initWorkingSetName,
+                       stepName,
                        requestInfo,
                        jobId,
                        outputFolder,
@@ -50,6 +51,8 @@ def roofGeonExtraction(stepName,
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -102,7 +105,7 @@ def roofGeonExtraction(stepName,
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Roof geon extraction: %s' % buildingMaskFile['name'],
+            jobTitle='[%s] Roof geon extraction: %s' % (initWorkingSetName, buildingMaskFile['name']),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

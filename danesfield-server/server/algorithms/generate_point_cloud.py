@@ -28,7 +28,7 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFiles,
+def generatePointCloud(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles,
                        longitude, latitude, longitudeWidth, latitudeWidth):
     """
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
@@ -37,6 +37,8 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFiles,
     - P3D Girder Worker Docker image is available on host
     - Host folder /mnt/GTOPO30 contains GTOPO 30 data
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -101,7 +103,7 @@ def generatePointCloud(stepName, requestInfo, jobId, outputFolder, imageFiles,
         **createDockerRunArguments(
             image=DockerImage.P3D,
             containerArgs=containerArgs,
-            jobTitle='Generate point cloud',
+            jobTitle='[%s] Generate point cloud' % initWorkingSetName,
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

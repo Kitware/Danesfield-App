@@ -26,13 +26,15 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def generateDsm(stepName, requestInfo, jobId, outputFolder, pointCloudFile, outputPrefix):
+def generateDsm(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, pointCloudFile, outputPrefix):
     """
     Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
 
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -77,7 +79,7 @@ def generateDsm(stepName, requestInfo, jobId, outputFolder, pointCloudFile, outp
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Generate DSM: %s' % pointCloudFile['name'],
+            jobTitle='[%s] Generate DSM: %s' % (initWorkingSetName, pointCloudFile['name']),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks
