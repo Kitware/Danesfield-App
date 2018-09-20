@@ -30,3 +30,4 @@ from .segment_by_height import segmentByHeight  # noqa: F401
 from .select_best import selectBest  # noqa: F401
 from .unet_semantic_segmentation import unetSemanticSegmentation  # noqa: F401
 from .buildings_to_dsm import buildingsToDsm  # noqa: F401
+from .get_road_vector import getRoadVector  # noqa: F401

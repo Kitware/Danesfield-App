@@ -26,8 +26,7 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
-                    msiImageFile, roadVectorFile):
+def getRoadVector(stepName, requestInfo, jobId, outputFolder, left, bottom, right, top):
     """
     Run a Girder Worker job to segment buildings by comparing a DSM to a DTM.
 
@@ -42,41 +41,29 @@ def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile
     :type jobId: str
     :param outputFolder: Output folder document.
     :type outputFolder: dict
-    :param dsmFile: DSM file document.
-    :type dsmFile: dict
-    :param dtmFile: DTM file document.
-    :type dtmFile: dict
-    :param msiImageFile: Pansharpened MSI image file document.
-    :type msiImageFile: dict
-    :param roadVectorFile: Road vector file.
-    :type roadVectorFile: dict
+    :param left: Longitude of left / westernmost side of bounding box
+    :type left: float
+    :param bottom: Latitude of bottom / southernmost side of bounding box
+    :type bottom: float
+    :param right: Longitude of right / easternmost side of bounding box
+    :type right: float
+    :param top: Latitude of top / northernmost side of bounding box
+    :type top: float
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
 
     # Set output file names
-    # TODO: Danesfield master script hardcodes these without any prefix; do the same here
-    thresholdOutputVolumePath = VolumePath('threshold_CLS.tif')
-    ndviOutputVolumePath = VolumePath('ndvi.tif')
-    roadRasterOutputVolumePath = VolumePath('road_rasterized.tif')
-    roadBridgeRasterOutputVolumePath = VolumePath('road_rasterized_bridge.tif')
+    outputVolumePath = VolumePath('__output__')
 
     # Docker container arguments
     containerArgs = [
-        'danesfield/tools/segment_by_height.py',
-        # DSM
-        GirderFileIdToVolume(dsmFile['_id'], gc=gc),
-        # DTM
-        GirderFileIdToVolume(dtmFile['_id'], gc=gc),
-        # Threshold output image
-        thresholdOutputVolumePath,
-        # MSI image
-        '--msi', GirderFileIdToVolume(msiImageFile['_id'], gc=gc),
-        # Normalized Difference Vegetation Index output image
-        '--ndvi', ndviOutputVolumePath,
-        '--road-vector', GirderFileIdToVolume(roadVectorFile['_id'], gc=gc),
-        '--road-rasterized', roadRasterOutputVolumePath,
-        '--road-rasterized-bridge', roadBridgeRasterOutputVolumePath
+        'danesfield/tools/get_road_vector.py',
+        '--left', str(left),
+        '--bottom', str(bottom),
+        '--right', str(right),
+        '--top', str(top),
+        '--output-dir', outputVolumePath,
     ]
 
     # Result hooks
@@ -89,17 +76,13 @@ def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile
             outputFolder['_id'],
             upload_kwargs=upload_kwargs,
             gc=gc)
-        for outputVolumePath in [
-            thresholdOutputVolumePath,
-            ndviOutputVolumePath
-        ]
     ]
 
     asyncResult = docker_run.delay(
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Segment by height: %s' % dsmFile['name'],
+            jobTitle='Get OSM road vector data',
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks
