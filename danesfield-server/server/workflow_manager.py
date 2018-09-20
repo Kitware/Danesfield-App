@@ -137,7 +137,7 @@ class DanesfieldWorkflowManager(object):
             for ws in WorkingSet().find({'parentWorkingSetId': workingSet['_id']}):
                 match = re.match(step_name_re, ws['name'])
                 if match:
-                    stepName = match[1]
+                    stepName = match.group(1)
                     jobData['workingSets'][stepName] = ws
 
                     # Set the skipped job as completed
