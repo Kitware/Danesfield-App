@@ -62,14 +62,20 @@
         <transition name="slide-fade" mode="out-in">
           <div v-if="!customVizDatasetId" class="datasets-pane" key="datasets">
             <v-select
-              :items="workingSets"
+              :items="flattenedWorkingSets"
               :value="selectedWorkingSetId"
               @change="change"
               class="working-set-selector px-2"
-              item-text="name"
-              item-value='_id'
+              item-text="workingSet.name"
+              item-value='workingSet._id'
               label="Select"
-              hide-details></v-select>
+              hide-details>
+              <template slot="item" slot-scope="{item:flattened}">
+                <div
+                  :style="{paddingLeft:Math.min(12*flattened.level,50)+'px'}"
+                  >{{flattened.workingSet.name.split(': ').slice(-1)[0]}}</div>
+              </template>
+            </v-select>
             <v-list dense class="datasets" ref="datasetsContainer">
               <draggable v-model="listingDatasetIdAndWorkingSets" :options="{
                   draggable:'.dataset',
@@ -393,10 +399,12 @@ export default {
       )[0];
     },
     childrenWorkingSets() {
-      return this.workingSets.filter(
-        workingSet =>
-          workingSet.parentWorkingSetId === this.selectedWorkingSetId
-      );
+      return this.workingSets
+        .filter(
+          workingSet =>
+            workingSet.parentWorkingSetId === this.selectedWorkingSetId
+        )
+        .reverse();
     },
     layers: {
       get() {
@@ -417,7 +425,7 @@ export default {
       "focusedWorkspaceKey",
       "vtkBGColor"
     ]),
-    ...mapGetters(["focusedWorkspace"])
+    ...mapGetters(["focusedWorkspace", "flattenedWorkingSets"])
   },
   asyncComputed: {
     async pointCloudParams() {
@@ -529,7 +537,7 @@ export default {
           return true;
         }
       } else if (workspace.type === "vtk") {
-        if(isOBJItem(dataset)){
+        if (isOBJItem(dataset)) {
           return true;
         }
       }
