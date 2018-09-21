@@ -1,9 +1,16 @@
 <template>
   <div>
-    <v-text-field class="file-selector" readonly append-icon="attach_file" single-line
-                  :value="value" :label="label" :required="required"
-                  @click.native="onFocus"
-                  :disabled="disabled" ref="fileTextField"></v-text-field>
+    <v-text-field
+      class="file-selector"
+      readonly
+      append-icon="attach_file"
+      :disabled="disabled"
+      :value="value"
+      :label="label"
+      :messages="messages"
+      :required="required"
+      @click.native="onFocus"
+      ref="fileTextField"></v-text-field>
     <input type="file" :accept="accept" :multiple="multiple" :disabled="disabled"
            ref="fileInput" @change="onFileChange">
   </div>
@@ -22,7 +29,7 @@ export default {
     },
     label: {
       type: String,
-      default: "choose file"
+      default: "Choose file"
     },
     required: {
       type: Boolean,
@@ -35,6 +42,10 @@ export default {
     multiple: {
       type: Boolean,
       default: false
+    },
+    messages: {
+      type: [String, Array],
+      default: ""
     }
   },
   data() {
