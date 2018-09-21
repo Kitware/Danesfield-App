@@ -64,6 +64,7 @@ class BuildingsToDsmStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         buildingsToDsm(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,

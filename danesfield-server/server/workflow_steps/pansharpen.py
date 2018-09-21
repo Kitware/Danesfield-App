@@ -36,6 +36,7 @@ class PansharpenStep(DanesfieldWorkflowStep):
 
     def run(self, jobInfo):
         # Get working set
+        initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
 
         # Get MSI and PAN source image files
@@ -48,5 +49,6 @@ class PansharpenStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         pansharpen(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **pansharpenOptions)

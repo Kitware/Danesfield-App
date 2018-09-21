@@ -38,7 +38,8 @@ from ..constants import DockerImage
 from ..workflow_manager import DanesfieldWorkflowManager
 
 
-def buildingsToDsm(stepName,
+def buildingsToDsm(initWorkingSetName,
+                   stepName,
                    requestInfo,
                    jobId,
                    outputFolder,
@@ -52,6 +53,8 @@ def buildingsToDsm(stepName,
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -131,7 +134,7 @@ def buildingsToDsm(stepName,
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgsDSM,
-                jobTitle='Buildings to DSM: DSM generation',
+                jobTitle='[%s] Buildings to DSM: DSM generation' % initWorkingSetName,
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=dsmResultHooks
@@ -141,7 +144,7 @@ def buildingsToDsm(stepName,
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgsCLS,
-                jobTitle='Buildings to DSM: CLS generation',
+                jobTitle='[%s] Buildings to DSM: CLS generation' % initWorkingSetName,
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=clsResultHooks

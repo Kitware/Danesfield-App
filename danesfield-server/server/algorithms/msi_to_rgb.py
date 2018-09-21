@@ -32,7 +32,7 @@ from ..workflow import DanesfieldWorkflowException
 from ..workflow_manager import DanesfieldWorkflowManager
 
 
-def msiToRgb(stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
+def msiToRgb(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
              alpha=None, rangePercentile=None):
     """
     Run Girder Worker jobs to convert multispectral (MSI) images to RGB.
@@ -40,6 +40,8 @@ def msiToRgb(stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -99,7 +101,7 @@ def msiToRgb(stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgs,
-                jobTitle='Convert MSI to RGB: %s' % prefix,
+                jobTitle='[%s] Convert MSI to RGB: %s' % (initWorkingSetName, prefix),
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=resultHooks

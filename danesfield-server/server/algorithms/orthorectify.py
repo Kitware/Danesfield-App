@@ -37,7 +37,7 @@ from ..workflow import DanesfieldWorkflowException
 from ..workflow_manager import DanesfieldWorkflowManager
 
 
-def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile, dtmFile,
+def orthorectify(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile, dtmFile,
                  rpcFiles, occlusionThreshold=None, denoiseRadius=None):
     """
     Run Girder Worker jobs to orthorectify source images.
@@ -45,6 +45,8 @@ def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -107,7 +109,7 @@ def orthorectify(stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgs,
-                jobTitle='Orthorectify: %s' % imageFile['name'],
+                jobTitle='[%s] Orthorectify: %s' % (initWorkingSetName, imageFile['name']),
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=resultHooks

@@ -54,6 +54,7 @@ class SelectBestStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         selectBest(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
             **selectBestOptions)

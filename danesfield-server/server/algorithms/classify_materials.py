@@ -32,7 +32,7 @@ from ..utilities import getPrefix
 from ..workflow import DanesfieldWorkflowException
 
 
-def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
+def classifyMaterials(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles,
                       metadataFiles, modelFile, outfilePrefix, cuda=None,
                       batchSize=None):
     """
@@ -41,6 +41,8 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -129,7 +131,7 @@ def classifyMaterials(stepName, requestInfo, jobId, outputFolder, imageFiles,
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Classify materials',
+            jobTitle='[%s] Classify materials' % initWorkingSetName,
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks
