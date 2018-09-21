@@ -282,19 +282,38 @@
         <v-card-title class="headline">Start a pipeline?</v-card-title>
         <v-card-text>
           A pipeline will be started with datasets within the current working set as input data. Multiple result working sets will be created.
-          <div class="pointcloud-params mt-2 ml-2">
-            <div class="subheading">Point cloud parameters:</div>
-            <template v-if="pointCloudParams">
-              <div>Center: {{pointCloudParams.longitude.toFixed(6)}}, {{pointCloudParams.latitude.toFixed(6)}}</div>
-              <div>Dimensions: {{pointCloudParams.longitudeWidth.toFixed(6)}}, {{pointCloudParams.latitudeWidth.toFixed(6)}}</div>
-            </template>
-            <div v-else>(Choose from a geojson file)</div>
-            <v-flex xs8>
-            <FeatureSelector
-              class="feature-selector"
-              v-model="pointCloudFeature"
-              @message="prompt({message:$event})" />
+          <div class="ml-1">
+            <div class="mt-2">
+              <div class="subheading">Point cloud:</div>
+              <template v-if="pointCloudParams">
+                <div>Center: {{pointCloudParams.longitude.toFixed(6)}}, {{pointCloudParams.latitude.toFixed(6)}}</div>
+                <div>Dimensions: {{pointCloudParams.longitudeWidth.toFixed(6)}}, {{pointCloudParams.latitudeWidth.toFixed(6)}}</div>
+              </template>
+              <div v-else>(Choose from a geojson file)</div>
+              <v-flex xs6>
+              <FeatureSelector
+                class="feature-selector"
+                v-model="pointCloudFeature"
+                @message="prompt({message:$event})" />
+                </v-flex>
+            </div>
+            <div class="mt-2">
+              <div class="subheading">Material classification:</div>
+              <v-flex xs6>
+                <v-select
+                  :items="[{name:'Standard',value:'STANDARD'},
+                    {name:'D1',value:'D1'},
+                    {name:'D2',value:'D2'},
+                    {name:'D3',value:'D3'},
+                    {name:'D4',value:'D4'}]"
+                  item-text="name"
+                  item-value="value"
+                  hide-details
+                  label="Model"
+                  dense
+                  v-model="materialClassificationModel" />
               </v-flex>
+            </div>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -372,6 +391,7 @@ export default {
       customVizDatasetId: null,
       preserveCustomViz: false,
       pointCloudFeature: null,
+      materialClassificationModel: "STANDARD",
       datasetDetailDialog: false,
       evaluationItems: [],
       palettePickerExtras: {
@@ -523,12 +543,17 @@ export default {
       ]);
     },
     async startPipeline() {
+      let options = {
+        "generate-point-cloud": this.pointCloudParams,
+        "classify-materials": {
+          model: this.materialClassificationModel
+        }
+      };
+
       var { data: job } = await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
-        }&options=${encodeURIComponent(
-          `{"generate-point-cloud":${JSON.stringify(this.pointCloudParams)}}`
-        )}`
+        }&options=${encodeURIComponent(JSON.stringify(options))}`
       );
     },
     workspaceSupportsDataset(workspace, dataset) {
