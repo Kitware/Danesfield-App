@@ -185,7 +185,7 @@ function flattenWorkingSets(children, level = 0) {
   for (let node of children) {
     output.unshift({ workingSet: node.workingSet, level });
     if (node.children.length) {
-      output = [...output, ...flattenWorkingSets(node.children, level + 1)];
+      output.splice(1, 0, ...flattenWorkingSets(node.children, level + 1));
     }
   }
   return output;
