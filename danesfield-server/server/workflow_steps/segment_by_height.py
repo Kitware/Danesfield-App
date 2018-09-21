@@ -89,7 +89,7 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         # FIXME: Hardcoding the shapefilePrefix for D4 for now, as
         # it's the only AOI with road data.  Need to come up with a
         # solution where this is selected based on the AOI
-        shapefilePrefix = "ex_FgMKU8FtfzgKJNgmUTE7T3Y5E1cgb_osm_roads_gen1"
+        shapefilePrefix = "ex_FgMKU8FtfzgKJNgmUTE7T3Y5E1cgb_osm_roads"
 
         # Run algorithm
         segmentByHeight(
