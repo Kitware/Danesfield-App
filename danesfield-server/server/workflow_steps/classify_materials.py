@@ -34,6 +34,7 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
     Supports the following options:
     - cuda
     - batchSize
+    - model
     """
     def __init__(self):
         super(ClassifyMaterialsStep, self).__init__(DanesfieldStep.CLASSIFY_MATERIALS)
