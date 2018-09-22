@@ -34,7 +34,7 @@ from ..workflow import DanesfieldWorkflowException
 
 def classifyMaterials(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles,
                       metadataFiles, modelFile, outfilePrefix, cuda=None,
-                      batchSize=None):
+                      batchSize=None, model=None):
     """
     Run a Girder Worker job to classify materials in an orthorectified image.
 
