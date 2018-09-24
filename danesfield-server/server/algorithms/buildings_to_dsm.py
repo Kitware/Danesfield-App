@@ -77,11 +77,6 @@ def buildingsToDsm(initWorkingSetName,
     outputDSMName = outputPrefix + '_rendered_DSM.tif'
     outputDSMVolumePath = VolumePath(outputDSMName)
 
-    # Docker container arguments; FIXME: currently have to hack on the
-    # individual GirderFileIdToVolume calls, so that we can get the
-    # files we need in the same directory and pass into
-    # buildings_to_dsm.  Could change buildings_to_dsm.py to take list
-    # of files as a fix.
     containerArgsDSM = [
         'danesfield/tools/buildings_to_dsm.py',
         GirderFileIdToVolume(dtmFile['_id'], gc=gc),
@@ -95,11 +90,6 @@ def buildingsToDsm(initWorkingSetName,
     outputCLSName = outputPrefix + '_rendered_CLS.tif'
     outputCLSVolumePath = VolumePath(outputCLSName)
 
-    # Docker container arguments; FIXME: currently have to hack on the
-    # individual GirderFileIdToVolume calls, so that we can get the
-    # files we need in the same directory and pass into
-    # buildings_to_dsm.  Could change buildings_to_dsm.py to take list
-    # of files as a fix.
     containerArgsCLS = [
         'danesfield/tools/buildings_to_dsm.py',
         GirderFileIdToVolume(dtmFile['_id'], gc=gc),
