@@ -186,7 +186,7 @@ export default {
           if (mtlReader && name) {
             mtlReader.applyMaterialToActor(name, actor);
           }
-
+          actor.getTextures()[0].setInterpolate(false);
           this.actors.push(actor);
         }
       }
