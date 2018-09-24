@@ -26,7 +26,7 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
+def segmentByHeight(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
                     msiImageFile, roadVectorFile):
     """
     Run a Girder Worker job to segment buildings by comparing a DSM to a DTM.
@@ -34,6 +34,8 @@ def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -99,7 +101,7 @@ def segmentByHeight(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Segment by height: %s' % dsmFile['name'],
+            jobTitle='[%s] Segment by height: %s' % (initWorkingSetName, dsmFile['name']),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

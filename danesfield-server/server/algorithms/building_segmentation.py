@@ -26,7 +26,7 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def buildingSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
+def buildingSegmentation(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
                          msiImageFile, rgbImageFile, modelFolder, modelFilePrefix):
     """
     Run a Girder Worker job to segment buildings using Columbia building segmentation.
@@ -34,6 +34,8 @@ def buildingSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dt
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -90,7 +92,7 @@ def buildingSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dt
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Building segmentation: %s' % dsmFile['name'],
+            jobTitle='[%s] Building segmentation: %s' % (initWorkingSetName, dsmFile['name']),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

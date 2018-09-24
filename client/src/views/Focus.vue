@@ -62,14 +62,20 @@
         <transition name="slide-fade" mode="out-in">
           <div v-if="!customVizDatasetId" class="datasets-pane" key="datasets">
             <v-select
-              :items="workingSets"
+              :items="flattenedWorkingSets"
               :value="selectedWorkingSetId"
               @change="change"
               class="working-set-selector px-2"
-              item-text="name"
-              item-value='_id'
+              item-text="workingSet.name"
+              item-value='workingSet._id'
               label="Select"
-              hide-details></v-select>
+              hide-details>
+              <template slot="item" slot-scope="{item:flattened}">
+                <div
+                  :style="{paddingLeft:Math.min(12*flattened.level,50)+'px'}"
+                  >{{flattened.workingSet.name.split(': ').slice(-1)[0]}}</div>
+              </template>
+            </v-select>
             <v-list dense class="datasets" ref="datasetsContainer">
               <draggable v-model="listingDatasetIdAndWorkingSets" :options="{
                   draggable:'.dataset',
@@ -276,19 +282,43 @@
         <v-card-title class="headline">Start a pipeline?</v-card-title>
         <v-card-text>
           A pipeline will be started with datasets within the current working set as input data. Multiple result working sets will be created.
-          <div class="pointcloud-params mt-2 ml-2">
-            <div class="subheading">Point cloud parameters:</div>
-            <template v-if="pointCloudParams">
-              <div>Center: {{pointCloudParams.longitude.toFixed(6)}}, {{pointCloudParams.latitude.toFixed(6)}}</div>
-              <div>Dimensions: {{pointCloudParams.longitudeWidth.toFixed(6)}}, {{pointCloudParams.latitudeWidth.toFixed(6)}}</div>
-            </template>
-            <div v-else>(Choose from a geojson file)</div>
-            <v-flex xs8>
-            <FeatureSelector
-              class="feature-selector"
-              v-model="pointCloudFeature"
-              @message="prompt({message:$event})" />
-              </v-flex>
+          <div class="ml-1">
+            <v-container grid-list-md class="pa-0">
+              <v-layout>
+                <v-flex xs11 v-if="AOIBbox">
+                  <v-text-field
+                    clearable
+                    @click:clear="clearAOI"
+                    :value="AOIDisplay"
+                    label="AOI"
+                    readonly></v-text-field>
+                </v-flex>
+                <v-flex xs6 v-else>
+                  <FeatureSelector
+                    class="feature-selector"
+                    v-model="AOIFeature"
+                    label="AOI"
+                    messages="Choose from a geojson file"
+                    @message="prompt({message:$event})" />
+                </v-flex>
+              </v-layout>
+              <v-layout>
+                <v-flex xs6>
+                  <v-select
+                    :items="[{name:'Standard',value:'STANDARD'},
+                      {name:'D1',value:'D1'},
+                      {name:'D2',value:'D2'},
+                      {name:'D3',value:'D3'},
+                      {name:'D4',value:'D4'}]"
+                    item-text="name"
+                    item-value="value"
+                    hide-details
+                    label="Model"
+                    dense
+                    v-model="materialClassificationModel" />
+                </v-flex>
+              </v-layout>
+            </v-container>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -300,7 +330,7 @@
           </v-btn>
           <v-btn
             color="primary"
-            :disabled="!pointCloudParams"
+            :disabled="!AOIFeature"
             @click="processConfirmDialog = false; startPipeline()">
             Confirm
           </v-btn>
@@ -365,7 +395,8 @@ export default {
       transitionName: "fade-group",
       customVizDatasetId: null,
       preserveCustomViz: false,
-      pointCloudFeature: null,
+      AOIFeature: null,
+      materialClassificationModel: "STANDARD",
       datasetDetailDialog: false,
       evaluationItems: [],
       palettePickerExtras: {
@@ -393,10 +424,12 @@ export default {
       )[0];
     },
     childrenWorkingSets() {
-      return this.workingSets.filter(
-        workingSet =>
-          workingSet.parentWorkingSetId === this.selectedWorkingSetId
-      );
+      return this.workingSets
+        .filter(
+          workingSet =>
+            workingSet.parentWorkingSetId === this.selectedWorkingSetId
+        )
+        .reverse();
     },
     layers: {
       get() {
@@ -409,6 +442,15 @@ export default {
         });
       }
     },
+    AOIBbox() {
+      if (!this.AOIFeature) {
+        return null;
+      }
+      return bbox(featureCollection(this.AOIFeature));
+    },
+    AOIDisplay() {
+      return this.AOIBbox.map(coord => coord.toFixed(4)).join(", ");
+    },
     ...mapState([
       "sidePanelExpanded",
       "workingSets",
@@ -417,36 +459,7 @@ export default {
       "focusedWorkspaceKey",
       "vtkBGColor"
     ]),
-    ...mapGetters(["focusedWorkspace"])
-  },
-  asyncComputed: {
-    async pointCloudParams() {
-      var features = this.pointCloudFeature ? this.pointCloudFeature : null;
-      if (!features && this.selectedWorkingSet) {
-        if (this.selectedWorkingSet.filterId) {
-          try {
-            var { data: filter } = await girder.girder.get(
-              `filter/${this.selectedWorkingSet.filterId}`
-            );
-            features = filter.conditions
-              .map(condition => condition.geojson)
-              .filter(feature => feature);
-          } catch (ex) {}
-        }
-      }
-      if (features && features.length) {
-        var box = bbox(featureCollection(features));
-        var polygonBox = bboxPolygon(box);
-        var centerPoint = center(polygonBox);
-        return {
-          longitude: centerPoint.geometry.coordinates[0],
-          latitude: centerPoint.geometry.coordinates[1],
-          longitudeWidth: box[2] - box[0],
-          latitudeWidth: box[3] - box[1]
-        };
-      }
-      return null;
-    }
+    ...mapGetters(["focusedWorkspace", "flattenedWorkingSets"])
   },
   watch: {
     user(user) {
@@ -493,6 +506,9 @@ export default {
         return;
       }
       return Promise.all([
+        this.tryLoadFilterAOIFeatures().then(feature => {
+          this.AOIFeature = feature;
+        }),
         this.getEvaluationDataset(this.selectedWorkingSet._id).then(
           evaluationItems => {
             this.evaluationItems = evaluationItems;
@@ -514,13 +530,35 @@ export default {
         })
       ]);
     },
+    clearAOI() {
+      setTimeout(() => {
+        this.AOIFeature = null;
+      }, 0);
+    },
     async startPipeline() {
+      var centerPoint = center(bboxPolygon(this.AOIBbox));
+      let options = {
+        "generate-point-cloud": {
+          longitude: centerPoint.geometry.coordinates[0],
+          latitude: centerPoint.geometry.coordinates[1],
+          longitudeWidth: this.AOIBbox[2] - this.AOIBbox[0],
+          latitudeWidth: this.AOIBbox[3] - this.AOIBbox[1]
+        },
+        "get-road-vector": {
+          left: this.AOIBbox[0],
+          bottom: this.AOIBbox[1],
+          right: this.AOIBbox[2],
+          top: this.AOIBbox[3]
+        },
+        "classify-materials": {
+          model: this.materialClassificationModel
+        }
+      };
+
       var { data: job } = await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
-        }&options=${encodeURIComponent(
-          `{"generate-point-cloud":${JSON.stringify(this.pointCloudParams)}}`
-        )}`
+        }&options=${encodeURIComponent(JSON.stringify(options))}`
       );
     },
     workspaceSupportsDataset(workspace, dataset) {
@@ -529,7 +567,7 @@ export default {
           return true;
         }
       } else if (workspace.type === "vtk") {
-        if(isOBJItem(dataset)){
+        if (isOBJItem(dataset)) {
           return true;
         }
       }
@@ -693,6 +731,20 @@ export default {
         };
       }
     },
+    async tryLoadFilterAOIFeatures() {
+      if (this.selectedWorkingSet.filterId) {
+        try {
+          var { data: filter } = await girder.girder.get(
+            `filter/${this.selectedWorkingSet.filterId}`
+          );
+          var features = filter.conditions
+            .map(condition => condition.geojson)
+            .filter(feature => feature);
+          return features;
+        } catch (ex) {}
+      }
+      return null;
+    },
     datasetDetailClicked(dataset) {
       window.open(`${GIRDER_URL}#item/${dataset._id}`, "_blank");
     },
@@ -850,11 +902,5 @@ export default {
 .narrow-list-tile-action.v-list__tile__action {
   min-width: inherit;
   flex: 0 0 32px;
-}
-
-.start-processing {
-  .feature-selector .file-selector {
-    margin-top: 0;
-  }
 }
 </style>

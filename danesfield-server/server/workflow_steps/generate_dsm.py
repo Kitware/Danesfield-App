@@ -52,6 +52,7 @@ class GenerateDsmStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         generateDsm(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, pointCloudFile=pointCloudFile,
             outputPrefix=outputPrefix, **generateDsmOptions)

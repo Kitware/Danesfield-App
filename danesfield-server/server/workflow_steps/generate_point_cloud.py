@@ -61,6 +61,7 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         generatePointCloud(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles,
             longitude=longitude, latitude=latitude,

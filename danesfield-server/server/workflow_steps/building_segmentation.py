@@ -48,6 +48,7 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
 
     def run(self, jobInfo):
         # Get working sets
+        initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
@@ -98,6 +99,7 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         buildingSegmentation(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
             msiImageFile=msiImageFile, rgbImageFile=rgbImageFile, modelFolder=modelFolder,

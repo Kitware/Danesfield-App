@@ -38,6 +38,7 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
 
     def run(self, jobInfo):
         # Get working set
+        initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
 
         # Get pansharpened MSI images
@@ -48,5 +49,6 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         msiToRgb(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **msiToRgbOptions)

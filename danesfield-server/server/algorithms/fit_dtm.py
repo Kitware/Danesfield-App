@@ -26,7 +26,7 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def fitDtm(stepName, requestInfo, jobId, outputFolder, dsmFile, outputPrefix,
+def fitDtm(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, outputPrefix,
            iterations=None, tension=None):
     """
     Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
@@ -34,6 +34,8 @@ def fitDtm(stepName, requestInfo, jobId, outputFolder, dsmFile, outputPrefix,
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -85,7 +87,7 @@ def fitDtm(stepName, requestInfo, jobId, outputFolder, dsmFile, outputPrefix,
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Fit DTM: %s' % dsmFile['name'],
+            jobTitle='[%s] Fit DTM: %s' % (initWorkingSetName, dsmFile['name']),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

@@ -64,6 +64,7 @@ class OrthorectifyStep(DanesfieldWorkflowStep):
 
         # Run algorithm
         orthorectify(
+            initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
             outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
             dtmFile=dtmFile, rpcFiles=rpcFiles, **orthorectifyOptions)

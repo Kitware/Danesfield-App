@@ -147,6 +147,9 @@ export default new Vuex.Store({
     }
   },
   getters: {
+    flattenedWorkingSets(state) {
+      return flattenWorkingSets(treefyWorkingSets(state.workingSets));
+    },
     focusedWorkspace(state) {
       return state.workspaces[state.focusedWorkspaceKey] || Object.values(state.workspaces)[0];
     }
@@ -157,6 +160,36 @@ export default new Vuex.Store({
     prompt
   }
 });
+
+function treefyWorkingSets(workingSets) {
+  var mapping = new Map();
+  var tree = [];
+  for (let workingSet of workingSets) {
+    let id = workingSet._id;
+    let node = { id, workingSet, children: [] };
+    mapping.set(id, node);
+    if (!workingSet.parentWorkingSetId) {
+      tree.push(node);
+    } else {
+      if (!mapping.has(workingSet.parentWorkingSetId)) {
+        tree.push(node);
+      }
+      mapping.get(workingSet.parentWorkingSetId).children.push(node);
+    }
+  }
+  return tree;
+}
+
+function flattenWorkingSets(children, level = 0) {
+  var output = [];
+  for (let node of children) {
+    output.unshift({ workingSet: node.workingSet, level });
+    if (node.children.length) {
+      output.splice(1, 0, ...flattenWorkingSets(node.children, level + 1));
+    }
+  }
+  return output;
+}
 
 function getInitialWorkspace() {
   return {

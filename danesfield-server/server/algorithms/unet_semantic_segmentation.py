@@ -27,7 +27,7 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
+def unetSemanticSegmentation(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
                              msiImageFile, rgbImageFile, configFile, modelFile):
     """
     Run a Girder Worker job to segment buildings using UNet semantic segmentation.
@@ -35,6 +35,8 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: strps
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -99,7 +101,7 @@ def unetSemanticSegmentation(stepName, requestInfo, jobId, outputFolder, dsmFile
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='UNet semantic segmentation: %s' % dsmFile['name'],
+            jobTitle='[%s] UNet semantic segmentation: %s' % (initWorkingSetName, dsmFile['name']),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

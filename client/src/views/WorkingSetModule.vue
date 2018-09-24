@@ -3,18 +3,19 @@
     <div v-if='!editingWorkingSet'>
       <v-expansion-panel>
         <v-expansion-panel-content
-          v-for="workingSet in workingSets"
-          :key="workingSet._id"
-          :class="{derived:workingSet.parentWorkingSetId}">
-          <div slot='header'>{{workingSet.name}}</div>
+          v-for="flattened in flattenedWorkingSets"
+          :key="flattened.workingSet._id"
+          :style="{paddingLeft:Math.min(12*flattened.level,50)+'px'}"
+          :class="{child:flattened.level}">
+          <div slot='header'>{{flattened.workingSet.name.split(': ').slice(-1)[0]}}</div>
             <v-layout>
               <v-flex xs2 offset-xs1>
-                <v-btn block color='grey lighten-4' depressed @click="$store.commit('workingSet/setEditingWorkingSet',workingSet)">
+                <v-btn block color='grey lighten-4' depressed @click="$store.commit('workingSet/setEditingWorkingSet',flattened.workingSet)">
                   <v-icon>edit</v-icon>
                 </v-btn>
               </v-flex>
               <v-flex xs4 offset-xs4>
-                <v-btn block color='primary' depressed @click="focusWorkingSet(workingSet)">
+                <v-btn block color='primary' depressed @click="focusWorkingSet(flattened.workingSet)">
                   Focus
                   <v-icon class='pl-1'>center_focus_strong</v-icon>
                 </v-btn>
@@ -29,7 +30,7 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from "vuex";
+import { mapState, mapMutations, mapGetters } from "vuex";
 
 import EditWorkingSet from "../components/EditWorkingSet";
 import NewWithName from "resonantgeoview/src/components/NewWithName";
@@ -44,8 +45,8 @@ export default {
     return {};
   },
   computed: {
-    ...mapState(["workingSets"]),
-    ...mapState("workingSet", ["editingWorkingSet"])
+    ...mapState("workingSet", ["editingWorkingSet"]),
+    ...mapGetters(["flattenedWorkingSets"])
   },
   methods: {
     addNewWorkingSet(name) {
@@ -62,7 +63,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.theme--light.v-expansion-panel .v-expansion-panel__container.derived {
-  background-color: #efefef;
+.theme--light.v-expansion-panel .v-expansion-panel__container.child {
+  background-color: #f5f5f5;
 }
 </style>

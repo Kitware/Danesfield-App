@@ -1,7 +1,9 @@
 <template>
   <FileSelector
     class="feature-selector"
+    :label="label"
     v-model="geojsonFilename"
+    :messages="messages"
     accept=".json,.geojson"
     @file='onGeojsonSelected' />
 </template>
@@ -13,10 +15,19 @@ export default {
   components: {
     FileSelector
   },
-  props: ["value"],
+  props: {
+    value: {},
+    label: {
+      default: "Choose file"
+    },
+    messages: {
+      type: [String, Array],
+      default: ""
+    }
+  },
   data() {
     return {
-      geojsonFilename: "",
+      geojsonFilename: ""
     };
   },
   methods: {
