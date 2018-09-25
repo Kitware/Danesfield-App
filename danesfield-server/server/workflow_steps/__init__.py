@@ -30,3 +30,6 @@ from .segment_by_height import SegmentByHeightStep  # noqa: F401
 from .select_best import SelectBestStep  # noqa: F401
 from .unet_semantic_segmentation import UNetSemanticSegmentationStep  # noqa: F401
 from .buildings_to_dsm import BuildingsToDsmStep  # noqa: F401
+from .get_road_vector import GetRoadVectorStep  # noqa: F401
+from .texture_mapping import TextureMappingStep  # noqa: F401
+from .crop_and_pansharpen import CropAndPansharpenStep  # noqa: F401
