@@ -40,6 +40,7 @@ class TextureMappingStep(DanesfieldWorkflowStep):
         self.addDependency(DanesfieldStep.ROOF_GEON_EXTRACTION)
         self.addDependency(DanesfieldStep.CROP_AND_PANSHARPEN)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
+        self.addDependency(DanesfieldStep.FIT_DTM)
 
     def run(self, jobInfo):
         # Get working sets
@@ -51,6 +52,7 @@ class TextureMappingStep(DanesfieldWorkflowStep):
         cropAndPansharpenWorkingSet = getWorkingSet(
             DanesfieldStep.CROP_AND_PANSHARPEN,
             jobInfo)
+        dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
 
         # Get OBJ files
         objFiles = self.getFiles(roofGeonExtractionWorkingSet, isObj)
@@ -61,6 +63,9 @@ class TextureMappingStep(DanesfieldWorkflowStep):
 
         # Get DSM
         dsmFile = self.getSingleFile(dsmWorkingSet)
+
+        # Get DTM
+        dtmFile = self.getSingleFile(dtmWorkingSet)
 
         # Get options
         textureMappingOptions = getOptions(self.name, jobInfo)
@@ -75,4 +80,5 @@ class TextureMappingStep(DanesfieldWorkflowStep):
             objFiles=objFiles,
             imageFiles=imageFiles,
             dsmFile=dsmFile,
+            dtmFile=dtmFile,
             **textureMappingOptions)

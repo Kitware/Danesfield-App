@@ -39,7 +39,8 @@ def textureMapping(initWorkingSetName,
                    outputFolder,
                    objFiles,
                    imageFiles,
-                   dsmFile):
+                   dsmFile,
+                   dtmFile):
     """
     Run a Girder Worker job to run texture mapping.
 
@@ -62,6 +63,8 @@ def textureMapping(initWorkingSetName,
     :type imageFiles: list[dict]
     :param dsmFile: DSM file document.
     :type dsmFile: dict
+    :param dtmFile: DTM file document.
+    :type dtmFile: dict
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
@@ -69,13 +72,14 @@ def textureMapping(initWorkingSetName,
     # Set output directory
     outputVolumePath = VolumePath('__output__')
 
-    # Set output path for DSM
+    # Set output path for occlusion mesh
     occlusionMeshName = 'xxxx.obj'
     occlusionMeshVolumePath = VolumePath(occlusionMeshName)
 
     containerArgs = [
         'danesfield/tools/texture_mapping.py',
         GirderFileIdToVolume(dsmFile['_id'], gc=gc),
+        GirderFileIdToVolume(dtmFile['_id'], gc=gc),
         outputVolumePath,
         occlusionMeshVolumePath,
         '--crops'
