@@ -26,13 +26,15 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient, cr
 from ..constants import DockerImage
 
 
-def getRoadVector(stepName, requestInfo, jobId, outputFolder, left, bottom, right, top):
+def getRoadVector(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, left, bottom, right, top):
     """
     Run a Girder Worker job to segment buildings by comparing a DSM to a DTM.
 
     Requirements:
     - Danesfield Docker image is available on host
 
+    :param initWorkingSetName: The name of the top-level working set.
+    :type initWorkingSetName: str
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
     :param requestInfo: HTTP request and authorization info.
@@ -82,7 +84,7 @@ def getRoadVector(stepName, requestInfo, jobId, outputFolder, left, bottom, righ
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='Get OSM road vector data',
+            jobTitle='[%s] Get OSM road vector data' % initWorkingSetName,
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks
