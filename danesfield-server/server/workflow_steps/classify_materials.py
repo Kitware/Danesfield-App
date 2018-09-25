@@ -54,8 +54,22 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         # Get options
         classifyMaterialsOptions = getOptions(self.name, jobInfo)
 
-        # Get model file from setting
-        modelFile = self.getFileFromSetting(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
+        # Use model selected from options; get model file from
+        # setting.  Not a particularly elegant solution, but should
+        # work.
+        model = classifyMaterialsOptions.get('model')
+        if model == "D1":
+            modelFileID = PluginSettings.MATERIAL_CLASSIFIER_D1_MODEL_FILE_ID
+        elif model == "D2":
+            modelFileID = PluginSettings.MATERIAL_CLASSIFIER_D2_MODEL_FILE_ID
+        elif model == "D3":
+            modelFileID = PluginSettings.MATERIAL_CLASSIFIER_D3_MODEL_FILE_ID
+        elif model == "D4":
+            modelFileID = PluginSettings.MATERIAL_CLASSIFIER_D4_MODEL_FILE_ID
+        else:
+            modelFileID = PluginSettings.MATERIAL_CLASSIFIER_STANDARD_MODEL_FILE_ID
+
+        modelFile = self.getFileFromSetting(modelFileID)
 
         # Set outfile prefix; replacing whitespace with underscores
         outfilePrefix = re.sub("\\s", "_", initWorkingSet['name'])

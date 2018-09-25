@@ -25,7 +25,11 @@ from girder.utility import setting_utilities
 
 class PluginSettings(object):
     BUILDING_SEGMENTATION_MODEL_FOLDER_ID = 'danesfield.building_segmentation_model_folder_id'
-    MATERIAL_CLASSIFIER_MODEL_FILE_ID = 'danesfield.material_classifier_model_file_id'
+    MATERIAL_CLASSIFIER_STANDARD_MODEL_FILE_ID = 'danesfield.material_classifier_standard_model_file_id'
+    MATERIAL_CLASSIFIER_D1_MODEL_FILE_ID = 'danesfield.material_classifier_D1_model_file_id'
+    MATERIAL_CLASSIFIER_D2_MODEL_FILE_ID = 'danesfield.material_classifier_D2_model_file_id'
+    MATERIAL_CLASSIFIER_D3_MODEL_FILE_ID = 'danesfield.material_classifier_D3_model_file_id'
+    MATERIAL_CLASSIFIER_D4_MODEL_FILE_ID = 'danesfield.material_classifier_D4_model_file_id'
     UNET_SEMANTIC_SEGMENTATION_CONFIG_FILE_ID = \
         'danesfield.unet_semantic_segmentation_config_file_id'
     UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID = 'danesfield.unet_semantic_segmentation_model_file_id'
@@ -45,14 +49,58 @@ def _defaultBuildingSegmentationModelFolderId():
     return ''
 
 
-@setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-def _validateMaterialClassifierModelFileId(doc):
+@setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_STANDARD_MODEL_FILE_ID)
+def _validateMaterialClassifierStandardModelFileId(doc):
     if not isinstance(doc['value'], six.string_types):
-        raise ValidationException('Material classifier model file ID must be a string.')
+        raise ValidationException('Material classifier standard model file ID must be a string.')
 
 
-@setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
-def _defaultMaterialClassifierModelFileId():
+@setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_STANDARD_MODEL_FILE_ID)
+def _defaultMaterialClassifierStandardModelFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_D1_MODEL_FILE_ID)
+def _validateMaterialClassifierD1ModelFileId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Material classifier D1 model file ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_D1_MODEL_FILE_ID)
+def _defaultMaterialClassifierD1ModelFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_D2_MODEL_FILE_ID)
+def _validateMaterialClassifierD2ModelFileId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Material classifier D2 model file ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_D2_MODEL_FILE_ID)
+def _defaultMaterialClassifierD2ModelFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_D3_MODEL_FILE_ID)
+def _validateMaterialClassifierD3ModelFileId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Material classifier D3 model file ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_D3_MODEL_FILE_ID)
+def _defaultMaterialClassifierD3ModelFileId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.MATERIAL_CLASSIFIER_D4_MODEL_FILE_ID)
+def _validateMaterialClassifierD4ModelFileId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Material classifier D4 model file ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.MATERIAL_CLASSIFIER_D4_MODEL_FILE_ID)
+def _defaultMaterialClassifierD4ModelFileId():
     return ''
 
 
