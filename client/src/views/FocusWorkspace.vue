@@ -1,6 +1,6 @@
 <template>
 <div class="root">
-  <WorkspaceContainer 
+  <WorkspaceContainer
     :focused="focusedWorkspace"
     @update:focused="setFocusedWorkspaceKey($event)"
     :autoResize="true"
@@ -75,7 +75,8 @@
     </Workspace>
   </WorkspaceContainer>
   <ClickInfoDialog
-    v-model="clickInfoDialog"
+    right="15px"
+    bottom="60px"
     :datasetClickEvents="datasetClickEvents" />
 </div>
 </template>
@@ -181,16 +182,6 @@ export default {
           return viewPort;
         }
       }
-    },
-    clickInfoDialog: {
-      get() {
-        return !!this.datasetClickEvents.length;
-      },
-      set(value) {
-        if (!value) {
-          this.datasetClickEvents = [];
-        }
-      }
     }
   },
   created() {
@@ -199,6 +190,12 @@ export default {
       this.datasetClickEventsAggregator = [];
     }, 0);
     this.datasetClickEventsAggregator = [];
+  },
+  mounted() {
+    setTimeout(() => {
+      // A fix that map container doesn't have correct size when map being initialized
+      window.dispatchEvent(new Event("resize"));
+    }, 0);
   },
   methods: {
     getTileURL(dataset) {
@@ -233,5 +230,9 @@ export default {
 <style lang="scss" scoped>
 .root {
   height: 100%;
+}
+
+.map {
+  z-index: 0;
 }
 </style>
