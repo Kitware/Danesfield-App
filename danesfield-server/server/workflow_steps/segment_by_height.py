@@ -44,6 +44,7 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         self.addDependency(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.PANSHARPEN)
         self.addDependency(DanesfieldStep.SELECT_BEST)
+        self.addDependency(DanesfieldStep.GET_ROAD_VECTOR)
 
     def run(self, jobInfo):
         # Get working sets
@@ -51,12 +52,17 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
+        getRoadVectorWorkingSet = getWorkingSet(DanesfieldStep.GET_ROAD_VECTOR, jobInfo)
 
         # Get DSM
         dsmFile = self.getSingleFile(dsmWorkingSet)
 
         # Get DTM
         dtmFile = self.getSingleFile(dtmWorkingSet)
+
+        # Get Road Vector
+        roadVectorFile = self.getSingleFile(getRoadVectorWorkingSet,
+                                            lambda item: item['name'] == 'road_vector.geojson')
 
         # Get best image set
         msiImageFile = None
@@ -77,21 +83,6 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         # Get options
         segmentByHeightOptions = getOptions(self.name, jobInfo)
 
-        shapefilesFolder = self.getFolderFromSetting(
-            PluginSettings.SEGMENT_BY_HEIGHT_SHAPEFILES_FOLDER_ID)
-
-        # Get shapefiles prefix
-        # shapefiles = list(Folder().childItems(shapefilesFolder, limit=1))
-        # if not shapefiles:
-        #     raise DanesfieldWorkflowException(
-        #         'Shapefiles for segment by height not found.', step=self.name)
-        # shapefilePrefix = os.path.splitext(shapefiles[0]['name'])[0]
-
-        # FIXME: Hardcoding the shapefilePrefix for D4 for now, as
-        # it's the only AOI with road data.  Need to come up with a
-        # solution where this is selected based on the AOI
-        shapefilePrefix = "ex_FgMKU8FtfzgKJNgmUTE7T3Y5E1cgb_osm_roads"
-
         # Run algorithm
         segmentByHeight(
             initWorkingSetName=initWorkingSet['name'],
@@ -102,6 +93,5 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
             dsmFile=dsmFile,
             dtmFile=dtmFile,
             msiImageFile=msiImageFile,
-            shapefilesFolder=shapefilesFolder,
-            shapefilePrefix=shapefilePrefix,
+            roadVectorFile=roadVectorFile,
             **segmentByHeightOptions)

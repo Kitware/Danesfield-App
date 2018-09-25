@@ -24,6 +24,7 @@ from .workflow_steps import (
     SelectBestStep,
     # UNetSemanticSegmentationStep,
     BuildingsToDsmStep,
+    GetRoadVectorStep,
     CropAndPansharpenStep,
     TextureMappingStep,
 )
@@ -49,6 +50,7 @@ def createWorkflow():
         SelectBestStep,
         # UNetSemanticSegmentationStep,
         BuildingsToDsmStep,
+        GetRoadVectorStep,
         CropAndPansharpenStep,
         TextureMappingStep,
     ]:
