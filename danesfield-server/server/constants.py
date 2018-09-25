@@ -45,6 +45,8 @@ class DanesfieldStep(object):
     ROOF_GEON_EXTRACTION = 'roof-geon-extraction'
     BUILDINGS_TO_DSM = 'buildings-to-dsm'
     GET_ROAD_VECTOR = 'get-road-vector'
+    CROP_AND_PANSHARPEN = 'crop-and-pansharpen'
+    TEXTURE_MAPPING = 'texture-mapping'
 
 
 class DockerImage(object):

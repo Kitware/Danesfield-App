@@ -105,6 +105,28 @@ def isRpc(item):
     return hasExtension(item, '.rpc')
 
 
+def isMsiRpc(item):
+    """
+    Return true if the item refers to an MSI image.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    name = item['name'].lower()
+    return '-m1bs-' in name and isRpc(item)
+
+
+def isPanRpc(item):
+    """
+    Return true if the item refers to a PAN image.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    name = item['name'].lower()
+    return '-p1bs-' in name and isRpc(item)
+
+
 def isObj(item):
     """
     Return true if the item refers to an OBJ file.
@@ -113,6 +135,17 @@ def isObj(item):
     :type item: dict
     """
     return hasExtension(item, '.obj')
+
+
+def isCroppedAndPansharpend(item):
+    """
+    Return true if the item refers to an image file from the crop and
+    pansharpening step.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    return hasExtension(item, '_crop_pansharpened_processed.tif')
 
 
 def getWorkingSet(stepName, jobInfo):
