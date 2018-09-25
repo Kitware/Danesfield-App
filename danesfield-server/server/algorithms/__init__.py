@@ -30,3 +30,5 @@ from .segment_by_height import segmentByHeight  # noqa: F401
 from .select_best import selectBest  # noqa: F401
 from .unet_semantic_segmentation import unetSemanticSegmentation  # noqa: F401
 from .buildings_to_dsm import buildingsToDsm  # noqa: F401
+from .crop_and_pansharpen import cropAndPansharpen  # noqa: F401
+from .texture_mapping import textureMapping  # noqa: F401

@@ -134,3 +134,40 @@ def rpcFileMatchesImageFile(rpcFile, imageFile):
         rpcBaseName = result.group('basename')
     imageBaseName = imageFile['name'].split('.')[0]
     return rpcBaseName.endswith(imageBaseName)
+
+
+def imagePrefix(imageFile):
+    """
+    Returns the image filename prefix for the given image file.
+
+    :param imageFile: Image file document.
+    :type imageFile: dict
+    :returns: tuple of prefix and modality.
+    """
+    match = re.match(r'^(?P<prefix>.+?)\-(?P<modality>P1BS|M1BS)',
+                     imageFile['name'],
+                     flags=re.IGNORECASE)
+
+    if match:
+        return match.group('prefix')
+    else:
+        return None
+
+
+def rpcPrefix(rpcFile):
+    """
+    Returns the RPC filename prefix for the given RPC file.
+
+    :param rpcFile: RPC file document.
+    :type rpcFile: dict
+    :returns: tuple of prefix and modality.
+    """
+    # Ignoring the GRA prefix
+    match = re.match(r'^(?P<gra_prefix>GRA_)?(?P<prefix>.+?)\-(?P<modality>P1BS|M1BS)',
+                     rpcFile['name'],
+                     flags=re.IGNORECASE)
+
+    if match:
+        return match.group('prefix')
+    else:
+        return None
