@@ -44,8 +44,7 @@ def cropAndPansharpen(initWorkingSetName,
                       msiImageFiles,
                       panImageFiles,
                       msiRpcFiles,
-                      panRpcFiles,
-                      rpcFiles):
+                      panRpcFiles):
     """
     Run a Girder Worker job to crop and pansharpen images for texture mapping.
 
