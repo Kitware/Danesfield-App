@@ -112,7 +112,7 @@ def textureMapping(initWorkingSetName,
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='[%s] Texture mapping',
+            jobTitle='[%s] Texture mapping' % initWorkingSetName,
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks
