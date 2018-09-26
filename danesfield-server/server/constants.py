@@ -47,6 +47,7 @@ class DanesfieldStep(object):
     GET_ROAD_VECTOR = 'get-road-vector'
     CROP_AND_PANSHARPEN = 'crop-and-pansharpen'
     TEXTURE_MAPPING = 'texture-mapping'
+    RUN_METRICS = 'run-metrics'
 
 
 class DockerImage(object):

@@ -31,6 +31,7 @@ class PluginSettings(object):
     UNET_SEMANTIC_SEGMENTATION_MODEL_FILE_ID = 'danesfield.unet_semantic_segmentation_model_file_id'
     ROOF_SEGMENTATION_MODEL_FOLDER_ID = 'danesfield.roof_segmentation_model_folder_id'
     SEGMENT_BY_HEIGHT_SHAPEFILES_FOLDER_ID = 'danesfield.segment_by_height_shapefiles_folder_id'
+    REFERENCE_DATA_FOLDER_ID = 'danesfield.reference_data_folder_id'
 
 
 @setting_utilities.validator(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
@@ -97,4 +98,15 @@ def _validateSegmentByHeightShapefilesFolderId(doc):
 
 @setting_utilities.default(PluginSettings.SEGMENT_BY_HEIGHT_SHAPEFILES_FOLDER_ID)
 def _defaultSegmentByHeightShapefilesFolderId():
+    return ''
+
+
+@setting_utilities.validator(PluginSettings.REFERENCE_DATA_FOLDER_ID)
+def _validateReferenceDataFolderId(doc):
+    if not isinstance(doc['value'], six.string_types):
+        raise ValidationException('Reference data folder ID must be a string.')
+
+
+@setting_utilities.default(PluginSettings.REFERENCE_DATA_FOLDER_ID)
+def _defaultReferenceDataFolderId():
     return ''

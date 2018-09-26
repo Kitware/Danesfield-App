@@ -33,3 +33,4 @@ from .buildings_to_dsm import buildingsToDsm  # noqa: F401
 from .get_road_vector import getRoadVector  # noqa: F401
 from .crop_and_pansharpen import cropAndPansharpen  # noqa: F401
 from .texture_mapping import textureMapping  # noqa: F401
+from .run_metrics import runMetrics  # noqa: F401

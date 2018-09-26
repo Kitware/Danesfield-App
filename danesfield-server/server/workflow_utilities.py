@@ -49,6 +49,33 @@ def isClsImage(item):
     return '_cls' in name and ext.startswith('.tif')
 
 
+def isDsmImage(item):
+    """
+    Return true if the item refers to a DSM image.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    return '_dsm' in name and ext.startswith('.tif')
+
+
+def isMtlImage(item):
+    """
+    Return true if the item refers to an MTL image.
+
+    :param item: Item document.
+    :type item: dict
+    """
+    name = item['name'].lower()
+    ext = os.path.splitext(name)[1]
+    # Can't use "ext.startswith" here as the classify-materials step
+    # appends to the extension for derivative files
+    return '_mtl' in name and (ext == '.tif' or
+                               ext == '.tiff')
+
+
 def isMsiImage(item):
     """
     Return true if the item refers to an MSI image.
