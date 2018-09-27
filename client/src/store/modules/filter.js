@@ -80,6 +80,22 @@ export default {
         return point.geometry.coordinates;
       });
     },
+    datasetBoundsFeature(state) {
+      return state.datasets
+        .filter(dataset =>
+          dataset['geometa'] && dataset['geometa']['bounds']
+        ).reduce((featureCollection, dataset) => {
+          featureCollection.features.push({
+            type: 'Feature',
+            properties: {
+              name: dataset.name,
+              _id: dataset._id
+            },
+            geometry: dataset['geometa']['bounds']
+          });
+          return featureCollection;
+        }, { type: "FeatureCollection", features: [] });
+    },
     selectedDatasetPoint(state) {
       if (!state.selectedDataset) {
         return null;

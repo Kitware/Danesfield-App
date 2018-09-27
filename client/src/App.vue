@@ -56,6 +56,7 @@
       </transition>
     </FullScreenViewport>
     <GirderUserDialog
+      appName='Danesfield'
       :form.sync='userForm'
       v-model='userDialog'
       />
@@ -82,7 +83,7 @@ export default {
     return {
       portal: {
         name: "title",
-        text: "Core3D"
+        text: "Danesfield - CORE3D"
       },
       GIRDER_URL,
       userForm: "login",

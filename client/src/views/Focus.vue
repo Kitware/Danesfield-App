@@ -33,7 +33,7 @@
             <v-icon>arrow_back</v-icon>
           </v-btn>
           <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
-          <v-toolbar-title v-else class="caption">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
+          <v-toolbar-title v-else class="body-1">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-menu 
             v-if="!customVizDatasetId" 
@@ -337,6 +337,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <Logo />
   </div>
 </template>
 
@@ -371,6 +372,7 @@ import getLargeImageMeta from "../utils/getLargeImageMeta";
 import FeatureSelector from "../components/FeatureSelector";
 import { palette } from "../utils/materialClassificationMapping";
 import { blueRed, blueWhiteRed, blackWhite } from "../utils/extraPalettes";
+import Logo from "../components/Logo";
 import postDownload from "../utils/postDownload";
 import isOBJItem from "../utils/isOBJItem";
 
@@ -381,7 +383,8 @@ export default {
     VectorCustomVizPane,
     GeotiffCustomVizPane,
     draggable,
-    FeatureSelector
+    FeatureSelector,
+    Logo
   },
   data() {
     return {
@@ -902,5 +905,10 @@ export default {
 .narrow-list-tile-action.v-list__tile__action {
   min-width: inherit;
   flex: 0 0 32px;
+}
+
+.logo {
+  left: 3px;
+  bottom: 43px;
 }
 </style>

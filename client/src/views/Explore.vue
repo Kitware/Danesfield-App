@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="full-screen">
     <GeojsMapViewport
@@ -14,12 +12,13 @@
       <template v-if="exploreTab==='workingSet'">
         <GeojsGeojsonLayer
           v-if="editingWorkingSet"
-          :geojson="datasetBoundsFeature"
+          :geojson="workingSetDatasetBoundsFeature"
+          :featureStyle="datasetBoundsFeatureStyle"
           :zIndex="1">
         </GeojsGeojsonLayer>
       </template>
       <template v-if="exploreTab==='filter'">
-        <GeojsHeatmapLayer v-if="editingFilter"
+        <GeojsHeatmapLayer v-if="editingFilter && viewport.zoom<=7"
           :data="heatmapData"
           :binned="10"
           :maxIntensity="5"
@@ -27,31 +26,37 @@
           :updateDelay="100"
           :zIndex="1">
         </GeojsHeatmapLayer>
+        <GeojsGeojsonLayer
+          v-if="editingFilter && viewport.zoom>7"
+          :geojson="filterDatasetBoundsFeature"
+          :featureStyle="datasetBoundsFeatureStyle"
+          :zIndex="2">
+        </GeojsGeojsonLayer>
         <GeojsAnnotationLayer
           :drawing.sync="drawing"
           :editing.sync="editing"
           :editable="true"
           :annotations="annotations"
           @update:annotations="$store.commit('filter/setAnnotations',$event)"
-          :zIndex="2">
+          :zIndex="3">
         </GeojsAnnotationLayer>
         <GeojsGeojsonLayer 
           v-if="editingConditionsGeojson"
           :geojson="editingConditionsGeojson"
           :featureStyle="filterGeojsonLayerStyle"
-          :zIndex="3">
+          :zIndex="4">
         </GeojsGeojsonLayer>
       </template>
       <template v-if="combinedSelectedDatasetPoint">
         <GeojsGeojsonLayer
           :geojson="combinedSelectedDatasetPoint"
           :featureStyle="{point:{strokeColor:'black',strokeWidth:2,radius:3}}"
-          :zIndex="4">
+          :zIndex="5">
         </GeojsGeojsonLayer>
         <GeojsWidgetLayer
           :position="combinedSelectedDatasetPoint.coordinates"
           :offset="{x:0,y:-20}"
-          :zIndex="5">
+          :zIndex="6">
           <v-chip small color="green" text-color="white">{{combinedSelectedDataset.name}}</v-chip>
         </GeojsWidgetLayer>
       </template>
@@ -91,6 +96,7 @@
         </v-btn>
       </v-bottom-nav>
     </SidePanel>
+    <Logo />
   </div>
 </template>
 
@@ -109,18 +115,25 @@
     overflow-x: hidden;
   }
 }
+
+.logo {
+  left: 3px;
+  bottom: 0px;
+}
 </style>
 <script>
 import { mapState, mapGetters } from "vuex";
 
 import WorkingSetModule from "./WorkingSetModule";
 import FilterModule from "./FilterModule";
+import Logo from "../components/Logo";
 
 export default {
   name: "Explore",
   components: {
     WorkingSetModule,
-    FilterModule
+    FilterModule,
+    Logo
   },
   data() {
     return {
@@ -133,13 +146,6 @@ export default {
     };
   },
   computed: {
-    portal() {
-      return {
-        name: "title",
-        appendText:
-          (this.exploreTab === "workingSet") ? "Working Sets" : "Filters"
-      };
-    },
     actions() {
       if (this.editingFilter) {
         return [
@@ -167,19 +173,45 @@ export default {
       }
     },
     filterGeojsonLayerStyle() {
-      // Tell Vuejs selectedCondition is a dependancy of the filterGeojsonLayerStyle computed
-      this.selectedCondition;
+      // Tell Vuejs selectedCondition is a dependancy of this computed
+      var selectedCondition = this.selectedCondition;
+      var primaryColor = this.$vuetify.theme.primary;
       return {
         polygon: {
           strokeColor: "#000000",
           strokeOpacity: 0.75,
           fillOpacity: 0.25,
           fillColor: (a, b, data) => {
-            return this.selectedCondition &&
-              data === this.selectedCondition.geojson
+            return selectedCondition && data === selectedCondition.geojson
               ? "red"
-              : "DodgerBlue";
+              : primaryColor;
           }
+        }
+      };
+    },
+    datasetBoundsFeatureStyle() {
+      // Tell Vuejs combinedSelectedDataset is a dependancy of this computed
+      var selectedDataset = this.combinedSelectedDataset;
+      var primaryColor = this.$vuetify.theme.primary;
+      return {
+        polygon: {
+          uniformPolygon: true,
+          fill(data) {
+            return selectedDataset &&
+              selectedDataset._id === data.properties._id
+              ? true
+              : false;
+          },
+          fillColor: "red",
+          fillOpacity: 0.2,
+          strokeColor(a, b, data) {
+            return selectedDataset &&
+              selectedDataset._id === data.properties._id
+              ? "red"
+              : primaryColor;
+          },
+          strokeOpacity: 0.6,
+          strokeWidth: 1.2
         }
       };
     },
@@ -202,8 +234,14 @@ export default {
       "annotations",
       "selectedCondition"
     ]),
-    ...mapGetters("workingSet", ["datasetBoundsFeature"]),
-    ...mapGetters("filter", ["editingConditionsGeojson", "heatmapData"]),
+    ...mapGetters("workingSet", {
+      workingSetDatasetBoundsFeature: "datasetBoundsFeature"
+    }),
+    ...mapGetters("filter", {
+      editingConditionsGeojson: "editingConditionsGeojson",
+      heatmapData: "heatmapData",
+      filterDatasetBoundsFeature: "datasetBoundsFeature"
+    }),
     user() {
       return this.$girder.user;
     }

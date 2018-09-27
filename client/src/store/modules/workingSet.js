@@ -28,16 +28,16 @@ export default {
           featureCollection.features.push({
             type: 'Feature',
             properties: {
-              name: dataset['name']
+              name: dataset['name'],
+              _id: dataset._id
             },
-            // Quick fix, wait for new GeoJS release
-            geometry: JSON.parse(JSON.stringify(dataset['geometa']['bounds']))
+            geometry: dataset['geometa']['bounds']
           });
           return featureCollection;
         }, { type: "FeatureCollection", features: [] });
     },
     selectedDatasetPoint(state) {
-      if (!state.selectedDataset) {
+      if (!state.selectedDataset || !state.selectedDataset.geometa) {
         return null;
       }
       return pointOnFeature(state.selectedDataset.geometa.bounds).geometry;

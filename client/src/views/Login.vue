@@ -2,6 +2,7 @@
 <FullScreenViewport>
   <v-container>
     <GirderUserDialog
+      appName='Danesfield'
       :form.sync='form'
       :value='userDialog'
       />
