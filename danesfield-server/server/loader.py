@@ -27,6 +27,7 @@ from .workflow_steps import (
     GetRoadVectorStep,
     CropAndPansharpenStep,
     TextureMappingStep,
+    RunMetricsStep,
 )
 
 
@@ -53,6 +54,7 @@ def createWorkflow():
         GetRoadVectorStep,
         CropAndPansharpenStep,
         TextureMappingStep,
+        RunMetricsStep,
     ]:
         workflow.addStep(step())
 
