@@ -19,22 +19,31 @@
 
 import itertools
 
-from six.moves import zip
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (
+    addJobInfo,
+    createDockerRunArguments,
+    createGirderClient,
+    createUploadMetadata)
 from ..constants import DockerImage
-from ..utilities import getPrefix
-from ..workflow import DanesfieldWorkflowException
 
 
-def classifyMaterials(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles,
-                      metadataFiles, modelFile, outfilePrefix, cuda=None,
-                      batchSize=None, model=None):
+def classifyMaterials(initWorkingSetName,
+                      stepName,
+                      requestInfo,
+                      jobId,
+                      outputFolder,
+                      imageFiles,
+                      metadataFiles,
+                      modelFile,
+                      outfilePrefix,
+                      cuda=None,
+                      batchSize=None,
+                      model=None):
     """
     Run a Girder Worker job to classify materials in an orthorectified image.
 
@@ -69,26 +78,6 @@ def classifyMaterials(initWorkingSetName, stepName, requestInfo, jobId, outputFo
 
     outputVolumePath = VolumePath('.')
 
-    # Find NITF metadata file corresponding to each image, or None
-    correspondingMetadataFiles = [
-        next(
-            (
-                metadataFile
-                for metadataFile in metadataFiles
-                if getPrefix(metadataFile['name']) == getPrefix(imageFile['name'])
-            ), None)
-        for imageFile in imageFiles
-    ]
-    imagesMissingMetadataFiles = [
-        imageFile['name']
-        for imageFile, metadataFile
-        in zip(imageFiles, correspondingMetadataFiles)
-        if not metadataFile
-    ]
-    if imagesMissingMetadataFiles:
-        raise DanesfieldWorkflowException('Missing NITF metadata files for images: {}'.format(
-            imagesMissingMetadataFiles), step=stepName)
-
     # Docker container arguments
     containerArgs = list(itertools.chain(
         [
@@ -107,7 +96,7 @@ def classifyMaterials(initWorkingSetName, stepName, requestInfo, jobId, outputFo
         ],
         [
             GirderFileIdToVolume(metadataFile['_id'], gc=gc)
-            for metadataFile in correspondingMetadataFiles
+            for metadataFile in metadataFiles
         ]
     ))
     if cuda is None or cuda:

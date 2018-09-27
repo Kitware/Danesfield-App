@@ -19,12 +19,14 @@
 
 import re
 
+from girder.models.item import Item
 from ..algorithms import classifyMaterials
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
     getOptions, getWorkingSet, isMsiImage, isMsiNitfMetadata)
+from ..utilities import getPrefix
 
 
 class ClassifyMaterialsStep(DanesfieldWorkflowStep):
@@ -37,13 +39,15 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
     - model
     """
     def __init__(self):
-        super(ClassifyMaterialsStep, self).__init__(DanesfieldStep.CLASSIFY_MATERIALS)
+        super(ClassifyMaterialsStep, self).__init__(
+            DanesfieldStep.CLASSIFY_MATERIALS)
         self.addDependency(DanesfieldStep.ORTHORECTIFY)
 
     def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
-        orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
+        orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY,
+                                               jobInfo)
 
         # Get MSI images
         imageFiles = self.getFiles(orthorectifyWorkingSet, isMsiImage)
@@ -51,11 +55,53 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         # Get NITF metadata files
         metadataFiles = self.getFiles(initWorkingSet, isMsiNitfMetadata)
 
+        pairs = {}
+        for f in imageFiles:
+            prefix = getPrefix(f['name'])
+            if prefix not in pairs:
+                pairs[prefix] = {}
+
+            pairs[prefix]['img'] = f
+
+        for f in metadataFiles:
+            prefix = getPrefix(f['name'])
+            if prefix not in pairs:
+                pairs[prefix] = {}
+
+            pairs[prefix]['meta'] = f
+
+        pairedImageFiles = []
+        pairedMetadataFiles = []
+        for prefix, pair in pairs.items():
+            if 'img' in pair and 'meta' in pair:
+                pairedImageFiles.append(pair['img'])
+                pairedMetadataFiles.append(pair['meta'])
+
+        if len(pairedImageFiles) >= 20:
+            modelVariant = "20"
+        else:
+            modelVariant = "01"
+
         # Get options
         classifyMaterialsOptions = getOptions(self.name, jobInfo)
 
-        # Get model file from setting
-        modelFile = self.getFileFromSetting(PluginSettings.MATERIAL_CLASSIFIER_MODEL_FILE_ID)
+        # Model selection
+        model = classifyMaterialsOptions.get('model')
+
+        # Special case for "STANDARD" default model
+        if model == "STANDARD":
+            modelName = "modelALL_{}.pth.tar" % modelVariant
+        else:
+            modelName = "model_{}_{}.pth.tar" % (model, modelVariant)
+
+        # Find the right model
+        modelFolder = self.getFolderFromSetting(
+            PluginSettings.MATERIAL_CLASSIFIER_MODEL_FOLDER_ID)
+        modelItemRecord = Item().findOne({'folderId': modelFolder['_id'],
+                                          'name': modelName})
+
+        # Should only be one file in the item
+        modelFile = Item().childFiles(modelItemRecord, limit=1)[0]
 
         # Set outfile prefix; replacing whitespace with underscores
         outfilePrefix = re.sub("\\s", "_", initWorkingSet['name'])
@@ -63,6 +109,12 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         # Run algorithm
         classifyMaterials(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
-            modelFile=modelFile, outfilePrefix=outfilePrefix, **classifyMaterialsOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            imageFiles=imageFiles,
+            metadataFiles=metadataFiles,
+            modelFile=modelFile,
+            outfilePrefix=outfilePrefix,
+            **classifyMaterialsOptions)
