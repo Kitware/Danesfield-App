@@ -90,9 +90,9 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
 
         # Special case for "STANDARD" default model
         if model == "STANDARD":
-            modelName = "modelALL_{}.pth.tar" % modelVariant
+            modelName = "modelALL_%s.pth.tar" % modelVariant
         else:
-            modelName = "model_{}_{}.pth.tar" % (model, modelVariant)
+            modelName = "model_%s_%s.pth.tar" % (model, modelVariant)
 
         # Find the right model
         modelFolder = self.getFolderFromSetting(
