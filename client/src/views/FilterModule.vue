@@ -1,6 +1,7 @@
 <template>
   <transition name="fade" mode="out-in">
     <div v-if='!editingFilter'>
+      <NewWithName name="filter" default="filter-1" @confirm='addNewFilter' />
       <v-expansion-panel>
         <v-expansion-panel-content
           v-for="filter in filters"
@@ -20,7 +21,6 @@
           </v-layout>
         </v-expansion-panel-content>
       </v-expansion-panel>
-      <NewWithName name="filter" default="filter-1" @confirm='addNewFilter' />
     </div>
     <EditFilter v-else />
   </transition>
