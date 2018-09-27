@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+from girder.models.folder import Folder
+from girder.models.user import User
 from ..algorithms import runMetrics
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
@@ -65,13 +67,26 @@ class RunMetricsStep(DanesfieldWorkflowStep):
         # Get MTL
         mtlFile = self.getSingleFile(classifyMaterialsWorkingSet, isMtlImage)
 
+        # Create an output folder for the results.  Some of the output
+        # files from the run_metrics step have the same name as output
+        # files from previous steps, so we need to put them into their
+        # own folder.
+        adminUser = User().getAdmins().next()
+        outputFolder = Folder().createFolder(
+            parent=jobInfo.outputFolder,
+            name="RunMetrics",
+            parentType='folder',
+            public=False,
+            creator=adminUser,
+            reuseExisting=True)
+
         # Run algorithm
         runMetrics(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder,
+            outputFolder=outputFolder,
             referenceFolder=referenceFolder,
             referencePrefix=referencePrefix,
             dtmFile=dtmFile,
