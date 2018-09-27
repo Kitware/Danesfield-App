@@ -96,6 +96,7 @@
         </v-btn>
       </v-bottom-nav>
     </SidePanel>
+    <Logo />
   </div>
 </template>
 
@@ -114,18 +115,25 @@
     overflow-x: hidden;
   }
 }
+
+.logo {
+  left: 3px;
+  bottom: 0px;
+}
 </style>
 <script>
 import { mapState, mapGetters } from "vuex";
 
 import WorkingSetModule from "./WorkingSetModule";
 import FilterModule from "./FilterModule";
+import Logo from "../components/Logo";
 
 export default {
   name: "Explore",
   components: {
     WorkingSetModule,
-    FilterModule
+    FilterModule,
+    Logo
   },
   data() {
     return {
