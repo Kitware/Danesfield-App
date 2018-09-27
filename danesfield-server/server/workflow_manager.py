@@ -27,8 +27,6 @@ from .constants import DanesfieldStep
 from .job_info import JobInfo
 from .models.workingSet import WorkingSet
 from .workflow import DanesfieldWorkflowException
-from .workflow_steps import (
-    RunMetricsStep)
 
 
 class DanesfieldWorkflowManager(object):
@@ -290,12 +288,12 @@ class DanesfieldWorkflowManager(object):
             ]
 
             # Skip run-metrics if the AOI is unknown
-            model = jobData['options'].get('classify-materials', {}).get('model')
-            if model is None or model == 'STANDARD':
-                try:
-                    incompleteSteps.remove(RunMetricsStep)
-                except ValueError as e:
-                    pass
+            # model = jobData['options'].get('classify-materials', {}).get('model')
+            # if model is None or model == 'STANDARD':
+            #     try:
+            #         incompleteSteps.remove(RunMetricsStep)
+            #     except ValueError as e:
+            #         pass
 
             logprint.info('DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
                 [step.name for step in incompleteSteps]
