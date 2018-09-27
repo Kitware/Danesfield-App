@@ -70,6 +70,9 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
 
             pairs[prefix]['meta'] = f
 
+        # Order and select image / metadata files based on the prefix,
+        # only including pairs where we have both an image and
+        # metadata
         pairedImageFiles = []
         pairedMetadataFiles = []
         for prefix, pair in pairs.items():
@@ -113,8 +116,8 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
             outputFolder=outputFolder,
-            imageFiles=imageFiles,
-            metadataFiles=metadataFiles,
+            imageFiles=pairedImageFiles,
+            metadataFiles=pairedMetadataFiles,
             modelFile=modelFile,
             outfilePrefix=outfilePrefix,
             **classifyMaterialsOptions)
