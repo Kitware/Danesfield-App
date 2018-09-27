@@ -71,42 +71,60 @@ def runMetrics(initWorkingSetName,
     """
     gc = createGirderClient(requestInfo)
 
-    outputVolumePath = VolumePath('__output__')
+    if referencePrefix == "STANDARD":
+        # We know that there's no reference data with this selection
+        containerArgs = [
+            'echo',
+            'No ground truth selected for scoring']
 
-    # Docker container arguments
-    containerArgs = [
-        'danesfield/tools/run_metrics.py',
-        '--output-dir', outputVolumePath,
-        '--ref-dir', GirderFolderIdToVolume(referenceFolder['_id'], gc=gc),
-        '--ref-prefix', referencePrefix,
-        '--dsm', GirderFileIdToVolume(dsmFile['_id'], gc=gc),
-        '--cls', GirderFileIdToVolume(clsFile['_id'], gc=gc),
-        '--mtl', GirderFileIdToVolume(mtlFile['_id'], gc=gc),
-        '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc)
-    ]
-
-    # Result hooks
-    # - Upload output files to output folder
-    # - Provide upload metadata
-    upload_kwargs = createUploadMetadata(jobId, stepName)
-    resultHooks = [
-        GirderUploadVolumePathToFolder(
-            outputVolumePath,
-            outputFolder['_id'],
-            upload_kwargs=upload_kwargs,
-            gc=gc)
-    ]
-
-    asyncResult = docker_run.delay(
-        **createDockerRunArguments(
-            image=DockerImage.DANESFIELD,
-            containerArgs=containerArgs,
-            jobTitle='[%s] Run metrics' % initWorkingSetName,
-            jobType=stepName,
-            user=requestInfo.user,
-            resultHooks=resultHooks
+        asyncResult = docker_run.delay(
+            **createDockerRunArguments(
+                image=DockerImage.DANESFIELD,
+                containerArgs=containerArgs,
+                jobTitle='[%s] Run metrics' % initWorkingSetName,
+                jobType=stepName,
+                user=requestInfo.user
+            )
         )
-    )
+    else:
+        # Otherwise we assume the reference data exists, and try to
+        # run the metrics
+        outputVolumePath = VolumePath('__output__')
+
+        # Docker container arguments
+        containerArgs = [
+            'danesfield/tools/run_metrics.py',
+            '--output-dir', outputVolumePath,
+            '--ref-dir', GirderFolderIdToVolume(referenceFolder['_id'], gc=gc),
+            '--ref-prefix', referencePrefix,
+            '--dsm', GirderFileIdToVolume(dsmFile['_id'], gc=gc),
+            '--cls', GirderFileIdToVolume(clsFile['_id'], gc=gc),
+            '--mtl', GirderFileIdToVolume(mtlFile['_id'], gc=gc),
+            '--dtm', GirderFileIdToVolume(dtmFile['_id'], gc=gc)
+        ]
+
+        # Result hooks
+        # - Upload output files to output folder
+        # - Provide upload metadata
+        upload_kwargs = createUploadMetadata(jobId, stepName)
+        resultHooks = [
+            GirderUploadVolumePathToFolder(
+                outputVolumePath,
+                outputFolder['_id'],
+                upload_kwargs=upload_kwargs,
+                gc=gc)
+        ]
+
+        asyncResult = docker_run.delay(
+            **createDockerRunArguments(
+                image=DockerImage.DANESFIELD,
+                containerArgs=containerArgs,
+                jobTitle='[%s] Run metrics' % initWorkingSetName,
+                jobType=stepName,
+                user=requestInfo.user,
+                resultHooks=resultHooks
+            )
+        )
 
     # Add info for job event listeners
     job = asyncResult.job
