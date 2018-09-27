@@ -33,7 +33,7 @@
             <v-icon>arrow_back</v-icon>
           </v-btn>
           <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
-          <v-toolbar-title v-else class="caption">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
+          <v-toolbar-title v-else class="body-1">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-menu 
             v-if="!customVizDatasetId" 
