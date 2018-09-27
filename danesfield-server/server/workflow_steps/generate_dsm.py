@@ -36,7 +36,7 @@ class GenerateDsmStep(DanesfieldWorkflowStep):
         super(GenerateDsmStep, self).__init__(DanesfieldStep.GENERATE_DSM)
         self.addDependency(DanesfieldStep.GENERATE_POINT_CLOUD)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         pointCloudWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo)
@@ -54,5 +54,5 @@ class GenerateDsmStep(DanesfieldWorkflowStep):
         generateDsm(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, pointCloudFile=pointCloudFile,
+            outputFolder=outputFolder, pointCloudFile=pointCloudFile,
             outputPrefix=outputPrefix, **generateDsmOptions)

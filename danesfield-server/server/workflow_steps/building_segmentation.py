@@ -46,7 +46,7 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         self.addDependency(DanesfieldStep.MSI_TO_RGB)
         self.addDependency(DanesfieldStep.SELECT_BEST)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
@@ -101,6 +101,6 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         buildingSegmentation(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
+            outputFolder=outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
             msiImageFile=msiImageFile, rgbImageFile=rgbImageFile, modelFolder=modelFolder,
             modelFilePrefix=modelFilePrefix, **buildingSegmentationOptions)

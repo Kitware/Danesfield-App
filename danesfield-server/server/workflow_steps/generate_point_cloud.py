@@ -37,7 +37,7 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
     def __init__(self):
         super(GeneratePointCloudStep, self).__init__(DanesfieldStep.GENERATE_POINT_CLOUD)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
 
@@ -63,6 +63,6 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
         generatePointCloud(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, imageFiles=imageFiles,
+            outputFolder=outputFolder, imageFiles=imageFiles,
             longitude=longitude, latitude=latitude,
             longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)

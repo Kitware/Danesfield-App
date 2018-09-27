@@ -40,7 +40,7 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         super(ClassifyMaterialsStep, self).__init__(DanesfieldStep.CLASSIFY_MATERIALS)
         self.addDependency(DanesfieldStep.ORTHORECTIFY)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
@@ -64,5 +64,5 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
         classifyMaterials(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
+            outputFolder=outputFolder, imageFiles=imageFiles, metadataFiles=metadataFiles,
             modelFile=modelFile, outfilePrefix=outfilePrefix, **classifyMaterialsOptions)

@@ -37,7 +37,7 @@ class SelectBestStep(DanesfieldWorkflowStep):
         super(SelectBestStep, self).__init__(DanesfieldStep.SELECT_BEST)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
@@ -56,7 +56,7 @@ class SelectBestStep(DanesfieldWorkflowStep):
         selectBest(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
+            outputFolder=outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
             **selectBestOptions)
 
     @staticmethod

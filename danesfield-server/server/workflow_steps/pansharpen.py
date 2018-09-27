@@ -34,7 +34,7 @@ class PansharpenStep(DanesfieldWorkflowStep):
         super(PansharpenStep, self).__init__(DanesfieldStep.PANSHARPEN)
         self.addDependency(DanesfieldStep.ORTHORECTIFY)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
@@ -51,4 +51,4 @@ class PansharpenStep(DanesfieldWorkflowStep):
         pansharpen(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **pansharpenOptions)
+            outputFolder=outputFolder, imageFiles=imageFiles, **pansharpenOptions)
