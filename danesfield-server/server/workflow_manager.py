@@ -22,6 +22,8 @@ import uuid
 import re
 
 from girder import logprint
+from girder.models.folder import Folder
+from girder.models.user import User
 
 from .constants import DanesfieldStep
 from .job_info import JobInfo
@@ -345,9 +347,20 @@ class DanesfieldWorkflowManager(object):
                 options=jobData['options']
             )
 
-            for step in readySteps:
-                jobData['runningSteps'].add(step.name)
-                step.run(jobInfo)
+            if readySteps:
+                adminUser = User().getAdmins().next()
+                for step in readySteps:
+                    # Create output directory for step
+                    outputFolder = Folder().createFolder(
+                        parent=jobInfo.outputFolder,
+                        name=step.name,
+                        parentType='folder',
+                        public=False,
+                        creator=adminUser,
+                        reuseExisting=True)
+
+                    jobData['runningSteps'].add(step.name)
+                    step.run(jobInfo, outputFolder)
 
     def stepSucceeded(self, jobId, stepName):
         """

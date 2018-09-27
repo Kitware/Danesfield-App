@@ -40,7 +40,7 @@ class CropAndPansharpenStep(DanesfieldWorkflowStep):
         self.addDependency(DanesfieldStep.GENERATE_POINT_CLOUD)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         pointCloudWorkingSet = getWorkingSet(
@@ -76,7 +76,7 @@ class CropAndPansharpenStep(DanesfieldWorkflowStep):
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder,
+            outputFolder=outputFolder,
             dsmFile=dsmFile,
             msiImageFiles=msiImageFiles,
             panImageFiles=panImageFiles,

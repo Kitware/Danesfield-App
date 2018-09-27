@@ -46,7 +46,7 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
         self.addDependency(DanesfieldStep.SELECT_BEST)
         self.addDependency(DanesfieldStep.GET_ROAD_VECTOR)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
@@ -89,7 +89,7 @@ class SegmentByHeightStep(DanesfieldWorkflowStep):
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder,
+            outputFolder=outputFolder,
             dsmFile=dsmFile,
             dtmFile=dtmFile,
             msiImageFile=msiImageFile,

@@ -50,7 +50,7 @@ class RoofGeonExtractionStep(DanesfieldWorkflowStep):
         # self.addDependency(DanesfieldStep.BUILDING_SEGMENTATION)
         # self.addDependency(DanesfieldStep.UNET_SEMANTIC_SEGMENTATION)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         pointCloudWorkingSet = getWorkingSet(
@@ -96,7 +96,7 @@ class RoofGeonExtractionStep(DanesfieldWorkflowStep):
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder,
+            outputFolder=outputFolder,
             pointCloudFile=pointCloudFile,
             dtmFile=dtmFile,
             buildingMaskFile=buildingMaskFile,

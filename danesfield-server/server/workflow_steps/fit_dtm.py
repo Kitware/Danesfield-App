@@ -37,7 +37,7 @@ class FitDtmStep(DanesfieldWorkflowStep):
         super(FitDtmStep, self).__init__(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
@@ -55,5 +55,5 @@ class FitDtmStep(DanesfieldWorkflowStep):
         fitDtm(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, dsmFile=dsmFile,
+            outputFolder=outputFolder, dsmFile=dsmFile,
             outputPrefix=outputPrefix, **fitDtmOptions)

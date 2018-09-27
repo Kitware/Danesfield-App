@@ -36,7 +36,7 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
         super(MsiToRgbStep, self).__init__(DanesfieldStep.MSI_TO_RGB)
         self.addDependency(DanesfieldStep.PANSHARPEN)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
@@ -51,4 +51,4 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
         msiToRgb(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
+            outputFolder=outputFolder, imageFiles=imageFiles, **msiToRgbOptions)

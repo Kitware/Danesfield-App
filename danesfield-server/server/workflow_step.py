@@ -40,7 +40,7 @@ class DanesfieldWorkflowStep(object):
         """
         self.dependencies.add(name)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         """
         Run the step. Subclasses must implement this method.
 

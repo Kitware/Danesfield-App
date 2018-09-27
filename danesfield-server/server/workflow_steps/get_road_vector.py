@@ -37,7 +37,7 @@ class GetRoadVectorStep(DanesfieldWorkflowStep):
     def __init__(self):
         super(GetRoadVectorStep, self).__init__(DanesfieldStep.GET_ROAD_VECTOR)
 
-    def run(self, jobInfo):
+    def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
 
@@ -60,7 +60,7 @@ class GetRoadVectorStep(DanesfieldWorkflowStep):
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
-            outputFolder=jobInfo.outputFolder,
+            outputFolder=outputFolder,
             left=left,
             bottom=bottom,
             right=right,
