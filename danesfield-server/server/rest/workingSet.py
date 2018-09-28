@@ -22,6 +22,7 @@ from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import Resource
 from girder.models.item import Item
+from girder.models.folder import Folder
 from ..models.workingSet import WorkingSet
 
 
@@ -134,17 +135,25 @@ class WorkingSetResource(Resource):
         if not workingSet['datasetIds']:
             return []
         datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
-        if not datasetItem:
-            return []
-        evaluationDatasets = list(Item().find(
-            {'$and': [
-                {'folderId': datasetItem['folderId']},
-                {'$or': [
-                    {'name': {'$regex': '_DTM.tif$'}},
-                    {'name': {'$regex': '_MTL.tif$'}},
-                    {'name': {'$regex': '_CLS.tif$'}},
-                    {'name': {'$regex': '_DSM.tif$'}}
-                ]}
-            ]}
-        ))
+        itemFolder = Folder().findOne({'_id': datasetItem['folderId']})
+        resultFolders = Folder().find({'parentId': itemFolder['parentId']})
+        evaluationDatasets = []
+        for folder in resultFolders:
+            if folder['name'] in evaluationMapping:
+                regexes = evaluationMapping[folder['name']]
+                evaluationDatasets = evaluationDatasets + list(Item().find(
+                    {'$and': [
+                        {'folderId': folder['_id']},
+                        {'$or': [{'name': {'$regex': regex}} for regex in regexes]}
+                    ]}
+                ))
         return evaluationDatasets
+
+evaluationMapping = {
+    'buildings-to-dsm': ['_CLS.tif$', '_DSM.tif$'],
+    'classify-materials': ['_MTL.tif$'],
+    'fit-dtm': ['_DTM.tif$'],
+    'generate-dsm': ['_DSM.tif$'],
+    'segment-by-height': ['_CLS.tif$'],
+    'texture-mapping': ['^((?!xxxx[.]obj).)*$']
+}
