@@ -51,7 +51,7 @@ class ComputeNdviStep(DanesfieldWorkflowStep):
 
         # Set output filename
         outputPrefix = re.sub("\\s", "_", initWorkingSet['name'])
-        outputNdviFilename = "{}_NDVI.tif" % outputPrefix
+        outputNdviFilename = "%s_NDVI.tif" % outputPrefix
 
         # Run algorithm
         computeNdvi(
