@@ -162,6 +162,22 @@ body,
   }
 }
 
+.hover-show-parent {
+  .hover-show-child {
+    display: none;
+
+    &.show {
+      display: flex;
+    }
+  }
+
+  &:hover {
+    .hover-show-child {
+      display: inherit;
+    }
+  }
+}
+
 /* overwrite */
 .v-btn {
   min-width: 0;
