@@ -82,11 +82,16 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
 
         if len(pairedImageFiles) >= 20:
             modelVariant = "20"
+            batchSize = 5000
         else:
             modelVariant = "01"
+            batchSize = 60000
 
-        # Get options
+        # Get options; Set a reasonable batch size based on model
+        # selection unless explicitly set in the options JSON
         classifyMaterialsOptions = getOptions(self.name, jobInfo)
+        if 'batchSize' not in classifyMaterialsOptions:
+            classifyMaterialsOptions['batchSize'] = batchSize
 
         # Model selection
         model = classifyMaterialsOptions.get('model')
