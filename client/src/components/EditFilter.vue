@@ -34,27 +34,38 @@
     <v-expansion-panel class="conditions" expand :value="[true]">
       <v-expansion-panel-content>
         <div slot='header'>Conditions</div>
-          <v-expansion-panel>
-            <v-expansion-panel-content
-              expand-icon="arrow_drop_down"
-              v-for="(condition,i) in this.editingConditions"
-              :key="i"
-              @mouseenter.native="setSelectedCondition(condition)"
-              @mouseleave.native="setSelectedCondition(null)">
-              <div slot='header'><v-icon class="mr-2">{{getConditionIcon(condition)}}</v-icon><span :style="{position:'relative',top:'-3px'}">{{getConditionText(condition.type)}}</span><v-icon class="condition-delete" @click.stop='deleteCondition(condition)'>delete</v-icon></div>
-              <v-card>
-                <v-card-text class="text-xs-center p">
-                  <DateRangeControl v-if="condition.type==='daterange'"
-                    :start.sync='condition.start'
-                    :end.sync='condition.end'
-                  />
-                  <div v-else>
-                    Expansion panel content for item {{condition.type}}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-expansion-panel-content>
-          </v-expansion-panel>
+        <v-list>
+          <v-list-tile
+            v-for="(condition,i) in this.editingConditions"
+            :key="i"
+            class="hover-show-parent"
+            @mouseenter.native="setSelectedCondition(condition)"
+            @mouseleave.native="setSelectedCondition(null)">
+            <v-list-tile-avatar>
+              <v-icon>{{getConditionIcon(condition)}}</v-icon>
+            </v-list-tile-avatar>
+            <v-list-tile-content>
+              <v-list-tile-title>{{getConditionText(condition.type)}}</v-list-tile-title>
+            </v-list-tile-content>
+            <v-list-tile-action class="hover-show-child">
+              <v-menu offset-y absolute :nudge-bottom="20" :nudge-left="20">
+                <v-btn class="group-menu-button" slot="activator" flat icon>
+                  <v-icon color="grey darken-1">more_vert</v-icon>
+                </v-btn>
+                <v-list>
+                  <v-list-tile @click="downloadRegionFilter(condition.geojson)">
+                    <v-list-tile-title>Download as GeoJSON</v-list-tile-title>
+                  </v-list-tile>
+                </v-list>
+              </v-menu>
+            </v-list-tile-action>
+            <v-list-tile-action @click='deleteCondition(condition)'>
+              <v-btn icon ripple>
+                <v-icon color="grey darken-1">delete</v-icon>
+              </v-btn>
+            </v-list-tile-action>
+          </v-list-tile>
+        </v-list>
       </v-expansion-panel-content>
     </v-expansion-panel>
     <div class='bottom'>
@@ -326,6 +337,16 @@ export default {
       this.geojsonFilename = null;
       this.setUploadGeojsonDialog(false);
     },
+    downloadRegionFilter(geojson) {
+      var a = window.document.createElement("a");
+      a.href = window.URL.createObjectURL(
+        new Blob([JSON.stringify(geojson)], { type: "application/json" })
+      );
+      a.download = "filter.geojson";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    },
     ...mapActions("prompt", ["prompt"]),
     ...mapMutations("filter", [
       "setSelectedCondition",
@@ -343,12 +364,6 @@ export default {
 
   .main {
     flex: 1;
-
-    .conditions {
-      .condition-delete {
-        float: right;
-      }
-    }
   }
 
   .bottom {
@@ -373,6 +388,13 @@ export default {
       max-width: 100%;
       overflow-x: hidden;
     }
+  }
+}
+
+.conditions {
+  .v-list__tile__action {
+    min-width: 40px;
+    padding: 0 8px;
   }
 }
 </style>

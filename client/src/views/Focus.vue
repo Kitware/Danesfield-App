@@ -46,13 +46,17 @@
             <v-list>
               <v-list-tile
                 @click="datasetDetailDialog=true">
-                <v-list-tile-title>Datasets detail</v-list-tile-title>
+                <v-list-tile-content>
+                  <v-list-tile-title>Datasets detail</v-list-tile-title>
+                </v-list-tile-content>
               </v-list-tile>
               <v-divider />
               <v-list-tile
                 :disabled="!evaluationItems.length"
                 @click="downloadCombinedResult">
-                <v-list-tile-title>Download evaluation datasets</v-list-tile-title>
+                <v-list-tile-content>
+                  <v-list-tile-title>Download evaluation datasets</v-list-tile-title>
+                </v-list-tile-content>
               </v-list-tile>
             </v-list>
           </v-menu>
@@ -813,22 +817,6 @@ export default {
 
     .opacity-slider {
       margin-top: -4px;
-    }
-  }
-}
-
-.hover-show-child {
-  display: none;
-
-  &.show {
-    display: flex;
-  }
-}
-
-.hover-show-parent {
-  &:hover {
-    .hover-show-child {
-      display: inherit;
     }
   }
 }
