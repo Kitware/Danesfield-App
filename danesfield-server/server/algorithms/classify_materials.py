@@ -42,7 +42,7 @@ def classifyMaterials(initWorkingSetName,
                       modelFile,
                       outfilePrefix,
                       cuda=None,
-                      batchSize=60000,
+                      batchSize=None,
                       model=None):
     """
     Run a Girder Worker job to classify materials in an orthorectified image.
