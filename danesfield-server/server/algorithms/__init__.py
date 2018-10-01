@@ -26,6 +26,7 @@ from .msi_to_rgb import msiToRgb  # noqa: F401
 from .orthorectify import orthorectify  # noqa: F401
 from .pansharpen import pansharpen  # noqa: F401
 from .roof_geon_extraction import roofGeonExtraction  # noqa: F401
+from .compute_ndvi import computeNdvi  # noqa: F401
 from .segment_by_height import segmentByHeight  # noqa: F401
 from .select_best import selectBest  # noqa: F401
 from .unet_semantic_segmentation import unetSemanticSegmentation  # noqa: F401

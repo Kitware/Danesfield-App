@@ -17,63 +17,49 @@
 #  limitations under the License.
 ##############################################################################
 
-from ..algorithms import segmentByHeight
+import re
+
+from ..algorithms import computeNdvi
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import getOptions, getWorkingSet
 
 
-class SegmentByHeightStep(DanesfieldWorkflowStep):
+class ComputeNdviStep(DanesfieldWorkflowStep):
     """
-    Step that runs segment by height.
+    Step that computes the NDVI from the pansharpened images.
 
     Supports the following options:
     - <none>
     """
     def __init__(self):
-        super(SegmentByHeightStep, self).__init__(
-            DanesfieldStep.SEGMENT_BY_HEIGHT)
-        self.addDependency(DanesfieldStep.GENERATE_DSM)
-        self.addDependency(DanesfieldStep.FIT_DTM)
-        self.addDependency(DanesfieldStep.GET_ROAD_VECTOR)
-        self.addDependency(DanesfieldStep.COMPUTE_NDVI)
+        super(ComputeNdviStep, self).__init__(DanesfieldStep.COMPUTE_NDVI)
+        self.addDependency(DanesfieldStep.PANSHARPEN)
 
     def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
-        dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
-        dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
-        ndviWorkingSet = getWorkingSet(DanesfieldStep.COMPUTE_NDVI, jobInfo)
-        getRoadVectorWorkingSet = getWorkingSet(
-            DanesfieldStep.GET_ROAD_VECTOR,
+        pansharpenWorkingSet = getWorkingSet(
+            DanesfieldStep.PANSHARPEN,
             jobInfo)
 
-        # Get DSM
-        dsmFile = self.getSingleFile(dsmWorkingSet)
-
-        # Get DTM
-        dtmFile = self.getSingleFile(dtmWorkingSet)
-
-        # Get Road Vector
-        roadVectorFile = self.getSingleFile(
-            getRoadVectorWorkingSet,
-            lambda item: item['name'] == 'road_vector.geojson')
-
-        # Get NDVI
-        ndviFile = self.getSingleFile(ndviWorkingSet)
+        # Get pansharpened images
+        imageFiles = self.getFiles(pansharpenWorkingSet)
 
         # Get options
-        segmentByHeightOptions = getOptions(self.name, jobInfo)
+        computeNdviOptions = getOptions(self.name, jobInfo)
+
+        # Set output filename
+        outputPrefix = re.sub("\\s", "_", initWorkingSet['name'])
+        outputNdviFilename = "{}_NDVI.tif" % outputPrefix
 
         # Run algorithm
-        segmentByHeight(
+        computeNdvi(
             initWorkingSetName=initWorkingSet['name'],
             stepName=self.name,
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
             outputFolder=outputFolder,
-            dsmFile=dsmFile,
-            dtmFile=dtmFile,
-            ndviFile=ndviFile,
-            roadVectorFile=roadVectorFile,
-            **segmentByHeightOptions)
+            imageFiles=imageFiles,
+            outputNdviFilename=outputNdviFilename,
+            **computeNdviOptions)
