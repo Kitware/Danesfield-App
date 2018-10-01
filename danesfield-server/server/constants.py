@@ -38,6 +38,7 @@ class DanesfieldStep(object):
     MSI_TO_RGB = 'msi-to-rgb'
     ORTHORECTIFY = 'orthorectify'
     PANSHARPEN = 'pansharpen'
+    COMPUTE_NDVI = 'compute-ndvi'
     SEGMENT_BY_HEIGHT = 'segment-by-height'
     UNET_SEMANTIC_SEGMENTATION = 'unet-semantic-segmentation'
     BUILDING_SEGMENTATION = 'building-segmentation'

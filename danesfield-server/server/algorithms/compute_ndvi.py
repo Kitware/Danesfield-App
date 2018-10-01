@@ -17,6 +17,8 @@
 #  limitations under the License.
 ##############################################################################
 
+import itertools
+
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -30,17 +32,15 @@ from .common import (
 from ..constants import DockerImage
 
 
-def segmentByHeight(initWorkingSetName,
-                    stepName,
-                    requestInfo,
-                    jobId,
-                    outputFolder,
-                    dsmFile,
-                    dtmFile,
-                    ndviFile,
-                    roadVectorFile):
+def computeNdvi(initWorkingSetName,
+                stepName,
+                requestInfo,
+                jobId,
+                outputFolder,
+                imageFiles,
+                outputNdviFilename):
     """
-    Run a Girder Worker job to segment buildings by comparing a DSM to a DTM.
+    Run a Girder Worker job to compute the NDVI from a set of images
 
     Requirements:
     - Danesfield Docker image is available on host
@@ -55,40 +55,29 @@ def segmentByHeight(initWorkingSetName,
     :type jobId: str
     :param outputFolder: Output folder document.
     :type outputFolder: dict
-    :param dsmFile: DSM file document.
-    :type dsmFile: dict
-    :param dtmFile: DTM file document.
-    :type dtmFile: dict
-    :param ndviFile: NDVI file document.
-    :type ndviFile: dict
-    :param roadVectorFile: Road vector file.
-    :type roadVectorFile: dict
+    :param imageFiles: List of pansharpened image files.
+    :type imageFiles: list[dict]
+    :param outputNdviFilename: Filename for output NDVI
+    :type outputNdviFilename: str
     :returns: Job document.
     """
     gc = createGirderClient(requestInfo)
 
     # Set output file names
-    # TODO: Danesfield master script hardcodes these without any
-    # prefix; do the same here
-    thresholdOutputVolumePath = VolumePath('threshold_CLS.tif')
-    roadRasterOutputVolumePath = VolumePath('road_rasterized.tif')
-    roadBridgeRasterOutputVolumePath = VolumePath('road_rasterized_bridge.tif')
+    ndviOutputVolumePath = VolumePath(outputNdviFilename)
 
     # Docker container arguments
-    containerArgs = [
-        'danesfield/tools/segment_by_height.py',
-        # DSM
-        GirderFileIdToVolume(dsmFile['_id'], gc=gc),
-        # DTM
-        GirderFileIdToVolume(dtmFile['_id'], gc=gc),
-        # Threshold output image
-        thresholdOutputVolumePath,
-        # Normalized Difference Vegetation Index image
-        '--input-ndvi', GirderFileIdToVolume(ndviFile['_id'], gc=gc),
-        '--road-vector', GirderFileIdToVolume(roadVectorFile['_id'], gc=gc),
-        '--road-rasterized', roadRasterOutputVolumePath,
-        '--road-rasterized-bridge', roadBridgeRasterOutputVolumePath
-    ]
+    containerArgs = list(itertools.chain(
+        [
+            'danesfield/tools/compute_ndvi.py',
+        ],
+        [
+            GirderFileIdToVolume(imageFile['_id'], gc=gc)
+            for imageFile in imageFiles
+        ],
+        [
+            ndviOutputVolumePath
+        ]))
 
     # Result hooks
     # - Upload output files to output folder
@@ -96,7 +85,7 @@ def segmentByHeight(initWorkingSetName,
     upload_kwargs = createUploadMetadata(jobId, stepName)
     resultHooks = [
         GirderUploadVolumePathToFolder(
-            thresholdOutputVolumePath,
+            ndviOutputVolumePath,
             outputFolder['_id'],
             upload_kwargs=upload_kwargs,
             gc=gc)
@@ -106,8 +95,7 @@ def segmentByHeight(initWorkingSetName,
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='[%s] Segment by height: %s' % (initWorkingSetName,
-                                                     dsmFile['name']),
+            jobTitle='[%s] Compute NDVI' % initWorkingSetName,
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks
