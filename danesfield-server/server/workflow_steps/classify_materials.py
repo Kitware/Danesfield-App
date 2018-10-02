@@ -80,12 +80,17 @@ class ClassifyMaterialsStep(DanesfieldWorkflowStep):
                 pairedImageFiles.append(pair['img'])
                 pairedMetadataFiles.append(pair['meta'])
 
-        if len(pairedImageFiles) >= 20:
-            modelVariant = "20"
-            batchSize = 5000
-        else:
-            modelVariant = "01"
-            batchSize = 60000
+        # if len(pairedImageFiles) >= 20:
+        #     modelVariant = "20"
+        #     batchSize = 5000
+        # else:
+        #     modelVariant = "01"
+        #     batchSize = 60000
+
+        # Explicitly using the "01" model variants for now, as the
+        # "20" runs out of GPU memory too easily.
+        modelVariant = "01"
+        batchSize = 60000
 
         # Get options; Set a reasonable batch size based on model
         # selection unless explicitly set in the options JSON
