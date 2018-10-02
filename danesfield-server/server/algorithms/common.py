@@ -142,9 +142,10 @@ def imagePrefix(imageFile):
 
     :param imageFile: Image file document.
     :type imageFile: dict
-    :returns: tuple of prefix and modality.
+    :returns: prefix string
     """
-    match = re.match(r'^(?P<prefix>.+?)\-(?P<modality>P1BS|M1BS)',
+    match = re.match(r'.*?(?P<prefix>[0-9]{2}[A-Z]{3}[0-9]{8})\-'
+                     '(?P<modality>P1BS|M1BS)',
                      imageFile['name'],
                      flags=re.IGNORECASE)
 
@@ -160,10 +161,10 @@ def rpcPrefix(rpcFile):
 
     :param rpcFile: RPC file document.
     :type rpcFile: dict
-    :returns: tuple of prefix and modality.
+    :returns: prefix string
     """
-    # Ignoring the GRA prefix
-    match = re.match(r'^(?P<gra_prefix>GRA_)?(?P<prefix>.+?)\-(?P<modality>P1BS|M1BS)',
+    match = re.match(r'.*?(?P<prefix>[0-9]{2}[A-Z]{3}[0-9]{8})\-'
+                     '(?P<modality>P1BS|M1BS)',
                      rpcFile['name'],
                      flags=re.IGNORECASE)
 
