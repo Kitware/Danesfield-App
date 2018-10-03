@@ -162,13 +162,16 @@ def cropAndPansharpen(initWorkingSetName,
     tasks = []
     for prefix, files in collection.items():
         # Skip if we don't have both MSI and PAN images
-        if "msi" in files and "pan" in files:
+        if "msi" in files and \
+           "pan" in files and \
+           "msi_rpc" in files and \
+           "pan_rpc" in files:
             tasks.append(
                 createCropAndPansharpenTask(prefix,
                                             files["msi"],
                                             files["pan"],
-                                            files.get("msi_rpc"),
-                                            files.get("pan_rpc")))
+                                            files["msi_rpc"],
+                                            files["pan_rpc"]))
 
     groupResult = group(tasks).delay()
 
