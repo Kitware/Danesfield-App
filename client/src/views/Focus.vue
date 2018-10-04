@@ -538,6 +538,7 @@ export default {
       ]);
     },
     clearAOI() {
+      // A fix, otherwise v-text will try to focus on a removed element
       setTimeout(() => {
         this.AOIFeature = null;
       }, 0);

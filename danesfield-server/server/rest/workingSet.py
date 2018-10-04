@@ -144,6 +144,8 @@ class WorkingSetResource(Resource):
         if not workingSet['datasetIds']:
             return []
         datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
+        if not datasetItem:
+            return []
         itemFolder = Folder().findOne({'_id': datasetItem['folderId']})
         resultFolders = Folder().find({'parentId': itemFolder['parentId']})
         evaluationDatasets = []
