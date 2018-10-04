@@ -20,6 +20,7 @@
 from bson.objectid import ObjectId
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
+from girder.constants import AccessType
 from girder.api.rest import Resource
 from girder.models.item import Item
 from girder.models.folder import Folder
@@ -46,11 +47,13 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def getAll(self, params):
-        return list(WorkingSet().find({}))
+        cursor = WorkingSet().find({})
+        return list(WorkingSet().filterResultsByPermission(
+            cursor, self.getCurrentUser(), AccessType.READ, 0, 0))
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=WorkingSet, destName='workingSet', level=AccessType.READ)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
@@ -67,11 +70,16 @@ class WorkingSetResource(Resource):
     @access.user
     def create(self, data, params):
         data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
-        return WorkingSet().save(data)
+
+        return WorkingSet().create(
+            name=data['name'],
+            parentWorkingSet=data.get('parentWorkingSet', None),
+            datasetIds=data['datasetIds'],
+            user=self.getCurrentUser())
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=WorkingSet, destName='workingSet', level=AccessType.WRITE)
         .jsonParam('data', '', requireObject=True, paramType='body')
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
@@ -85,7 +93,7 @@ class WorkingSetResource(Resource):
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=WorkingSet, destName='workingSet', level=AccessType.WRITE)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
@@ -126,12 +134,13 @@ class WorkingSetResource(Resource):
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=WorkingSet, destName='workingSet', level=AccessType.READ)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
     @access.user
     def getEvaluationItems(self, workingSet, params):
+        user = self.getCurrentUser()
         if not workingSet['datasetIds']:
             return []
         datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
@@ -141,12 +150,14 @@ class WorkingSetResource(Resource):
         for folder in resultFolders:
             if folder['name'] in evaluationMapping:
                 regexes = evaluationMapping[folder['name']]
-                evaluationDatasets = evaluationDatasets + list(Item().find(
+                cursor = Item().find(
                     {'$and': [
                         {'folderId': folder['_id']},
                         {'$or': [{'name': {'$regex': regex}} for regex in regexes]}
                     ]}
-                ))
+                )
+                evaluationDatasets = evaluationDatasets + list(Item().filterResultsByPermission(
+                    cursor, user, AccessType.READ, 0, 0))
         return evaluationDatasets
 
 evaluationMapping = {

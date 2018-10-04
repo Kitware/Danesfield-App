@@ -383,7 +383,7 @@ class DanesfieldWorkflowManager(object):
                 initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
                 workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
                 datasetIds = [file['itemId'] for file in files]
-                workingSet = WorkingSet().createWorkingSet(
+                workingSet = WorkingSet().create(
                     name=workingSetName,
                     parentWorkingSet=initialWorkingSet,
                     datasetIds=datasetIds

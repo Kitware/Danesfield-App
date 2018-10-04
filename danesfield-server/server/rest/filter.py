@@ -19,6 +19,7 @@
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
+from girder.constants import AccessType
 from girder.api.rest import Resource
 from ..models.filter import Filter
 
@@ -42,11 +43,13 @@ class FilterResource(Resource):
     )
     @access.user
     def getAll(self, params):
-        return list(Filter().find({}))
+        cursor = Filter().find({})
+        return list(Filter().filterResultsByPermission(
+            cursor, self.getCurrentUser(), AccessType.READ, 0, 0))
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=Filter, destName='filter')
+        .modelParam('id', model=Filter, destName='filter', level=AccessType.READ)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
@@ -62,11 +65,11 @@ class FilterResource(Resource):
     )
     @access.user
     def create(self, data, params):
-        return Filter().save(data)
+        return Filter().create(data, user=self.getCurrentUser())
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=Filter, destName='filter')
+        .modelParam('id', model=Filter, destName='filter', level=AccessType.WRITE)
         .jsonParam('data', '', requireObject=True, paramType='body')
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
@@ -79,7 +82,7 @@ class FilterResource(Resource):
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=Filter, destName='filter')
+        .modelParam('id', model=Filter, destName='filter', level=AccessType.WRITE)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
