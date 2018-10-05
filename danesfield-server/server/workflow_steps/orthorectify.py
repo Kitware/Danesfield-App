@@ -21,7 +21,7 @@ from ..algorithms import orthorectify
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
-    getOptions, getWorkingSet, isMsiImage, isPanImage, isRpc)
+    getOptions, getWorkingSet, isMsiImage, isRpc)
 
 
 class OrthorectifyStep(DanesfieldWorkflowStep):
@@ -43,12 +43,11 @@ class OrthorectifyStep(DanesfieldWorkflowStep):
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
-        pointCloudWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo)
+        pointCloudWorkingSet = getWorkingSet(
+            DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo)
 
-        # Get MSI and PAN source image files
-        imageFiles = self.getFiles(
-            initWorkingSet,
-            lambda item: isMsiImage(item) or isPanImage(item))
+        # Get only MSI source image files
+        imageFiles = self.getFiles(initWorkingSet, isMsiImage)
 
         # Get DSM
         dsmFile = self.getSingleFile(dsmWorkingSet)
@@ -65,6 +64,12 @@ class OrthorectifyStep(DanesfieldWorkflowStep):
         # Run algorithm
         orthorectify(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
-            dtmFile=dtmFile, rpcFiles=rpcFiles, **orthorectifyOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            imageFiles=imageFiles,
+            dsmFile=dsmFile,
+            dtmFile=dtmFile,
+            rpcFiles=rpcFiles,
+            **orthorectifyOptions)

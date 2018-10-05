@@ -22,7 +22,7 @@ import re
 from ..algorithms import computeNdvi
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
-from ..workflow_utilities import getOptions, getWorkingSet
+from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage
 
 
 class ComputeNdviStep(DanesfieldWorkflowStep):
@@ -34,17 +34,17 @@ class ComputeNdviStep(DanesfieldWorkflowStep):
     """
     def __init__(self):
         super(ComputeNdviStep, self).__init__(DanesfieldStep.COMPUTE_NDVI)
-        self.addDependency(DanesfieldStep.PANSHARPEN)
+        self.addDependency(DanesfieldStep.ORTHORECTIFY)
 
     def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
-        pansharpenWorkingSet = getWorkingSet(
-            DanesfieldStep.PANSHARPEN,
+        orthorectifyWorkingSet = getWorkingSet(
+            DanesfieldStep.ORTHORECTIFY,
             jobInfo)
 
         # Get pansharpened images
-        imageFiles = self.getFiles(pansharpenWorkingSet)
+        imageFiles = self.getFiles(orthorectifyWorkingSet, isMsiImage)
 
         # Get options
         computeNdviOptions = getOptions(self.name, jobInfo)
