@@ -165,7 +165,7 @@ def rpcPrefix(rpcFile):
     :returns: prefix string
     """
     match = re.match(r'.*?(?P<prefix>[0-9]{2}[A-Z]{3}[0-9]{8})\-'
-                     '(?P<modality>P1BS|M1BS)'
+                     '(?P<modality>P1BS|M1BS)\-'
                      '(?P<trail>[0-9]{12}_[0-9]{2}_P[0-9]{3})',
                      rpcFile['name'],
                      flags=re.IGNORECASE)
