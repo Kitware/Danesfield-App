@@ -538,6 +538,7 @@ export default {
       ]);
     },
     clearAOI() {
+      // A fix, otherwise v-text will try to focus on a removed element
       setTimeout(() => {
         this.AOIFeature = null;
       }, 0);
@@ -806,6 +807,7 @@ export default {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .working-set-selector {

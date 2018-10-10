@@ -139,7 +139,7 @@ export default {
   computed: {
     viewport() {
       var viewPort = {
-        center: [-100, 30],
+        center: [-95, 40],
         zoom: 4
       };
       if (!this.boundDatasets || !this.boundDatasets.length) {

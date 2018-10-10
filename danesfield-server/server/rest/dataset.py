@@ -31,8 +31,10 @@ class DatasetResource(Resource):
         return self._getAll()
 
     def _getAll(self):
-        datasetItems = list(Item().find(
-            {'$and': [{'name': {'$regex': '.NTF$'}}, {'$or': [{'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF', 'OBJ', 'National Imagery Transmission Format']}}, {'geometa.subDatasets.driver': 'National Imagery Transmission Format'}]}]}))
+        cursor = Item().find(
+            {'$and': [{'name': {'$regex': '.NTF$'}}, {'$or': [{'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF', 'OBJ', 'National Imagery Transmission Format']}}, {'geometa.subDatasets.driver': 'National Imagery Transmission Format'}]}]})
+        datasetItems = list(Item().filterResultsByPermission(
+            cursor, self.getCurrentUser(), AccessType.READ, 0, 0))
         return self.filterInputNTF(datasetItems)
 
     @autoDescribeRoute(
@@ -61,15 +63,16 @@ class DatasetResource(Resource):
 
     @autoDescribeRoute(
         Description('')
-        .modelParam('id', model=WorkingSet, destName='workingSet')
+        .modelParam('id', model=WorkingSet, destName='workingSet', level=AccessType.READ)
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
     @access.user
     def getWorkingSetDatasets(self, workingSet, params):
-        datasetItems = list(Item().find(
-            {"_id": {"$in": [ObjectId(id) for id in workingSet['datasetIds']]}}))
-        return datasetItems
+        cursor = Item().find(
+            {"_id": {"$in": [ObjectId(id) for id in workingSet['datasetIds']]}})
+        return list(Item().filterResultsByPermission(
+            cursor, self.getCurrentUser(), AccessType.READ, 0, 0))
 
     @autoDescribeRoute(
         Description('')
@@ -78,11 +81,14 @@ class DatasetResource(Resource):
         .errorResponse()
         .errorResponse('Read access was denied on the item.', 403)
     )
+    @access.user
     def search(self, geojson, relation):
-        return self.filterInputNTF(geometa_search_handler({
+        items = self.filterInputNTF(geometa_search_handler({
             "geojson": geojson,
             "relation": relation
         }))
+        return list(Item().filterResultsByPermission(
+            items, self.getCurrentUser(), AccessType.READ, 0, 0))
 
     def filterInputNTF(self, datasets):
         filteredDatasets = []

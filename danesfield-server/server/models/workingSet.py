@@ -1,10 +1,12 @@
+import datetime
 from bson.objectid import ObjectId
 
 from girder.exceptions import ValidationException
-from girder.models.model_base import Model
+from girder.models.model_base import AccessControlledModel
+from girder.constants import AccessType
 
 
-class WorkingSet(Model):
+class WorkingSet(AccessControlledModel):
 
     def initialize(self):
         self.name = 'workingSet'
@@ -22,11 +24,12 @@ class WorkingSet(Model):
 
         return model
 
-    def createWorkingSet(self, name, parentWorkingSet=None, datasetIds=[], filterId=None):
+    def create(self, name, parentWorkingSet=None, datasetIds=[], filterId=None, user=None):
         """
         Create a new working set.
         """
         doc = {
+            'created': datetime.datetime.utcnow(),
             'name': name,
             'parentWorkingSetId': parentWorkingSet['_id'] if parentWorkingSet is not None else None,
             'datasetIds': [ObjectId(datasetId) for datasetId in datasetIds]
@@ -35,4 +38,4 @@ class WorkingSet(Model):
         if filterId:
             doc['filterId'] = filterId
 
-        return self.save(doc)
+        return self.setUserAccess(doc, user, level=AccessType.ADMIN, save=True)

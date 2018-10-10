@@ -171,10 +171,11 @@ function treefyWorkingSets(workingSets) {
     if (!workingSet.parentWorkingSetId) {
       tree.push(node);
     } else {
-      if (!mapping.has(workingSet.parentWorkingSetId)) {
+      if (mapping.has(workingSet.parentWorkingSetId)) {
+        mapping.get(workingSet.parentWorkingSetId).children.push(node);
+      } else {
         tree.push(node);
       }
-      mapping.get(workingSet.parentWorkingSetId).children.push(node);
     }
   }
   return tree;

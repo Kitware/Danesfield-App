@@ -138,7 +138,7 @@ export default {
   data() {
     return {
       viewport: {
-        center: [-100, 30],
+        center: [-95, 40],
         zoom: 4
       },
       drawing: false,
@@ -256,6 +256,12 @@ export default {
   created() {
     this.$store.dispatch("loadWorkingSets");
     this.$store.dispatch("loadFilters");
+  },
+  mounted() {
+    setTimeout(() => {
+      // A fix that map container doesn't have correct size when map being initialized
+      window.dispatchEvent(new Event("resize"));
+    }, 100);
   },
   methods: {
     clickAction(name) {
