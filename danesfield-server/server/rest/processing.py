@@ -21,12 +21,13 @@ import time
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
+from girder.constants import AccessType
 from girder.api.rest import Resource, getApiUrl, getCurrentToken
 from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.user import User
 
-from ..models import workingSet
+from ..models.workingSet import WorkingSet
 from ..request_info import RequestInfo
 from ..workflow_manager import DanesfieldWorkflowManager
 
@@ -83,8 +84,8 @@ class ProcessingResource(Resource):
                '    }\n'
                '}\n'
                '```\n')
-        .modelParam('workingSet', 'The ID of the working set.', model=workingSet.WorkingSet,
-                    paramType='query')
+        .modelParam('workingSet', 'The ID of the working set.', model=WorkingSet,
+                    paramType='query', level=AccessType.READ)
         .jsonParam('options', 'Processing options keyed by step name.', requireObject=True,
                    required=False)
         .errorResponse()
