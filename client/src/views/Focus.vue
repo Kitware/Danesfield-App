@@ -52,10 +52,10 @@
               </v-list-tile>
               <v-divider />
               <v-list-tile
-                :disabled="!evaluationItems.length"
+                :disabled="!evaluationItems.length&&!childrenWorkingSetEvaluationItems.length"
                 @click="downloadCombinedResult">
                 <v-list-tile-content>
-                  <v-list-tile-title>Download evaluation datasets</v-list-tile-title>
+                  <v-list-tile-title>Download{{evaluationItems.length?' step':''}} evaluation datasets</v-list-tile-title>
                 </v-list-tile-content>
               </v-list-tile>
             </v-list>
@@ -406,6 +406,7 @@ export default {
       materialClassificationModel: "STANDARD",
       datasetDetailDialog: false,
       evaluationItems: [],
+      childrenWorkingSetEvaluationItems: [],
       palettePickerExtras: {
         Custom: [blueRed, blueWhiteRed],
         "Material Classification": [palette]
@@ -516,9 +517,10 @@ export default {
         this.tryLoadFilterAOIFeatures().then(feature => {
           this.AOIFeature = feature;
         }),
-        this.getEvaluationDataset(this.selectedWorkingSet._id).then(
-          evaluationItems => {
+        this.getEvaluationDatasets(this.selectedWorkingSet._id).then(
+          ({ evaluationItems, childrenWorkingSetEvaluationItems }) => {
             this.evaluationItems = evaluationItems;
+            this.childrenWorkingSetEvaluationItems = childrenWorkingSetEvaluationItems;
           }
         ),
         loadDatasetByWorkingSetId(this.selectedWorkingSet._id).then(
@@ -756,18 +758,22 @@ export default {
     datasetDetailClicked(dataset) {
       window.open(`${GIRDER_URL}#item/${dataset._id}`, "_blank");
     },
-    async getEvaluationDataset(workingSetId) {
-      var { data: evaluationItems } = await this.$girder.get(
+    async getEvaluationDatasets(workingSetId) {
+      return (await this.$girder.get(
         `workingSet/${workingSetId}/evaluationItems`
-      );
-      return evaluationItems;
+      )).data;
     },
     async downloadCombinedResult() {
+      var {
+        evaluationItems,
+        childrenWorkingSetEvaluationItems
+      } = await this.getEvaluationDatasets(this.selectedWorkingSet._id);
+      var items = evaluationItems.length
+        ? evaluationItems
+        : childrenWorkingSetEvaluationItems;
       postDownload(`${API_URL}/resource/download`, {
         resources: JSON.stringify({
-          item: (await this.getEvaluationDataset(
-            this.selectedWorkingSet._id
-          )).map(dataset => dataset._id)
+          item: items.map(dataset => dataset._id)
         })
       });
     },
