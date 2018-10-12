@@ -49,10 +49,18 @@ export default new Vuex.Store({
       state.workingSet.editingWorkingSet = workingSet;
     },
     addWorkspace(state, workspace) {
-      Vue.set(state.workspaces, Math.random().toString(36).substring(7), {
+      var newWorkspace = {
         type: workspace.type,
         layers: []
-      });
+      };
+      switch (newWorkspace.type) {
+        case 'vtk':
+          newWorkspace.texture = true;
+          break;
+        case 'map':
+          break;
+      }
+      Vue.set(state.workspaces, Math.random().toString(36).substring(7), newWorkspace);
     },
     removeWorkspace(state, key) {
       Vue.delete(state.workspaces, key);
@@ -60,6 +68,14 @@ export default new Vuex.Store({
     changeWorkspaceType(state, { workspace, type }) {
       workspace.type = type;
       workspace.layers = [];
+      switch (workspace.type) {
+        case 'vtk':
+          Vue.set(workspace, 'texture', true);
+          break;
+        case 'map':
+          Vue.delete(workspace, 'texture');
+          break;
+      }
     },
     setFocusedWorkspaceKey(state, key) {
       state.focusedWorkspaceKey = key;

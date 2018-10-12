@@ -56,7 +56,9 @@
             v-for="layer in workspace.layers"
             v-if="isOBJItem(layer.dataset)"
             :key="layer.dataset._id"
-            :item="layer.dataset" />
+            :item="layer.dataset"
+            :texture="workspace.texture"
+             />
         </VTKViewport>
       <template slot='actions' v-if="workspace.type==='vtk'">
         <WorkspaceAction>
@@ -70,6 +72,9 @@
               <Palette :value="vtkBGColor" @input="changeVTKBGColor($event)" />
             </v-card>
           </v-menu>
+        </WorkspaceAction>
+        <WorkspaceAction>
+          <v-icon :class="{'grey--text text--darken-1':!workspace.texture}" @click="workspace.texture=!workspace.texture">texture</v-icon>
         </WorkspaceAction>
       </template>
     </Workspace>
