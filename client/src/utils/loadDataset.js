@@ -6,6 +6,11 @@ export default () => {
     });
 }
 
+export const loadAllDatasets = async () => {
+    let { data: datasets } = await girder.girder.get('dataset');
+    return datasets;
+}
+
 export const loadDatasetByFilterConditions = async (conditions) => {
     var geometryCollection = conditions
         .map((condition) => condition.geojson.geometry)
@@ -23,8 +28,7 @@ export const loadDatasetByFilterConditions = async (conditions) => {
         });
         return datasets;
     } else {
-        let { data: datasets } = await girder.girder.get('dataset');
-        return datasets;
+        return loadAllDatasets();
     }
 }
 
