@@ -141,26 +141,45 @@ class WorkingSetResource(Resource):
     @access.user
     def getEvaluationItems(self, workingSet, params):
         user = self.getCurrentUser()
-        if not workingSet['datasetIds']:
+        return {
+            "childrenWorkingSetEvaluationItems": self.getChildrenWorkingSetEvaluationItems(
+                user, workingSet),
+            'evaluationItems': self.getWorkingSetEvaluationItems(
+                user, workingSet)
+        }
+
+    def getChildrenWorkingSetEvaluationItems(self, user, workingSet):
+        childrenWorkingSets = list(WorkingSet().find({"parentWorkingSetId": workingSet['_id']}))
+        if not len(childrenWorkingSets):
             return []
+        childrenWorkingSetevaluationItems = []
+        for childWorkingSet in childrenWorkingSets:
+            childWorkingSetEvaluationItems = self.getWorkingSetEvaluationItems(
+                user, childWorkingSet)
+            for resultItem in list(Item().filterResultsByPermission(
+                    childWorkingSetEvaluationItems, user, AccessType.READ, 0, 0)):
+                existingSameNameItems = filter(lambda item: item['name'] == resultItem[
+                    'name'], childrenWorkingSetevaluationItems)
+                if existingSameNameItems:
+                    childrenWorkingSetevaluationItems.remove(existingSameNameItems[0])
+                childrenWorkingSetevaluationItems.append(resultItem)
+        return childrenWorkingSetevaluationItems
+
+    def getWorkingSetEvaluationItems(self, user, workingSet):
         datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
         if not datasetItem:
             return []
-        itemFolder = Folder().findOne({'_id': datasetItem['folderId']})
-        resultFolders = Folder().find({'parentId': itemFolder['parentId']})
-        evaluationDatasets = []
-        for folder in resultFolders:
-            if folder['name'] in evaluationMapping:
-                regexes = evaluationMapping[folder['name']]
-                cursor = Item().find(
-                    {'$and': [
-                        {'folderId': folder['_id']},
-                        {'$or': [{'name': {'$regex': regex}} for regex in regexes]}
-                    ]}
-                )
-                evaluationDatasets = evaluationDatasets + list(Item().filterResultsByPermission(
-                    cursor, user, AccessType.READ, 0, 0))
-        return evaluationDatasets
+        stepResultFolder = Folder().findOne({'_id': datasetItem['folderId']})
+        if stepResultFolder['name'] in evaluationMapping:
+            regexes = evaluationMapping[stepResultFolder['name']]
+            return list(Item().find(
+                {'$and': [
+                    {'folderId': stepResultFolder['_id']},
+                    {'$or': [{'name': {'$regex': regex}} for regex in regexes]}
+                ]}
+            ))
+        return []
+
 
 evaluationMapping = {
     'buildings-to-dsm': ['_CLS.tif$', '_DSM.tif$'],
