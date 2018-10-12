@@ -73,34 +73,6 @@ export default {
         return null;
       }
       return state.selectedCondition.geojson;
-    },
-    heatmapData(state) {
-      return state.datasets.map(dataset => {
-        let point = pointOnFeature(dataset.geometa.bounds);
-        return point.geometry.coordinates;
-      });
-    },
-    datasetBoundsFeature(state) {
-      return state.datasets
-        .filter(dataset =>
-          dataset['geometa'] && dataset['geometa']['bounds']
-        ).reduce((featureCollection, dataset) => {
-          featureCollection.features.push({
-            type: 'Feature',
-            properties: {
-              name: dataset.name,
-              _id: dataset._id
-            },
-            geometry: dataset['geometa']['bounds']
-          });
-          return featureCollection;
-        }, { type: "FeatureCollection", features: [] });
-    },
-    selectedDatasetPoint(state) {
-      if (!state.selectedDataset) {
-        return null;
-      }
-      return pointOnFeature(state.selectedDataset.geometa.bounds).geometry;
     }
   }
 };

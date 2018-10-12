@@ -9,29 +9,21 @@
         attribution='© OpenStreetMap contributors, © CARTO'
         :zIndex='0'>
       </GeojsTileLayer>
-      <template v-if="exploreTab==='workingSet'">
-        <GeojsGeojsonLayer
-          v-if="editingWorkingSet"
-          :geojson="workingSetDatasetBoundsFeature"
-          :featureStyle="datasetBoundsFeatureStyle"
-          :zIndex="1">
-        </GeojsGeojsonLayer>
-      </template>
+      <GeojsHeatmapLayer v-if="!editingWorkingSet && viewport.zoom<=7"
+        :data="heatmapData"
+        :binned="10"
+        :maxIntensity="5"
+        :minIntensity="0"
+        :updateDelay="100"
+        :zIndex="1">
+      </GeojsHeatmapLayer>
+      <GeojsGeojsonLayer
+        v-if="editingWorkingSet || viewport.zoom>7"
+        :geojson="datasetBoundsFeature"
+        :featureStyle="datasetBoundsFeatureStyle"
+        :zIndex="2">
+      </GeojsGeojsonLayer>
       <template v-if="exploreTab==='filter'">
-        <GeojsHeatmapLayer v-if="editingFilter && viewport.zoom<=7"
-          :data="heatmapData"
-          :binned="10"
-          :maxIntensity="5"
-          :minIntensity="0"
-          :updateDelay="100"
-          :zIndex="1">
-        </GeojsHeatmapLayer>
-        <GeojsGeojsonLayer
-          v-if="editingFilter && viewport.zoom>7"
-          :geojson="filterDatasetBoundsFeature"
-          :featureStyle="datasetBoundsFeatureStyle"
-          :zIndex="2">
-        </GeojsGeojsonLayer>
         <GeojsAnnotationLayer
           :drawing.sync="drawing"
           :editing.sync="editing"
@@ -123,6 +115,7 @@
 </style>
 <script>
 import { mapState, mapGetters } from "vuex";
+import pointOnFeature from "@turf/point-on-feature";
 
 import WorkingSetModule from "./WorkingSetModule";
 import FilterModule from "./FilterModule";
@@ -189,6 +182,46 @@ export default {
         }
       };
     },
+    heatmapData() {
+      var datasets = this.editingWorkingSet
+        ? this.workingSetDatasets
+        : this.editingFilter
+          ? this.filterDatasets
+          : this.allDatasets;
+      if (!datasets) {
+        return null;
+      }
+      return datasets.map(dataset => {
+        let point = pointOnFeature(dataset.geometa.bounds);
+        return point.geometry.coordinates;
+      });
+    },
+    datasetBoundsFeature() {
+      var datasets = this.editingWorkingSet
+        ? this.workingSetDatasets
+        : this.editingFilter
+          ? this.filterDatasets
+          : this.allDatasets;
+      if (!datasets) {
+        return null;
+      }
+      return datasets
+        .filter(dataset => dataset["geometa"] && dataset["geometa"]["bounds"])
+        .reduce(
+          (featureCollection, dataset) => {
+            featureCollection.features.push({
+              type: "Feature",
+              properties: {
+                name: dataset.name,
+                _id: dataset._id
+              },
+              geometry: dataset["geometa"]["bounds"]
+            });
+            return featureCollection;
+          },
+          { type: "FeatureCollection", features: [] }
+        );
+    },
     datasetBoundsFeatureStyle() {
       // Tell Vuejs combinedSelectedDataset is a dependancy of this computed
       var selectedDataset = this.combinedSelectedDataset;
@@ -222,26 +255,26 @@ export default {
       );
     },
     combinedSelectedDatasetPoint() {
-      return (
-        this.$store.getters["workingSet/selectedDatasetPoint"] ||
-        this.$store.getters["filter/selectedDatasetPoint"]
-      );
+      var selectedDataset = this.combinedSelectedDataset;
+      if (!selectedDataset || !selectedDataset.geometa) {
+        return null;
+      }
+      return pointOnFeature(selectedDataset.geometa.bounds).geometry;
     },
-    ...mapState(["sidePanelExpanded", "exploreTab"]),
+    ...mapState(["sidePanelExpanded", "exploreTab", "allDatasets"]),
     ...mapState("workingSet", ["editingWorkingSet"]),
+    ...mapState("workingSet", {
+      workingSetDatasets: "datasets"
+    }),
     ...mapState("filter", [
       "editingFilter",
       "annotations",
       "selectedCondition"
     ]),
-    ...mapGetters("workingSet", {
-      workingSetDatasetBoundsFeature: "datasetBoundsFeature"
+    ...mapState("filter", {
+      filterDatasets: "datasets"
     }),
-    ...mapGetters("filter", {
-      editingConditionsGeojson: "editingConditionsGeojson",
-      heatmapData: "heatmapData",
-      filterDatasetBoundsFeature: "datasetBoundsFeature"
-    }),
+    ...mapGetters("filter", ["editingConditionsGeojson"]),
     user() {
       return this.$girder.user;
     }
@@ -254,6 +287,7 @@ export default {
     }
   },
   created() {
+    this.$store.dispatch("loadAllDatasets");
     this.$store.dispatch("loadWorkingSets");
     this.$store.dispatch("loadFilters");
   },

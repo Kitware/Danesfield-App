@@ -6,6 +6,7 @@ import prompt from "resonantgeoview/src/components/prompt/module";
 import filter from './modules/filter';
 import workingSet from './modules/workingSet';
 import paletteColors from '../components/vtk/paletteColors';
+import { loadAllDatasets } from '../utils/loadDataset';
 
 Vue.use(Vuex);
 
@@ -15,6 +16,8 @@ export default new Vuex.Store({
       sidePanelExpanded: true,
       workingSets: [],
       filters: [],
+      // For always showing datasets on Explore
+      allDatasets: [],
       exploreTab: 'workingSet',
       selectedWorkingSetId: null,
       workspaces: getInitialWorkspace(),
@@ -144,6 +147,9 @@ export default new Vuex.Store({
         this.state.filters.splice(this.state.filters.indexOf(filter), 1);
         return filter;
       });
+    },
+    async loadAllDatasets({ state }) {
+      state.allDatasets = await loadAllDatasets();
     }
   },
   getters: {
