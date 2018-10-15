@@ -19,7 +19,10 @@ export default {
     };
   },
   computed: {},
-  props: ["item"],
+  props: {
+    item: Object,
+    texture: Boolean
+  },
   async mounted() {
     const objContent = await this._fetchObjFileContent(this.item);
     let mtlFileNames = this._parseMtlFileNames(objContent);
@@ -38,6 +41,15 @@ export default {
       this.addImageContent(imageItem.name, imageContent[index]);
     });
     return this.buildPipeline();
+  },
+  watch: {
+    texture() {
+      // This is a hack by me. I found if multiple are done synchronously, sometime some model wills be missing from rendering sometime
+      setTimeout(() => {
+        this._destroy();
+        this.buildPipeline(false);
+      }, Math.random() * 100);
+    }
   },
   methods: {
     _fetchObjFileContent(item) {
@@ -125,53 +137,51 @@ export default {
     addImageContent(name, content) {
       this.actorData.image[name] = { content: content };
     },
-    async buildPipeline() {
+    async buildPipeline(resetCamera = true) {
       const data = this.actorData;
 
-      this._readObjs(data.obj);
-      this._readMtls(data.mtl);
+      var objReaders = this._readObjs(data.obj);
+      var mtlReaders = this._readMtls(data.mtl);
       this._readImages(data.image);
 
       const mtlReaderByName = {};
       const imageLoaded = [];
 
-      // Attach images to MTLs
-      for (let info of Object.values(data.mtl)) {
-        const mtlReader = info.reader;
+      if (this.texture) {
+        // Attach images to MTLs
+        for (let mtlReader of mtlReaders) {
+          mtlReader.getMaterialNames().forEach(materialName => {
+            mtlReaderByName[materialName] = mtlReader;
 
-        mtlReader.getMaterialNames().forEach(materialName => {
-          mtlReaderByName[materialName] = mtlReader;
-
-          const material = mtlReader.getMaterial(materialName);
-          if (material && material.image) {
-            const promise = new Promise((resolve, reject) => {
-              material.image.addEventListener("load", () => resolve(), {
-                once: true
+            const material = mtlReader.getMaterial(materialName);
+            if (material && material.image) {
+              const promise = new Promise((resolve, reject) => {
+                material.image.addEventListener("load", () => resolve(), {
+                  once: true
+                });
+                material.image.addEventListener("error", () => resolve(), {
+                  once: true
+                });
               });
-              material.image.addEventListener("error", () => resolve(), {
-                once: true
-              });
-            });
-            imageLoaded.push(promise);
-          }
-        });
+              imageLoaded.push(promise);
+            }
+          });
 
-        mtlReader.listImages().forEach(imageName => {
-          const image = data.image[imageName];
-          if (image && image.inline) {
-            mtlReader.setImageSrc(imageName, image.inline);
-          }
-        });
+          mtlReader.listImages().forEach(imageName => {
+            const image = data.image[imageName];
+            if (image && image.inline) {
+              mtlReader.setImageSrc(imageName, image.inline);
+            }
+          });
+        }
+        // Wait for texture images to load. If rendering occurs before textures are loaded,
+        // WebGL reports errors like:
+        //     RENDER WARNING: there is no texture bound to the unit 0
+        await Promise.all(imageLoaded);
       }
 
-      // Wait for texture images to load. If rendering occurs before textures are loaded,
-      // WebGL reports errors like:
-      //     RENDER WARNING: there is no texture bound to the unit 0
-      await Promise.all(imageLoaded);
-
       // Create VTK pipeline
-      for (let info of Object.values(this.actorData.obj)) {
-        const objReader = info.reader;
+      for (let objReader of objReaders) {
         const size = objReader.getNumberOfOutputPorts();
         for (let i = 0; i < size; i++) {
           const source = objReader.getOutputData(i);
@@ -186,7 +196,9 @@ export default {
           if (mtlReader && name) {
             mtlReader.applyMaterialToActor(name, actor);
           }
-          actor.getTextures()[0].setInterpolate(false);
+          if (actor.getTextures()[0]) {
+            actor.getTextures()[0].setInterpolate(false);
+          }
           this.actors.push(actor);
         }
       }
@@ -194,22 +206,24 @@ export default {
         this.renderer.addActor(actor);
       }
       this.viewport.$emit("progressMessage", null);
-      this.renderer.resetCamera();
+      if (resetCamera) {
+        this.renderer.resetCamera();
+      }
       this.renderWindow.render();
     },
     _readObjs(data) {
-      for (let [name, info] of Object.entries(data)) {
+      return Object.entries(data).map(([name, info]) => {
         const objReader = vtkOBJReader.newInstance({ splitMode: "usemtl" });
         objReader.parseAsText(info.content);
-        data[name].reader = objReader;
-      }
+        return objReader;
+      });
     },
     _readMtls(data) {
-      for (let [name, info] of Object.entries(data)) {
-        const mtlReader = vtkMTLReader.newInstance();
+      return Object.entries(data).map(([name, info]) => {
+        var mtlReader = vtkMTLReader.newInstance();
         mtlReader.parseAsText(info.content);
-        data[name].reader = mtlReader;
-      }
+        return mtlReader;
+      });
     },
     _readImages(data) {
       for (let [name, info] of Object.entries(data)) {
@@ -244,12 +258,16 @@ export default {
           this.totalBytesLoaded + this.currentBytesLoaded
         )}`
       );
+    },
+    _destroy() {
+      for (let actor of this.actors) {
+        this.renderer.removeActor(actor);
+      }
+      this.actors = [];
     }
   },
   beforeDestroy() {
-    for (let actor of this.actors) {
-      this.renderer.removeActor(actor);
-    }
+    this._destroy();
     this.renderer.resetCamera();
     this.renderWindow.render();
   },
