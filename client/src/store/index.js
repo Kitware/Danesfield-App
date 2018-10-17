@@ -19,6 +19,7 @@ export default new Vuex.Store({
       // For always showing datasets on Explore
       allDatasets: [],
       exploreTab: 'workingSet',
+      hideUnsupportedDatasetsOnFocus: false,
       selectedWorkingSetId: null,
       workspaces: getInitialWorkspace(),
       focusedWorkspaceKey: '0',
@@ -102,6 +103,9 @@ export default new Vuex.Store({
     },
     setWorkspaceLayerOpacity(state, { layer, opacity }) {
       layer.opacity = opacity;
+    },
+    toggleHideUnsupportedDatasets(state) {
+      state.hideUnsupportedDatasetsOnFocus = !state.hideUnsupportedDatasetsOnFocus;
     }
   },
   actions: {

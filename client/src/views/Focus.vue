@@ -50,6 +50,12 @@
                   <v-list-tile-title>Datasets detail</v-list-tile-title>
                 </v-list-tile-content>
               </v-list-tile>
+              <v-list-tile
+                @click="toggleHideUnsupportedDatasets()">
+                <v-list-tile-content>
+                  <v-list-tile-title>{{hideUnsupportedDatasetsOnFocus?'Show':'Hide'}} unsupported datasets</v-list-tile-title>
+                </v-list-tile-content>
+              </v-list-tile>
               <v-divider />
               <v-list-tile
                 :disabled="!evaluationItems.length&&!childrenWorkingSetEvaluationItems.length"
@@ -81,6 +87,10 @@
               </template>
             </v-select>
             <v-list dense class="datasets" ref="datasetsContainer">
+              <v-list-tile
+                v-if="hideUnsupportedDatasetsOnFocus && listingDatasetIdAndWorkingSets.filter(({datasetId})=>datasets[datasetId]&&!supportWorkspaceType(datasets[datasetId])).length">
+                <div style="text-align:center;width:100%;">Unsupported datasets are hidden</div>
+              </v-list-tile>
               <draggable v-model="listingDatasetIdAndWorkingSets" :options="{
                   draggable:'.dataset',
                   handle:'.dataset',
@@ -93,13 +103,13 @@
                   <v-list-group
                     v-for="datasetIdAndWorkingSet in listingDatasetIdAndWorkingSets"
                     :key="datasetIdAndWorkingSet.datasetId+datasetIdAndWorkingSet.workingSet._id"
-                    v-if="datasets[datasetIdAndWorkingSet.datasetId]"
+                    v-if="datasets[datasetIdAndWorkingSet.datasetId] && (!hideUnsupportedDatasetsOnFocus || supportWorkspaceType(datasets[datasetIdAndWorkingSet.datasetId]))"
                     class="dataset hover-show-parent"
                     append-icon="">
                     <v-list-tile
                       slot="activator">
-                      <v-list-tile-action @click.stop>
-                        <template v-if="workspaceSupportsDataset(focusedWorkspace,datasets[datasetIdAndWorkingSet.datasetId])">
+                      <v-list-tile-action @click.stop v-if="supportWorkspaceType(datasets[datasetIdAndWorkingSet.datasetId])">
+                        <template v-if="supportWorkspaceType(datasets[datasetIdAndWorkingSet.datasetId])==focusedWorkspace.type">
                           <v-btn flat icon key="add" v-if="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="visualize(datasets[datasetIdAndWorkingSet.datasetId],focusedWorkspace)">
                             <v-icon>fa-globe-americas</v-icon>
                           </v-btn>
@@ -148,7 +158,7 @@
                         </v-menu>
                       </v-list-tile-action>
                     </v-list-tile>
-                    <v-list-tile>
+                    <v-list-tile v-if="supportWorkspaceType(datasets[datasetIdAndWorkingSet.datasetId])">
                       <v-list-tile-content>
                         <v-list-tile-title>
                           <v-layout>
@@ -465,7 +475,8 @@ export default {
       "selectedWorkingSetId",
       "workspaces",
       "focusedWorkspaceKey",
-      "vtkBGColor"
+      "vtkBGColor",
+      "hideUnsupportedDatasetsOnFocus"
     ]),
     ...mapGetters(["focusedWorkspace", "flattenedWorkingSets"])
   },
@@ -571,17 +582,17 @@ export default {
         }&options=${encodeURIComponent(JSON.stringify(options))}`
       );
     },
-    workspaceSupportsDataset(workspace, dataset) {
-      if (workspace.type === "map") {
-        if (["GeoTIFF", "GeoJSON"].indexOf(dataset.geometa.driver) !== -1) {
-          return true;
-        }
-      } else if (workspace.type === "vtk") {
-        if (isOBJItem(dataset)) {
-          return true;
-        }
+    supportWorkspaceType(dataset) {
+      if (
+        dataset.geometa &&
+        dataset.geometa.driver &&
+        ["GeoTIFF", "GeoJSON"].indexOf(dataset.geometa.driver) !== -1
+      ) {
+        return "map";
       }
-      return false;
+      if (isOBJItem(dataset)) {
+        return "vtk";
+      }
     },
     addDatasets(datasets) {
       datasets
@@ -787,7 +798,8 @@ export default {
       "removeDatasetFromWorkspace",
       "removeAllDatasetsFromWorkspaces",
       "resetWorkspace",
-      "changeVTKBGColor"
+      "changeVTKBGColor",
+      "toggleHideUnsupportedDatasets"
     ]),
     ...mapActions(["loadWorkingSets"]),
     ...mapActions("prompt", ["prompt"])
