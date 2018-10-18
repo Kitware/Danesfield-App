@@ -8,7 +8,7 @@ import macro from "vtk.js/Sources/macro";
 export default {
   name: "OBJMultiItemActor",
   components: {},
-  inject: ["renderWindow", "renderer", "viewport"],
+  inject: ["renderWindow", "renderer", "viewport", "cache"],
   data() {
     return {
       actors: [],
@@ -53,6 +53,9 @@ export default {
   },
   methods: {
     _fetchObjFileContent(item) {
+      if (this.cache.has(item._id)) {
+        return Promise.resolve(this.cache.get(item._id));
+      }
       return this.$girder
         .get(`item/${item._id}/download`, {
           onDownloadProgress: event => {
@@ -60,7 +63,10 @@ export default {
           },
           responseType: "text"
         })
-        .then(({ data }) => data);
+        .then(({ data }) => {
+          this.cache.set(item._id, data);
+          return data;
+        });
     },
     _parseMtlFileNames(content) {
       const mtlFileNames = [];
@@ -89,13 +95,19 @@ export default {
     },
     _fetchMtlFileContent(items) {
       const requests = items.map(item => {
+        if (this.cache.has(item._id)) {
+          return Promise.resolve(this.cache.get(item._id));
+        }
         return this.$girder
           .get(`item/${item._id}/download`, {
             onDownloadProgress: event => {
               this.onProgress(event);
             }
           })
-          .then(({ data }) => data);
+          .then(({ data }) => {
+            this.cache.set(item._id, data);
+            return data;
+          });
       });
 
       return Promise.all(requests);
@@ -115,6 +127,9 @@ export default {
     },
     _fetchImageFileContent(items) {
       const requests = items.map(item => {
+        if (this.cache.has(item._id)) {
+          return Promise.resolve(this.cache.get(item._id));
+        }
         return this.$girder
           .get(`item/${item._id}/download`, {
             onDownloadProgress: event => {
@@ -123,7 +138,9 @@ export default {
             responseType: "blob"
           })
           .then(({ data }) => {
-            return this.blobToBase64(data);
+            data = this.blobToBase64(data);
+            this.cache.set(item._id, data);
+            return data;
           });
       });
       return Promise.all(requests);
