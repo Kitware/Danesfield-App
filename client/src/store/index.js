@@ -87,6 +87,9 @@ export default new Vuex.Store({
     removeDatasetFromWorkspace(state, { dataset, workspace }) {
       workspace.layers.splice(workspace.layers.map(layers => layers.dataset).indexOf(dataset), 1);
     },
+    removeAllDatasetsFromWorkspace(state, workspace) {
+      workspace.layers = [];
+    },
     removeAllDatasetsFromWorkspaces(state) {
       for (let workspace of Object.values(state.workspaces)) {
         workspace.layers = [];

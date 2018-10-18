@@ -35,33 +35,47 @@
           <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
           <v-toolbar-title v-else class="body-1">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-menu 
-            v-if="!customVizDatasetId" 
+          <v-menu
+            v-if="!customVizDatasetId"
             offset-y>
             <v-btn
               slot="activator"
-              icon>
+              icon
+              :disabled="!selectedWorkingSetId">
               <v-icon>more_vert</v-icon>
             </v-btn>
             <v-list>
               <v-list-tile
-                @click="datasetDetailDialog=true">
+                v-if="!focusedWorkspace.layers.length && focusedWorkspace.type==='vtk'"
+                @click="addAllDatasetsToWorkspace(focusedWorkspace)">
                 <v-list-tile-content>
-                  <v-list-tile-title>Datasets detail</v-list-tile-title>
+                  Visualize all
                 </v-list-tile-content>
               </v-list-tile>
               <v-list-tile
+                v-if="focusedWorkspace.layers.length && focusedWorkspace.type==='vtk'"
+                @click="removeAllDatasetsFromWorkspace(focusedWorkspace)">
+                <v-list-tile-content>
+                  Remove all
+                </v-list-tile-content>
+              </v-list-tile>
+              <v-divider v-if="focusedWorkspace.type==='vtk'" />
+              <v-list-tile
                 @click="toggleHideUnsupportedDatasets()">
                 <v-list-tile-content>
-                  <v-list-tile-title>{{hideUnsupportedDatasetsOnFocus?'Show':'Hide'}} unsupported datasets</v-list-tile-title>
+                  {{hideUnsupportedDatasetsOnFocus?'Show':'Hide'}} unsupported datasets
                 </v-list-tile-content>
+              </v-list-tile>
+              <v-list-tile
+                @click="datasetDetailDialog=true">
+                <v-list-tile-content>Datasets detail</v-list-tile-content>
               </v-list-tile>
               <v-divider />
               <v-list-tile
                 :disabled="!evaluationItems.length&&!childrenWorkingSetEvaluationItems.length"
                 @click="downloadCombinedResult">
                 <v-list-tile-content>
-                  <v-list-tile-title>Download{{evaluationItems.length?' step':''}} evaluation datasets</v-list-tile-title>
+                  Download{{evaluationItems.length?' step':''}} evaluation datasets
                 </v-list-tile-content>
               </v-list-tile>
             </v-list>
@@ -110,7 +124,7 @@
                       slot="activator">
                       <v-list-tile-action @click.stop v-if="supportWorkspaceType(datasets[datasetIdAndWorkingSet.datasetId])">
                         <template v-if="supportWorkspaceType(datasets[datasetIdAndWorkingSet.datasetId])==focusedWorkspace.type">
-                          <v-btn flat icon key="add" v-if="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="visualize(datasets[datasetIdAndWorkingSet.datasetId],focusedWorkspace)">
+                          <v-btn flat icon key="add" v-if="focusedWorkspace.layers.map(layer=>layer.dataset).indexOf(datasets[datasetIdAndWorkingSet.datasetId])===-1" color="grey lighten-2" @click="addDatasetToFocusedWorkspace(datasets[datasetIdAndWorkingSet.datasetId])">
                             <v-icon>fa-globe-americas</v-icon>
                           </v-btn>
                           <v-btn flat icon key="remove" v-else color="grey darken-2" @click="removeDatasetFromWorkspace({dataset:datasets[datasetIdAndWorkingSet.datasetId],workspace:focusedWorkspace})">
@@ -442,6 +456,9 @@ export default {
       )[0];
     },
     childrenWorkingSets() {
+      if (!this.selectedWorkingSetId) {
+        return [];
+      }
       return this.workingSets
         .filter(
           workingSet =>
@@ -691,9 +708,18 @@ export default {
         }
       }
     },
-    async visualize(dataset, workspace) {
+    async addDatasetToFocusedWorkspace(dataset) {
       await this.getDatasetMeta(dataset);
-      this.addDatasetToWorkspace({ dataset, workspace });
+      this.addDatasetToWorkspace({ dataset, workspace: this.focusedWorkspace });
+    },
+    async addAllDatasetsToWorkspace() {
+      await this.listingDatasetIdAndWorkingSets
+        .map(({ datasetId }) => this.datasets[datasetId])
+        .filter(
+          dataset =>
+            this.supportWorkspaceType(dataset) === this.focusedWorkspace.type
+        )
+        .map(dataset => this.addDatasetToFocusedWorkspace(dataset));
     },
     async customDatasetVisualization(dataset) {
       this.customVizDatasetId = dataset._id;
@@ -796,6 +822,7 @@ export default {
       "addDatasetToWorkspace",
       "setWorkspaceLayerOpacity",
       "removeDatasetFromWorkspace",
+      "removeAllDatasetsFromWorkspace",
       "removeAllDatasetsFromWorkspaces",
       "resetWorkspace",
       "changeVTKBGColor",
