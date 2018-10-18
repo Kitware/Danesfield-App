@@ -24,6 +24,7 @@ export default {
     texture: Boolean
   },
   async mounted() {
+    this._destroyed = false;
     const objContent = await this._fetchObjFileContent(this.item);
     let mtlFileNames = this._parseMtlFileNames(objContent);
     const folderId = this.item.folderId;
@@ -40,15 +41,14 @@ export default {
     imageItems.forEach((imageItem, index) => {
       this.addImageContent(imageItem.name, imageContent[index]);
     });
-    return this.buildPipeline();
+    if (!this._destroyed) {
+      return this.buildPipeline();
+    }
   },
   watch: {
     texture() {
-      // This is a hack by me. I found if multiple are done synchronously, sometime some model wills be missing from rendering sometime
-      setTimeout(() => {
-        this._destroy();
-        this.buildPipeline(false);
-      }, Math.random() * 100);
+      this._destroyActors();
+      this.buildPipeline(false);
     }
   },
   methods: {
@@ -178,6 +178,9 @@ export default {
         // WebGL reports errors like:
         //     RENDER WARNING: there is no texture bound to the unit 0
         await Promise.all(imageLoaded);
+        if (this._destroyed) {
+          return;
+        }
       }
 
       // Create VTK pipeline
@@ -252,14 +255,16 @@ export default {
         this.totalBytesLoaded = event.loaded;
       }
 
-      this.viewport.$emit(
-        "progressMessage",
-        `${this.item.name} ${macro.formatBytesToProperUnit(
-          this.totalBytesLoaded + this.currentBytesLoaded
-        )}`
-      );
+      if (!this._destroyed) {
+        this.viewport.$emit(
+          "progressMessage",
+          `${this.item.name} ${macro.formatBytesToProperUnit(
+            this.totalBytesLoaded + this.currentBytesLoaded
+          )}`
+        );
+      }
     },
-    _destroy() {
+    _destroyActors() {
       for (let actor of this.actors) {
         this.renderer.removeActor(actor);
       }
@@ -267,9 +272,11 @@ export default {
     }
   },
   beforeDestroy() {
-    this._destroy();
+    this._destroyActors();
+    this.viewport.$emit("progressMessage", null);
     this.renderer.resetCamera();
     this.renderWindow.render();
+    this._destroyed = true;
   },
   render() {
     return null;
