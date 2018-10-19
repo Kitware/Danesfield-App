@@ -29,7 +29,8 @@ export default {
   computed: {},
   provide() {
     var provide = {
-      viewport: this
+      viewport: this,
+      cache: new Map()
     };
     Object.defineProperty(provide, "renderer", {
       get: () => this.renderer

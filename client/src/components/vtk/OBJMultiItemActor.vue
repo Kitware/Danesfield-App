@@ -8,7 +8,7 @@ import macro from "vtk.js/Sources/macro";
 export default {
   name: "OBJMultiItemActor",
   components: {},
-  inject: ["renderWindow", "renderer", "viewport"],
+  inject: ["renderWindow", "renderer", "viewport", "cache"],
   data() {
     return {
       actors: [],
@@ -24,6 +24,7 @@ export default {
     texture: Boolean
   },
   async mounted() {
+    this._destroyed = false;
     const objContent = await this._fetchObjFileContent(this.item);
     let mtlFileNames = this._parseMtlFileNames(objContent);
     const folderId = this.item.folderId;
@@ -40,19 +41,21 @@ export default {
     imageItems.forEach((imageItem, index) => {
       this.addImageContent(imageItem.name, imageContent[index]);
     });
-    return this.buildPipeline();
+    if (!this._destroyed) {
+      return this.buildPipeline();
+    }
   },
   watch: {
     texture() {
-      // This is a hack by me. I found if multiple are done synchronously, sometime some model wills be missing from rendering sometime
-      setTimeout(() => {
-        this._destroy();
-        this.buildPipeline(false);
-      }, Math.random() * 100);
+      this._destroyActors();
+      this.buildPipeline(false);
     }
   },
   methods: {
     _fetchObjFileContent(item) {
+      if (this.cache.has(item._id)) {
+        return Promise.resolve(this.cache.get(item._id));
+      }
       return this.$girder
         .get(`item/${item._id}/download`, {
           onDownloadProgress: event => {
@@ -60,7 +63,10 @@ export default {
           },
           responseType: "text"
         })
-        .then(({ data }) => data);
+        .then(({ data }) => {
+          this.cache.set(item._id, data);
+          return data;
+        });
     },
     _parseMtlFileNames(content) {
       const mtlFileNames = [];
@@ -89,13 +95,19 @@ export default {
     },
     _fetchMtlFileContent(items) {
       const requests = items.map(item => {
+        if (this.cache.has(item._id)) {
+          return Promise.resolve(this.cache.get(item._id));
+        }
         return this.$girder
           .get(`item/${item._id}/download`, {
             onDownloadProgress: event => {
               this.onProgress(event);
             }
           })
-          .then(({ data }) => data);
+          .then(({ data }) => {
+            this.cache.set(item._id, data);
+            return data;
+          });
       });
 
       return Promise.all(requests);
@@ -115,6 +127,9 @@ export default {
     },
     _fetchImageFileContent(items) {
       const requests = items.map(item => {
+        if (this.cache.has(item._id)) {
+          return Promise.resolve(this.cache.get(item._id));
+        }
         return this.$girder
           .get(`item/${item._id}/download`, {
             onDownloadProgress: event => {
@@ -123,7 +138,9 @@ export default {
             responseType: "blob"
           })
           .then(({ data }) => {
-            return this.blobToBase64(data);
+            data = this.blobToBase64(data);
+            this.cache.set(item._id, data);
+            return data;
           });
       });
       return Promise.all(requests);
@@ -178,6 +195,9 @@ export default {
         // WebGL reports errors like:
         //     RENDER WARNING: there is no texture bound to the unit 0
         await Promise.all(imageLoaded);
+        if (this._destroyed) {
+          return;
+        }
       }
 
       // Create VTK pipeline
@@ -252,14 +272,16 @@ export default {
         this.totalBytesLoaded = event.loaded;
       }
 
-      this.viewport.$emit(
-        "progressMessage",
-        `${this.item.name} ${macro.formatBytesToProperUnit(
-          this.totalBytesLoaded + this.currentBytesLoaded
-        )}`
-      );
+      if (!this._destroyed) {
+        this.viewport.$emit(
+          "progressMessage",
+          `${this.item.name} ${macro.formatBytesToProperUnit(
+            this.totalBytesLoaded + this.currentBytesLoaded
+          )}`
+        );
+      }
     },
-    _destroy() {
+    _destroyActors() {
       for (let actor of this.actors) {
         this.renderer.removeActor(actor);
       }
@@ -267,9 +289,11 @@ export default {
     }
   },
   beforeDestroy() {
-    this._destroy();
+    this._destroyActors();
+    this.viewport.$emit("progressMessage", null);
     this.renderer.resetCamera();
     this.renderWindow.render();
+    this._destroyed = true;
   },
   render() {
     return null;
