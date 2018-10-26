@@ -717,6 +717,7 @@ export default {
         .map(({ datasetId }) => this.datasets[datasetId])
         .filter(
           dataset =>
+            dataset &&
             this.supportWorkspaceType(dataset) === this.focusedWorkspace.type
         )
         .map(dataset => this.addDatasetToFocusedWorkspace(dataset));
