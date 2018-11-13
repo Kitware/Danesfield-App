@@ -24,7 +24,6 @@ export default new Vuex.Store({
       filters: [],
       // For always showing datasets on Explore
       allDatasets: [],
-      exploreTab: 'workingSet',
       hideUnsupportedDatasetsOnFocus: false,
       selectedWorkingSetId: null,
       workspaces: getInitialWorkspace(),
@@ -35,11 +34,6 @@ export default new Vuex.Store({
   mutations: {
     toggleSidePanel(state) {
       state.sidePanelExpanded = !state.sidePanelExpanded;
-    },
-    setExploreTab(state, value) {
-      state.exploreTab = value;
-      this.commit("filter/setEditingFilter", null);
-      this.commit('workingSet/setEditingWorkingSet', null);
     },
     addWorkingSet(state, workingSet) {
       state.workingSets.push(workingSet);
@@ -52,7 +46,6 @@ export default new Vuex.Store({
     },
     createWorkingSetFromFilter(state, filter) {
       var workingSet = { name: '', filterId: filter._id, datasetIds: [] };
-      state.exploreTab = 'workingSet';
       state.workingSet.editingWorkingSet = workingSet;
     },
     addWorkspace(state, workspace) {
@@ -149,12 +142,12 @@ export default new Vuex.Store({
         return workingSet;
       });
     },
-    loadFilters() {
-      girder.girder.get('filter')
-        .then(({ data }) => {
-          this.state.filters = data;
-        });
-    },
+    // loadFilters() {
+    //   girder.girder.get('filter')
+    //     .then(({ data }) => {
+    //       this.state.filters = data;
+    //     });
+    // },
     saveFilter({ commit, state }, filter) {
       if (filter._id) {
         return girder.girder.put(`filter/${filter._id}`, filter)

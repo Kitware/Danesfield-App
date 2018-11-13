@@ -14,6 +14,7 @@ from girder.api.rest import Resource
 from girder.models.item import Item
 from girder.models.folder import Folder
 from ..models.workingSet import WorkingSet
+from ..models.filter import Filter
 
 
 class WorkingSetResource(Resource):
@@ -83,6 +84,11 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def delete(self, workingSet, params):
+        if workingSet['filterId']:
+            if WorkingSet().find({
+                'filterId':workingSet['filterId']
+            }).count() == 1:
+                Filter().removeWithQuery({'_id':ObjectId(workingSet['filterId'])})
         WorkingSet().remove(workingSet)
         return
 

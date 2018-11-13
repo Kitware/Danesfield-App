@@ -78,7 +78,7 @@ import UserButton from "resonantgeoview/src/components/girder/UserButton";
 import { status } from "resonantgeo/src/components/girder/jobs";
 import { GIRDER_URL } from "./constants";
 
-import "./transitions.scss";
+import "resonantgeoview/src/transitions.scss";
 
 let jobStatus = status.all();
 

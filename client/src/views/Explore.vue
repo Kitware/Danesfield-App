@@ -15,7 +15,7 @@
         attribution='© OpenStreetMap contributors, © CARTO'
         :zIndex='0'>
       </GeojsTileLayer>
-      <GeojsHeatmapLayer v-if="!editingWorkingSet && viewport.zoom<=7"
+      <GeojsHeatmapLayer v-if="!workingSetDatasets.length && viewport.zoom<=7"
         :data="heatmapData"
         :binned="10"
         :maxIntensity="5"
@@ -24,21 +24,20 @@
         :zIndex="1">
       </GeojsHeatmapLayer>
       <GeojsGeojsonLayer
-        v-if="editingWorkingSet || viewport.zoom>7"
+        v-if="workingSetDatasets.length || viewport.zoom>7"
         :geojson="datasetBoundsFeature"
         :featureStyle="datasetBoundsFeatureStyle"
         :zIndex="2">
       </GeojsGeojsonLayer>
-      <template v-if="exploreTab==='filter'">
+      <template v-if="editingWorkingSet">
         <GeojsAnnotationLayer
           :drawing.sync="drawing"
           :editing.sync="editing"
           :editable="true"
-          :annotations="annotations"
-          @update:annotations="$store.commit('filter/setAnnotations',$event)"
+          :annotations.sync="annotations"
           :zIndex="3">
         </GeojsAnnotationLayer>
-        <GeojsGeojsonLayer 
+        <GeojsGeojsonLayer
           v-if="editingConditionsGeojson"
           :geojson="editingConditionsGeojson"
           :featureStyle="filterGeojsonLayerStyle"
@@ -69,30 +68,22 @@
       :footer="false">
       <template slot="actions">
         <SidePanelAction
-        v-for="action in actions" 
-        :key="action.name"
-        @click.stop="clickAction(action.name)">
+          v-if="editingWorkingSet"
+          v-for="action in [
+            { name: 'rectangle', icon: 'aspect_ratio' },
+            { name: 'polygon', icon: 'label_outline' },
+            { name: 'upload-geojson', icon: 'fa-file-upload' }
+          ]"
+          :key="action.name"
+          @click.stop="clickAction(action.name)">
         <v-icon>{{action.icon}}</v-icon>
         </SidePanelAction>
       </template>
       <div class="main">
         <transition name="slide-fade" mode="out-in">
-          <WorkingSetModule 
-            v-if="exploreTab==='workingSet'" />
-          <FilterModule 
-            v-if="exploreTab==='filter'" />
+          <WorkingSetModule />
         </transition>
       </div>
-      <v-bottom-nav :value="true" :active="exploreTab" @update:active="$store.commit('setExploreTab',$event)" color="transparent">
-        <v-btn flat color="primary" value="workingSet">
-          <span>Working sets</span>
-          <v-icon>history</v-icon>
-        </v-btn>
-        <v-btn flat color="primary" value="filter">
-          <span>Filters</span>
-          <v-icon>place</v-icon>
-        </v-btn>
-      </v-bottom-nav>
     </SidePanel>
     <Logo />
   </div>
@@ -124,14 +115,12 @@ import { mapState, mapGetters } from "vuex";
 import pointOnFeature from "@turf/point-on-feature";
 
 import WorkingSetModule from "./WorkingSetModule";
-import FilterModule from "./FilterModule";
 import Logo from "../components/Logo";
 
 export default {
   name: "Explore",
   components: {
     WorkingSetModule,
-    FilterModule,
     Logo
   },
   inject: ["girderRest"],
@@ -142,34 +131,16 @@ export default {
         zoom: 4
       },
       drawing: false,
-      editing: false
+      editing: false,
+      annotations: []
     };
   },
   computed: {
-    actions() {
-      if (this.editingFilter) {
-        return [
-          { name: "rectangle", icon: "aspect_ratio" },
-          { name: "polygon", icon: "label_outline" },
-          { name: "upload-geojson", icon: "fa-file-upload" }
-        ];
-      }
-      return [];
-    },
     title() {
-      switch (this.exploreTab) {
-        case "workingSet":
-          if (!this.editingWorkingSet) {
-            return "Working Sets";
-          } else {
-            return "Edit Working Set";
-          }
-        case "filter":
-          if (!this.editingFilter) {
-            return "Filters";
-          } else {
-            return "Edit Filter";
-          }
+      if (!this.editingWorkingSet) {
+        return "Working Sets";
+      } else {
+        return "Edit Working Set";
       }
     },
     filterGeojsonLayerStyle() {
@@ -190,30 +161,24 @@ export default {
       };
     },
     heatmapData() {
-      var datasets = this.editingWorkingSet
-        ? this.workingSetDatasets
-        : this.editingFilter
-          ? this.filterDatasets
-          : this.allDatasets;
-      if (!datasets) {
+      var datasets = this.allDatasets;
+      if (!datasets.length) {
         return null;
       }
-      return datasets.map(dataset => {
+      return datasets.filter(dataset => dataset.geometa).map(dataset => {
         let point = pointOnFeature(dataset.geometa.bounds);
         return point.geometry.coordinates;
       });
     },
     datasetBoundsFeature() {
-      var datasets = this.editingWorkingSet
+      var datasets = this.workingSetDatasets.length
         ? this.workingSetDatasets
-        : this.editingFilter
-          ? this.filterDatasets
-          : this.allDatasets;
-      if (!datasets) {
+        : this.allDatasets;
+      if (!datasets.length) {
         return null;
       }
       return datasets
-        .filter(dataset => dataset["geometa"] && dataset["geometa"]["bounds"])
+        .filter(dataset => dataset.geometa && dataset.geometa.bounds)
         .reduce(
           (featureCollection, dataset) => {
             featureCollection.features.push({
@@ -222,7 +187,7 @@ export default {
                 name: dataset.name,
                 _id: dataset._id
               },
-              geometry: dataset["geometa"]["bounds"]
+              geometry: dataset.geometa.bounds
             });
             return featureCollection;
           },
@@ -268,32 +233,38 @@ export default {
       }
       return pointOnFeature(selectedDataset.geometa.bounds).geometry;
     },
-    ...mapState(["sidePanelExpanded", "exploreTab", "allDatasets"]),
-    ...mapState("workingSet", ["editingWorkingSet"]),
+    ...mapState(["sidePanelExpanded", "allDatasets"]),
+    ...mapState("workingSet", [
+      "editingWorkingSet",
+      "editingConditions",
+      "selectedCondition"
+    ]),
     ...mapState("workingSet", {
       workingSetDatasets: "datasets"
     }),
-    ...mapState("filter", [
-      "editingFilter",
-      "annotations",
-      "selectedCondition"
-    ]),
-    ...mapState("filter", {
-      filterDatasets: "datasets"
-    }),
-    ...mapGetters("filter", ["editingConditionsGeojson"])
+    ...mapGetters("workingSet", ["editingConditionsGeojson"])
   },
   watch: {
     "girderRest.user"(user) {
       if (!user) {
         this.$router.push("/login");
       }
+    },
+    annotations([annotation]) {
+      if (annotation && annotation.geojson()) {
+        var geojson = annotation.geojson();
+        delete geojson.properties;
+        this.editingConditions.push({
+          type: "region",
+          geojson
+        });
+        this.annotations = [];
+      }
     }
   },
   created() {
     this.$store.dispatch("loadAllDatasets");
     this.$store.dispatch("loadWorkingSets");
-    this.$store.dispatch("loadFilters");
   },
   mounted() {
     setTimeout(() => {
@@ -310,11 +281,8 @@ export default {
         case "polygon":
           this.drawing = this.drawing !== name ? name : null;
           break;
-        // case "daterange":
-        //   this.$store.commit("filter/setPickDateRange", true);
-        //   break;
         case "upload-geojson":
-          this.$store.commit("filter/setUploadGeojsonDialog", true);
+          this.$store.commit("workingSet/setUploadGeojsonDialog", true);
           break;
       }
     }

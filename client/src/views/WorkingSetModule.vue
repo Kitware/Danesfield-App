@@ -7,7 +7,7 @@
 <template>
   <transition name="fade" mode="out-in">
     <div v-if='!editingWorkingSet'>
-      <NewWithName name="working set" default='working-set-1' @confirm='addNewWorkingSet' />
+      <NewWithName name="working set" no-confirm @confirm='addNewWorkingSet' />
       <v-expansion-panel>
         <v-expansion-panel-content
           v-for="flattened in flattenedWorkingSets"

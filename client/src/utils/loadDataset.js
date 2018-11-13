@@ -34,7 +34,7 @@ export const loadDatasetByFilterConditions = async (conditions) => {
         });
         return datasets;
     } else {
-        return loadAllDatasets();
+        return [];
     }
 }
 

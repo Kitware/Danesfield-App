@@ -787,7 +787,7 @@ export default {
       if (this.selectedWorkingSet.filterId) {
         try {
           var { data: filter } = await girder.girder.get(
-            `filter/${this.selectedWorkingSet.filterId}`
+            `workingSet/${this.selectedWorkingSet.filterId}`
           );
           var features = filter.conditions
             .map(condition => condition.geojson)
