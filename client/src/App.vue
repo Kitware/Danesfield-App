@@ -51,9 +51,8 @@
         </v-toolbar-title>
       </template>
       <template slot="right">
-        <GirderUserButton 
-          @login="userForm='login';userDialog=true;"
-          @user="userForm='logout';userDialog=true;" />
+        <UserButton
+          @user="girderRest.logout()" />
       </template>
     </AppToolbar>
     <FullScreenViewport>
@@ -75,6 +74,7 @@ import { mapActions } from "vuex";
 
 import girder from "./girder";
 import Prompt from "resonantgeoview/src/components/prompt/Prompt";
+import UserButton from "resonantgeoview/src/components/girder/UserButton";
 import { status } from "resonantgeo/src/components/girder/jobs";
 import { GIRDER_URL } from "./constants";
 
@@ -84,7 +84,8 @@ let jobStatus = status.all();
 
 export default {
   name: "App",
-  components: { Prompt },
+  components: { Prompt, UserButton },
+  inject: ["girderRest"],
   data() {
     return {
       portal: {

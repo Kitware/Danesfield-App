@@ -134,6 +134,7 @@ export default {
     FilterModule,
     Logo
   },
+  inject: ["girderRest"],
   data() {
     return {
       viewport: {
@@ -280,13 +281,10 @@ export default {
     ...mapState("filter", {
       filterDatasets: "datasets"
     }),
-    ...mapGetters("filter", ["editingConditionsGeojson"]),
-    user() {
-      return this.$girder.user;
-    }
+    ...mapGetters("filter", ["editingConditionsGeojson"])
   },
   watch: {
-    user(user) {
+    "girderRest.user"(user) {
       if (!user) {
         this.$router.push("/login");
       }

@@ -19,7 +19,10 @@ module.exports = {
     config.module
       .rule('js')
       .include
-      .add('resonantgeo')
+      .add(/^resonantgeo$/)
+      .end()
+      .use()
+      .loader('babel-loader')
 
     config.module
       .rule('glsl')

@@ -420,6 +420,7 @@ export default {
     FeatureSelector,
     Logo
   },
+  inject: ["girderRest"],
   data() {
     return {
       datasets: {},
@@ -452,9 +453,6 @@ export default {
     },
     API_URL() {
       return API_URL;
-    },
-    user() {
-      return this.$girder.user;
     },
     selectedWorkingSet() {
       return this.workingSets.filter(
@@ -504,7 +502,7 @@ export default {
     ...mapGetters(["focusedWorkspace", "flattenedWorkingSets"])
   },
   watch: {
-    user(user) {
+    "girderRest.user"(user) {
       if (!user) {
         this.$router.push("/login");
       }
