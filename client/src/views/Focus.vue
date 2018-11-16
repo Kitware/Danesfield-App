@@ -928,16 +928,13 @@ export default {
     }
 
     .v-list__group__header {
-      > div:first-child {
-        width: calc(100% - 40px);
+      .v-list__group__header__append-icon {
+        padding-left: 0;
       }
 
       .v-list__tile {
-        padding-right: 2px;
+        padding-right: 6px;
       }
-    }
-    .v-list__group__header__append-icon {
-      padding-left: 0;
     }
   }
 }

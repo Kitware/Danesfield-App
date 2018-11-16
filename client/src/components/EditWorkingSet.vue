@@ -6,7 +6,7 @@
 
 <template>
   <div class='edit-workingset'>
-    <div>
+    <div class="mx-2">
       <v-text-field
         class="input"
         name="Name"
@@ -15,9 +15,9 @@
         v-model="name">
       </v-text-field>
     </div>
-    <div class='body-2' v-if="datasets.length">Datasets</div>
+    <div class='body-2 mx-2' v-if="datasets.length">Datasets</div>
     <transition name='fade'>
-      <SlideFadeGroup class="datasets" tag='div'>
+      <SlideFadeGroup class="datasets mx-2" tag='div'>
         <div v-for="dataset in filteredDatasets" :key="dataset._id">
           <v-tooltip top open-delay="1000">
             <span>{{dataset.name}}</span>
@@ -117,7 +117,7 @@
 
 <script>
 import { mapState, mapMutations, mapActions } from "vuex";
-import SlideFadeGroup from 'resonantgeoview/src/components/transition/slide-fade-group';
+import SlideFadeGroup from "resonantgeoview/src/components/transition/slide-fade-group";
 
 import FeatureSelector from "./FeatureSelector";
 import clientDownloadJSON from "../utils/clientDownloadJSON";
@@ -208,8 +208,7 @@ export default {
   },
   methods: {
     exit() {
-      this.setDatasets([]);
-      this.setEditingWorkingSet(null);
+      this.clear();
     },
     async save() {
       let filter = await this.saveFilter({
@@ -268,11 +267,10 @@ export default {
       "loadConditionsByFilter"
     ]),
     ...mapMutations("workingSet", [
-      "setEditingWorkingSet",
-      "setDatasets",
       "setSelectedCondition",
       "setSelectedDataset",
-      "setUploadGeojsonDialog"
+      "setUploadGeojsonDialog",
+      "clear"
     ])
   }
 };

@@ -175,8 +175,11 @@ export default new Vuex.Store({
     }
   },
   getters: {
-    flattenedWorkingSets(state) {
-      return flattenWorkingSets(treefyWorkingSets(state.workingSets));
+    workingSetsTree(state) {
+      return treefyWorkingSets(state.workingSets);
+    },
+    flattenedWorkingSets(state, getters) {
+      return flattenWorkingSets(getters.workingSetsTree);
     },
     focusedWorkspace(state) {
       return state.workspaces[state.focusedWorkspaceKey] || Object.values(state.workspaces)[0];
@@ -197,12 +200,12 @@ function treefyWorkingSets(workingSets) {
     let node = { id, workingSet, children: [] };
     mapping.set(id, node);
     if (!workingSet.parentWorkingSetId) {
-      tree.push(node);
+      tree.unshift(node);
     } else {
       if (mapping.has(workingSet.parentWorkingSetId)) {
-        mapping.get(workingSet.parentWorkingSetId).children.push(node);
+        mapping.get(workingSet.parentWorkingSetId).children.unshift(node);
       } else {
-        tree.push(node);
+        // tree.push(node);
       }
     }
   }
@@ -212,9 +215,11 @@ function treefyWorkingSets(workingSets) {
 function flattenWorkingSets(children, level = 0) {
   var output = [];
   for (let node of children) {
-    output.unshift({ workingSet: node.workingSet, level });
+    output.push({ workingSet: node.workingSet, level });
     if (node.children.length) {
-      output.splice(1, 0, ...flattenWorkingSets(node.children, level + 1));
+      // debugger;
+      // output.splice(1, 0, ...flattenWorkingSets(node.children, level + 1));
+      output = [...output, ...flattenWorkingSets(node.children, level + 1)];
     }
   }
   return output;

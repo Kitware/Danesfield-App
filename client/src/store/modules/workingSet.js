@@ -32,6 +32,11 @@ export default {
     },
     setUploadGeojsonDialog(state, value) {
       state.uploadGeojsonDialog = value;
+    },
+    clear(state) {
+      state.datasets = [];
+      state.editingConditions = [];
+      state.editingWorkingSet = null;
     }
   },
   actions: {
