@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import threading
 import uuid
 import re
@@ -25,19 +23,21 @@ from .workflow import DanesfieldWorkflowException
 
 class DanesfieldWorkflowManager(object):
     """
-    Class to manage files and orchestrate steps in the Danesfield workflow.
+    Class to manage files and orchestrate steps in the Danesfield
+    workflow.
 
-    The class should generally be used through its singleton instance. The
-    singleton should be initialized by configuring a DanesfieldWorkflow and
-    setting it as the workflow property.
+    The class should generally be used through its singleton
+    instance. The singleton should be initialized by configuring a
+    DanesfieldWorkflow and setting it as the workflow property.
 
-    Call initJob() to start a new job, then advance the workflow to run the
-    steps that are ready using advance().
+    Call initJob() to start a new job, then advance the workflow to
+    run the steps that are ready using advance().
 
-    Handlers for workflow steps receive information about the original HTTP
-    request and authorization, the job identifier, the initial working set and
-    any working sets created during the workflow, the standard output for each step,
-    the folder in which to store output files, and user-specified options.
+    Handlers for workflow steps receive information about the original
+    HTTP request and authorization, the job identifier, the initial
+    working set and any working sets created during the workflow, the
+    standard output for each step, the folder in which to store output
+    files, and user-specified options.
     """
     _instance = None
 
@@ -71,10 +71,16 @@ class DanesfieldWorkflowManager(object):
         """
         jobData = self._jobData.get(jobId)
         if jobData is None:
-            raise DanesfieldWorkflowException('Invalid job ID: \'{}\''.format(jobId))
+            raise DanesfieldWorkflowException(
+                'Invalid job ID: \'{}\''.format(jobId))
         return jobData
 
-    def initJob(self, requestInfo, workingSet, outputFolder, options, previousWorkingSet=None):
+    def initJob(self,
+                requestInfo,
+                workingSet,
+                outputFolder,
+                options,
+                previousWorkingSet=None):
         """
         Initialize a new job to run the workflow.
 
@@ -116,19 +122,21 @@ class DanesfieldWorkflowManager(object):
                 'outputFolder': outputFolder,
                 # Options
                 'options': options if options is not None else {},
-                # For composite steps, list of [Celery GroupResult, number of jobs remaining],
-                # indexed by step name
+                # For composite steps, list of [Celery GroupResult,
+                # number of jobs remaining], indexed by step name
                 'groupResult': {}
             }
 
-            logprint.info('DanesfieldWorkflowManager.initJob Job={} WorkingSet={}'.format(
-                jobId, workingSet['_id']))
+            logprint.info(
+                'DanesfieldWorkflowManager.initJob Job={} WorkingSet={}'.
+                format(jobId, workingSet['_id']))
 
             # If a workingSet exists for a given step, we include that
             # working set in the current jobData and flag it as being
             # complete (the step will not be re-run)
             step_name_re = re.compile(".*:\\s(.*)")
-            for ws in WorkingSet().find({'parentWorkingSetId': workingSet['_id']}):
+            for ws in WorkingSet().find({'parentWorkingSetId':
+                                         workingSet['_id']}):
                 match = re.match(step_name_re, ws['name'])
                 if match:
                     stepName = match.group(1)
@@ -136,11 +144,13 @@ class DanesfieldWorkflowManager(object):
 
                     # Set the skipped job as completed
                     jobData['completedSteps'].add(stepName)
-                    logprint.info('DanesfieldWorkflowManager.skippingStep Job={} '
-                                  'StepName={}'.format(jobId, stepName))
+                    logprint.info(
+                        'DanesfieldWorkflowManager.skippingStep Job={} '
+                        'StepName={}'.format(jobId, stepName))
                 else:
-                    logprint.warning('DanesfieldWorkflowManager.unableToParseStepName '
-                                     'Job={} WorkingSetName={}'.format(jobId, ws['name']))
+                    logprint.warning(
+                        'DanesfieldWorkflowManager.unableToParseStepName '
+                        'Job={} WorkingSetName={}'.format(jobId, ws['name']))
 
             self._jobData[jobId] = jobData
 
@@ -154,7 +164,8 @@ class DanesfieldWorkflowManager(object):
         :type jobId: str
         """
         with self._lock:
-            logprint.info('DanesfieldWorkflowManager.finalizeJob Job={}'.format(jobId))
+            logprint.info(
+                'DanesfieldWorkflowManager.finalizeJob Job={}'.format(jobId))
 
             self._jobData.pop(jobId, None)
 
@@ -170,8 +181,9 @@ class DanesfieldWorkflowManager(object):
         :type file: dict
         """
         with self._lock:
-            logprint.info('DanesfieldWorkflowManager.addFile Job={} StepName={} File={}'.format(
-                jobId, stepName, file['_id']))
+            logprint.info(
+                'DanesfieldWorkflowManager.addFile Job={} StepName={} File={}'.
+                format(jobId, stepName, file['_id']))
 
             jobData = self._getJobData(jobId)
             jobData['files'].setdefault(stepName, []).append(file)
@@ -188,8 +200,9 @@ class DanesfieldWorkflowManager(object):
         :type output: list[str]
         """
         with self._lock:
-            logprint.info('DanesfieldWorkflowManager.addStandardOutput Job={} StepName={}'.format(
-                jobId, stepName))
+            logprint.info(
+                'DanesfieldWorkflowManager.addStandardOutput Job={} '
+                'StepName={}'.format(jobId, stepName))
 
             jobData = self._getJobData(jobId)
             jobData['standardOutput'][stepName] = output
@@ -218,7 +231,8 @@ class DanesfieldWorkflowManager(object):
         with self._lock:
             jobData = self._getJobData(jobId)
             # Store GroupResult and number of jobs
-            jobData['groupResult'][stepName] = [groupResult, len(groupResult.children)]
+            jobData['groupResult'][stepName] = [groupResult,
+                                                len(groupResult.children)]
 
     def isCompositeStep(self, jobId, stepName):
         """
@@ -230,9 +244,9 @@ class DanesfieldWorkflowManager(object):
 
     def isCompositeStepComplete(self, jobId, stepName):
         """
-        Query whether a composite step is complete. A composite step is complete
-        when all its jobs have completed and compositeStepJobCompleted() has
-        been called for each job.
+        Query whether a composite step is complete. A composite step
+        is complete when all its jobs have completed and
+        compositeStepJobCompleted() has been called for each job.
         """
         with self._lock:
             jobData = self._getJobData(jobId)
@@ -268,7 +282,8 @@ class DanesfieldWorkflowManager(object):
         :type jobId: str
         """
         with self._lock:
-            logprint.info('DanesfieldWorkflowManager.advance Job={}'.format(jobId))
+            logprint.info(
+                'DanesfieldWorkflowManager.advance Job={}'.format(jobId))
 
             jobData = self._getJobData(jobId)
 
@@ -282,16 +297,17 @@ class DanesfieldWorkflowManager(object):
             ]
 
             # Skip run-metrics if the AOI is unknown
-            # model = jobData['options'].get('classify-materials', {}).get('model')
+            # model = jobData['options'].get('classify-materials', {}).get(
+            #     'model')
             # if model is None or model == 'STANDARD':
             #     try:
             #         incompleteSteps.remove(RunMetricsStep)
             #     except ValueError as e:
             #         pass
 
-            logprint.info('DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
-                [step.name for step in incompleteSteps]
-            ))
+            logprint.info(
+                'DanesfieldWorkflowManager.advance IncompleteSteps={}'.format(
+                    [step.name for step in incompleteSteps]))
 
             runningSteps = [
                 step
@@ -299,16 +315,18 @@ class DanesfieldWorkflowManager(object):
                 if step.name in jobData['runningSteps']
             ]
 
-            logprint.info('DanesfieldWorkflowManager.advance RunningSteps={}'.format(
-                [step.name for step in runningSteps]
-            ))
+            logprint.info(
+                'DanesfieldWorkflowManager.advance RunningSteps={}'.format(
+                    [step.name for step in runningSteps]))
 
             # Finalize job if either:
             # - All steps have completed, or
             # - A previous step failed and no steps are running
-            # Note that it's possible that future steps could run successfully if
-            # they don't depend on the failed step; that's not currently handled.
-            if not runningSteps and (not incompleteSteps or jobData['failedSteps']):
+            # Note that it's possible that future steps could run
+            # successfully if they don't depend on the failed step;
+            # that's not currently handled.
+            if not runningSteps and \
+               (not incompleteSteps or jobData['failedSteps']):
                 self.finalizeJob(jobId)
                 return
 
@@ -319,14 +337,14 @@ class DanesfieldWorkflowManager(object):
                 step.dependencies.issubset(jobData['completedSteps'])
             ]
 
-            logprint.info('DanesfieldWorkflowManager.advance ReadySteps={}'.format(
-                [step.name for step in readySteps]
-            ))
+            logprint.info(
+                'DanesfieldWorkflowManager.advance ReadySteps={}'.format(
+                    [step.name for step in readySteps]))
 
             if not runningSteps and not readySteps and incompleteSteps:
-                logprint.error('DanesfieldWorkflowManager.advance StuckSteps={}'.format(
-                    [step.name for step in incompleteSteps]
-                ))
+                logprint.error(
+                    'DanesfieldWorkflowManager.advance StuckSteps={}'.format(
+                        [step.name for step in incompleteSteps]))
                 # TODO: More error notification/handling/clean up
                 return
 
@@ -359,8 +377,9 @@ class DanesfieldWorkflowManager(object):
         Call when a step completes successfully.
         """
         with self._lock:
-            logprint.info('DanesfieldWorkflowManager.stepSucceeded Job={} StepName={}'.format(
-                jobId, stepName))
+            logprint.info(
+                'DanesfieldWorkflowManager.stepSucceeded Job={} StepName={}'.
+                format(jobId, stepName))
 
             jobData = self._getJobData(jobId)
 
@@ -373,7 +392,8 @@ class DanesfieldWorkflowManager(object):
             workingSet = None
             if files:
                 initialWorkingSet = jobData['workingSets'][DanesfieldStep.INIT]
-                workingSetName = '{}: {}'.format(initialWorkingSet['name'], stepName)
+                workingSetName = '{}: {}'.format(
+                    initialWorkingSet['name'], stepName)
                 datasetIds = [file['itemId'] for file in files]
                 workingSet = WorkingSet().createWorkingSet(
                     name=workingSetName,
@@ -387,17 +407,19 @@ class DanesfieldWorkflowManager(object):
             jobData['groupResult'].pop(stepName, None)
 
             logprint.info(
-                'DanesfieldWorkflowManager.createdWorkingSet Job={} StepName={} '
-                'WorkingSet={}'.format(
-                    jobId, stepName, workingSet['_id'] if workingSet is not None else None))
+                'DanesfieldWorkflowManager.createdWorkingSet Job={} '
+                'StepName={} WorkingSet={}'.format(
+                    jobId,
+                    stepName,
+                    workingSet['_id'] if workingSet is not None else None))
 
     def stepFailed(self, jobId, stepName):
         """
         Call when a step fails or is canceled.
         """
         with self._lock:
-            logprint.info('DanesfieldWorkflowManager.stepFailed Job={} StepName={}'.format(
-                jobId, stepName))
+            logprint.info('DanesfieldWorkflowManager.stepFailed Job={} '
+                          'StepName={}'.format(jobId, stepName))
 
             jobData = self._getJobData(jobId)
 

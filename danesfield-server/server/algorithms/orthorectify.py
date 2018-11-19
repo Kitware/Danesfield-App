@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import os
 
 from celery import group
@@ -20,17 +18,26 @@ from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import (
-    addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata,
-    rpcFileMatchesImageFile
-)
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata,
+                     rpcFileMatchesImageFile)
 from ..constants import DockerImage
-from ..workflow import DanesfieldWorkflowException
 from ..workflow_manager import DanesfieldWorkflowManager
 
 
-def orthorectify(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile, dtmFile,
-                 rpcFiles, occlusionThreshold=None, denoiseRadius=None):
+def orthorectify(initWorkingSetName,
+                 stepName,
+                 requestInfo,
+                 jobId,
+                 outputFolder,
+                 imageFiles,
+                 dsmFile,
+                 dtmFile,
+                 rpcFiles,
+                 occlusionThreshold=None,
+                 denoiseRadius=None):
     """
     Run Girder Worker jobs to orthorectify source images.
 
@@ -81,9 +88,11 @@ def orthorectify(initWorkingSetName, stepName, requestInfo, jobId, outputFolder,
             '--raytheon-rpc', GirderFileIdToVolume(rpcFile['_id'], gc=gc),
         ]
         if occlusionThreshold is not None:
-            containerArgs.extend(['--occlusion-thresh', str(occlusionThreshold)])
+            containerArgs.extend(['--occlusion-thresh',
+                                  str(occlusionThreshold)])
         if denoiseRadius is not None:
-            containerArgs.extend(['--denoise-radius', str(denoiseRadius)])
+            containerArgs.extend(['--denoise-radius',
+                                  str(denoiseRadius)])
 
         # Result hooks
         # - Upload output files to output folder
@@ -101,7 +110,8 @@ def orthorectify(initWorkingSetName, stepName, requestInfo, jobId, outputFolder,
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgs,
-                jobTitle='[%s] Orthorectify: %s' % (initWorkingSetName, imageFile['name']),
+                jobTitle=('[%s] Orthorectify: %s' %
+                          (initWorkingSetName, imageFile['name'])),
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=resultHooks
@@ -131,8 +141,9 @@ def orthorectify(initWorkingSetName, stepName, requestInfo, jobId, outputFolder,
     if imagesMissingRpcFiles:
         logprint.info('Step: {} -- Warning: Missing RPC files for images: {}'
                       .format(stepName, imagesMissingRpcFiles))
-    #     raise DanesfieldWorkflowException('Missing RPC files for images: {}'.format(
-    #         imagesMissingRpcFiles), step=stepName)
+        # raise DanesfieldWorkflowException(
+        #     'Missing RPC files for images: {}'.format(imagesMissingRpcFiles),
+        #     step=stepName)
 
     # Run tasks in parallel using a group; skip if we have no rpcFile
     # for the given image
@@ -144,7 +155,9 @@ def orthorectify(initWorkingSetName, stepName, requestInfo, jobId, outputFolder,
     ]
     groupResult = group(tasks).delay()
 
-    DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
+    DanesfieldWorkflowManager.instance().setGroupResult(jobId,
+                                                        stepName,
+                                                        groupResult)
 
     # Add info for job event listeners
     for result in groupResult.results:

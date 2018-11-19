@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import itertools
 
 from girder_worker.docker.tasks import docker_run
@@ -18,7 +16,13 @@ from .common import addJobInfo, createDockerRunArguments, createGirderClient
 from ..constants import DockerImage
 
 
-def selectBest(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles, dsmFile):
+def selectBest(initWorkingSetName,
+               stepName,
+               requestInfo,
+               jobId,
+               outputFolder,
+               imageFiles,
+               dsmFile):
     """
     Run a Girder Worker job to select the best image pair.
 

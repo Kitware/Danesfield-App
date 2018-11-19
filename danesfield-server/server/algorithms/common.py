@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import json
 import re
 
@@ -49,7 +47,12 @@ def createUploadMetadata(jobId, stepName):
     return upload_kwargs
 
 
-def createDockerRunArguments(image, containerArgs, jobTitle, jobType, user, resultHooks=None):
+def createDockerRunArguments(image,
+                             containerArgs,
+                             jobTitle,
+                             jobType,
+                             user,
+                             resultHooks=None):
     """
     Return arguments to pass to docker_run Celery task.
 

@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import re
 
 from ..algorithms import computeNdvi

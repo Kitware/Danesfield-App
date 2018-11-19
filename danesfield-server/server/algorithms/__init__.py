@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from .building_segmentation import buildingSegmentation  # noqa: F401
 from .classify_materials import classifyMaterials  # noqa: F401
 from .fit_dtm import fitDtm  # noqa: F401

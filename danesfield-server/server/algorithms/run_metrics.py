@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -16,7 +14,10 @@ from girder_worker.docker.transforms.girder import (
     GirderUploadVolumePathToFolder,
     GirderFolderIdToVolume)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 
 

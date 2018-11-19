@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from celery import group
 
 from girder_worker.docker.tasks import docker_run

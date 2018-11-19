@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import Resource

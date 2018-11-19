@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import os
 
 from girder.models.item import Item
@@ -19,13 +17,14 @@ from .workflow import DanesfieldWorkflowException
 
 def fileFromItem(item):
     """
-    Return the file contained in an item. Raise an exception if the item doesn't contain
-    exactly one file.
+    Return the file contained in an item. Raise an exception if the
+    item doesn't contain exactly one file.
     """
     files = Item().childFiles(item, limit=2)
     if files.count() != 1:
         raise DanesfieldWorkflowException(
-            'Item must contain %d files, but should contain only one.' % files.count())
+            'Item must contain %d files, but should contain only one.' %
+            files.count())
     return files[0]
 
 
@@ -169,7 +168,8 @@ def isCroppedAndPansharpend(item):
 
 def getWorkingSet(stepName, jobInfo):
     """
-    Get a specific working set by step name. Raise an error if the working set is not found.
+    Get a specific working set by step name. Raise an error if the
+    working set is not found.
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
@@ -185,8 +185,8 @@ def getWorkingSet(stepName, jobInfo):
 
 def getStandardOutput(stepName, jobInfo):
     """
-    Get a standard output for a specific step by name. Raise an error if the standard output is
-    not found.
+    Get a standard output for a specific step by name. Raise an error
+    if the standard output is not found.
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)
@@ -202,8 +202,8 @@ def getStandardOutput(stepName, jobInfo):
 
 def getOptions(stepName, jobInfo):
     """
-    Get the options for a particular step from the global options and perform basic
-    validation. Returns a dictionary that may be empty.
+    Get the options for a particular step from the global options and
+    perform basic validation. Returns a dictionary that may be empty.
 
     :param stepName: The name of the step.
     :type stepName: str (DanesfieldStep)

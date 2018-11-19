@@ -7,21 +7,34 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
-    GirderFileIdToVolume, GirderFolderIdToVolume, GirderUploadVolumePathToFolder)
+    GirderFileIdToVolume,
+    GirderFolderIdToVolume,
+    GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 
 
-def buildingSegmentation(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
-                         msiImageFile, rgbImageFile, modelFolder, modelFilePrefix):
+def buildingSegmentation(initWorkingSetName,
+                         stepName,
+                         requestInfo,
+                         jobId,
+                         outputFolder,
+                         dsmFile,
+                         dtmFile,
+                         msiImageFile,
+                         rgbImageFile,
+                         modelFolder,
+                         modelFilePrefix):
     """
-    Run a Girder Worker job to segment buildings using Columbia building segmentation.
+    Run a Girder Worker job to segment buildings using Columbia
+    building segmentation.
 
     Requirements:
     - Danesfield Docker image is available on host
@@ -84,7 +97,8 @@ def buildingSegmentation(initWorkingSetName, stepName, requestInfo, jobId, outpu
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='[%s] Building segmentation: %s' % (initWorkingSetName, dsmFile['name']),
+            jobTitle=('[%s] Building segmentation: %s' %
+                      (initWorkingSetName, dsmFile['name'])),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

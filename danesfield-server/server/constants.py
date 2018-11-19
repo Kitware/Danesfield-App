@@ -8,8 +8,6 @@
 ###############################################################################
 
 
-
-
 class DanesfieldJobKey(object):
     """
     Keys for metadata attached to Danesfield jobs and related objects.

@@ -7,22 +7,32 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 
 
-def unetSemanticSegmentation(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, dtmFile,
-                             msiImageFile, rgbImageFile, configFile, modelFile):
+def unetSemanticSegmentation(initWorkingSetName,
+                             stepName,
+                             requestInfo,
+                             jobId,
+                             outputFolder,
+                             dsmFile,
+                             dtmFile,
+                             msiImageFile,
+                             rgbImageFile,
+                             configFile,
+                             modelFile):
     """
-    Run a Girder Worker job to segment buildings using UNet semantic segmentation.
+    Run a Girder Worker job to segment buildings using UNet semantic
+    segmentation.
 
     Requirements:
     - Danesfield Docker image is available on host
@@ -93,7 +103,8 @@ def unetSemanticSegmentation(initWorkingSetName, stepName, requestInfo, jobId, o
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='[%s] UNet semantic segmentation: %s' % (initWorkingSetName, dsmFile['name']),
+            jobTitle=('[%s] UNet semantic segmentation: %s' %
+                      (initWorkingSetName, dsmFile['name'])),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

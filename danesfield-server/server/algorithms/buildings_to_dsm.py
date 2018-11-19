@@ -7,18 +7,13 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from celery import group
 
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume,
-    GirderUploadVolumePathToFolder,
-    GirderFolderIdToVolume)
-
-from girder_worker.docker.transforms import TemporaryVolume
+    GirderUploadVolumePathToFolder)
 
 from .common import (
     addJobInfo,
@@ -116,7 +111,8 @@ def buildingsToDsm(initWorkingSetName,
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgsDSM,
-                jobTitle='[%s] Buildings to DSM: DSM generation' % initWorkingSetName,
+                jobTitle=('[%s] Buildings to DSM: DSM generation' %
+                          initWorkingSetName),
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=dsmResultHooks
@@ -126,7 +122,8 @@ def buildingsToDsm(initWorkingSetName,
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgsCLS,
-                jobTitle='[%s] Buildings to DSM: CLS generation' % initWorkingSetName,
+                jobTitle=('[%s] Buildings to DSM: CLS generation' %
+                          initWorkingSetName),
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=clsResultHooks

@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from .building_segmentation import BuildingSegmentationStep  # noqa: F401
 from .classify_materials import ClassifyMaterialsStep  # noqa: F401
 from .msi_to_rgb import MsiToRgbStep  # noqa: F401
@@ -21,7 +19,8 @@ from .roof_geon_extraction import RoofGeonExtractionStep  # noqa: F401
 from .compute_ndvi import ComputeNdviStep  # noqa: F401
 from .segment_by_height import SegmentByHeightStep  # noqa: F401
 from .select_best import SelectBestStep  # noqa: F401
-from .unet_semantic_segmentation import UNetSemanticSegmentationStep  # noqa: F401
+from .unet_semantic_segmentation import (  # noqa: F401
+    UNetSemanticSegmentationStep)
 from .buildings_to_dsm import BuildingsToDsmStep  # noqa: F401
 from .get_road_vector import GetRoadVectorStep  # noqa: F401
 from .texture_mapping import TextureMappingStep  # noqa: F401

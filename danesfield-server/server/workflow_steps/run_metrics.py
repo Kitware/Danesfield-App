@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from ..algorithms import runMetrics
 from ..constants import DanesfieldStep
 from ..settings import PluginSettings
@@ -31,12 +29,15 @@ class RunMetricsStep(DanesfieldWorkflowStep):
     def run(self, jobInfo, outputFolder):
         # Get working sets
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
-        classifyMaterialsWorkingSet = getWorkingSet(DanesfieldStep.CLASSIFY_MATERIALS, jobInfo)
-        buildingsToDsmWorkingSet = getWorkingSet(DanesfieldStep.BUILDINGS_TO_DSM, jobInfo)
+        classifyMaterialsWorkingSet = getWorkingSet(
+            DanesfieldStep.CLASSIFY_MATERIALS, jobInfo)
+        buildingsToDsmWorkingSet = getWorkingSet(
+            DanesfieldStep.BUILDINGS_TO_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
 
         runMetricsOptions = getOptions(self.name, jobInfo)
-        classifyMaterialsOptions = getOptions(DanesfieldStep.CLASSIFY_MATERIALS, jobInfo)
+        classifyMaterialsOptions = getOptions(
+            DanesfieldStep.CLASSIFY_MATERIALS, jobInfo)
 
         # Using the "model" passed through the classify materials
         # options as the reference file prefix for now

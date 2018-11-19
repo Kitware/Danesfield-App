@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from bson.objectid import ObjectId
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
@@ -58,7 +56,8 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def create(self, data, params):
-        data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
+        data['datasetIds'] = \
+            self.normalizeworkingSetDatasets(data['datasetIds'])
         return WorkingSet().save(data)
 
     @autoDescribeRoute(
@@ -71,7 +70,8 @@ class WorkingSetResource(Resource):
     @access.user
     def edit(self, workingSet, data, params):
         data.pop('_id', None)
-        data['datasetIds'] = self.normalizeworkingSetDatasets(data['datasetIds'])
+        data['datasetIds'] = self.normalizeworkingSetDatasets(
+            data['datasetIds'])
         workingSet.update(data)
         return WorkingSet().save(workingSet)
 
@@ -99,7 +99,9 @@ class WorkingSetResource(Resource):
                     list(Item().find(
                         {'$and':
                          [{'_id': {'$ne': ObjectId(datasetId)}},
-                          {'name': {'$regex': '^' + datasetItem['name'].split('-')[0] + '.*.NTF$'}}]
+                          {'name': {'$regex': '^' +
+                                    datasetItem['name'].split('-')[0] +
+                                    '.*.NTF$'}}]
                          }))
                 if len(msiOrPans) == 1:
                     datasetIdsSet.add(str(msiOrPans[0]['_id']))
@@ -126,14 +128,15 @@ class WorkingSetResource(Resource):
     def getEvaluationItems(self, workingSet, params):
         user = self.getCurrentUser()
         return {
-            "childrenWorkingSetEvaluationItems": self.getChildrenWorkingSetEvaluationItems(
-                user, workingSet),
-            'evaluationItems': self.getWorkingSetEvaluationItems(
-                user, workingSet)
+            "childrenWorkingSetEvaluationItems":
+            self.getChildrenWorkingSetEvaluationItems(user, workingSet),
+            "evaluationItems":
+            self.getWorkingSetEvaluationItems(user, workingSet)
         }
 
     def getChildrenWorkingSetEvaluationItems(self, user, workingSet):
-        childrenWorkingSets = list(WorkingSet().find({"parentWorkingSetId": workingSet['_id']}))
+        childrenWorkingSets = list(WorkingSet().find(
+            {"parentWorkingSetId": workingSet['_id']}))
         if not len(childrenWorkingSets):
             return []
         childrenWorkingSetevaluationItems = []
@@ -141,15 +144,18 @@ class WorkingSetResource(Resource):
             childWorkingSetEvaluationItems = self.getWorkingSetEvaluationItems(
                 user, childWorkingSet)
             for resultItem in list(childWorkingSetEvaluationItems):
-                existingSameNameItems = filter(lambda item: item['name'] == resultItem[
-                    'name'], childrenWorkingSetevaluationItems)
+                existingSameNameItems = filter(
+                    lambda item: item['name'] == resultItem['name'],
+                    childrenWorkingSetevaluationItems)
                 if existingSameNameItems:
-                    childrenWorkingSetevaluationItems.remove(existingSameNameItems[0])
+                    childrenWorkingSetevaluationItems.remove(
+                        existingSameNameItems[0])
                 childrenWorkingSetevaluationItems.append(resultItem)
         return childrenWorkingSetevaluationItems
 
     def getWorkingSetEvaluationItems(self, user, workingSet):
-        datasetItem = Item().findOne({'_id': ObjectId(workingSet['datasetIds'][0])})
+        datasetItem = Item().findOne(
+            {'_id': ObjectId(workingSet['datasetIds'][0])})
         if not datasetItem:
             return []
         stepResultFolder = Folder().findOne({'_id': datasetItem['folderId']})

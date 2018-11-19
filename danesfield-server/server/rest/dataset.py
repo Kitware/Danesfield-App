@@ -38,7 +38,16 @@ class DatasetResource(Resource):
 
     def _getAll(self):
         datasetItems = list(Item().find(
-            {'$and': [{'name': {'$regex': '.NTF$'}}, {'$or': [{'geometa.driver': {'$in': ['GeoJSON', 'GeoTIFF', 'OBJ', 'National Imagery Transmission Format']}}, {'geometa.subDatasets.driver': 'National Imagery Transmission Format'}]}]}))
+            {'$and':
+             [{'name': {'$regex': '.NTF$'}},
+              {'$or':
+               [{'geometa.driver': {'$in':
+                                    ['GeoJSON',
+                                     'GeoTIFF',
+                                     'OBJ',
+                                     'National Imagery Transmission Format']}},
+                {'geometa.subDatasets.driver':
+                 'National Imagery Transmission Format'}]}]}))
         return self.filterInputNTF(datasetItems)
 
     @autoDescribeRoute(
@@ -74,7 +83,8 @@ class DatasetResource(Resource):
     @access.user
     def getWorkingSetDatasets(self, workingSet, params):
         datasetItems = list(Item().find(
-            {"_id": {"$in": [ObjectId(id) for id in workingSet['datasetIds']]}}))
+            {"_id": {"$in":
+                     [ObjectId(id) for id in workingSet['datasetIds']]}}))
         return datasetItems
 
     @autoDescribeRoute(

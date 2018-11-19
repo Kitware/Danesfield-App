@@ -7,7 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
 from girder import events
 
 from .rest import dataset, workingSet, processing, filter
@@ -72,7 +71,9 @@ def createWorkflow():
 
 def load(info):
     # Install event handlers
-    events.bind('model.file.finalizeUpload.after', info['name'], onFinalizeUpload)
+    events.bind('model.file.finalizeUpload.after',
+                info['name'],
+                onFinalizeUpload)
     events.bind('jobs.job.update', info['name'], onJobUpdate)
 
     # Set workflow on workflow manager

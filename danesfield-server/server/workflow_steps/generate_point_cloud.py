@@ -7,13 +7,15 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from ..algorithms import generatePointCloud
 from ..constants import DanesfieldStep
 from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
-from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage, isPanImage
+from ..workflow_utilities import (
+    getOptions,
+    getWorkingSet,
+    isMsiImage,
+    isPanImage)
 
 
 class GeneratePointCloudStep(DanesfieldWorkflowStep):
@@ -27,7 +29,8 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
     - latitudeWidth (required)
     """
     def __init__(self):
-        super(GeneratePointCloudStep, self).__init__(DanesfieldStep.GENERATE_POINT_CLOUD)
+        super(GeneratePointCloudStep, self).__init__(
+            DanesfieldStep.GENERATE_POINT_CLOUD)
 
     def run(self, jobInfo, outputFolder):
         # Get working set
@@ -48,13 +51,18 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
             latitudeWidth = generatePointCloudOptions['latitudeWidth']
         except KeyError:
             raise DanesfieldWorkflowException(
-                'The following options are required: longtitude, latitude, longitudewith, '
-                'latitudeWidth', step=self.name)
+                'The following options are required: longtitude, latitude, '
+                'longitudewith, latitudeWidth', step=self.name)
 
         # Run algorithm
         generatePointCloud(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, imageFiles=imageFiles,
-            longitude=longitude, latitude=latitude,
-            longitudeWidth=longitudeWidth, latitudeWidth=latitudeWidth)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            imageFiles=imageFiles,
+            longitude=longitude,
+            latitude=latitude,
+            longitudeWidth=longitudeWidth,
+            latitudeWidth=latitudeWidth)

@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import itertools
 
 from girder_worker.docker.tasks import docker_run
@@ -16,12 +14,23 @@ from girder_worker.docker.transforms import BindMountVolume, VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 
 
-def generatePointCloud(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles,
-                       longitude, latitude, longitudeWidth, latitudeWidth):
+def generatePointCloud(initWorkingSetName,
+                       stepName,
+                       requestInfo,
+                       jobId,
+                       outputFolder,
+                       imageFiles,
+                       longitude,
+                       latitude,
+                       longitudeWidth,
+                       latitudeWidth):
     """
     Run a Girder Worker job to generate a 3D point cloud from 2D images.
 
@@ -55,14 +64,16 @@ def generatePointCloud(initWorkingSetName, stepName, requestInfo, jobId, outputF
 
     # Docker volumes
     volumes = [
-        BindMountVolume(host_path='/mnt/GTOPO30', container_path='/P3D/GTOPO30', mode='ro')
+        BindMountVolume(host_path='/mnt/GTOPO30',
+                        container_path='/P3D/GTOPO30',
+                        mode='ro')
     ]
 
     outputVolumePath = VolumePath('__output__')
 
     # Docker container arguments
-    # TODO: Consider a solution where args are written to a file, in case of very long
-    # command lines
+    # TODO: Consider a solution where args are written to a file, in
+    # case of very long command lines
     containerArgs = list(itertools.chain(
         [
             'python', '/P3D/RTN_distro/scripts/generate_point_cloud.pyc',
@@ -75,7 +86,8 @@ def generatePointCloud(initWorkingSetName, stepName, requestInfo, jobId, outputF
             '--threads', '8',
             '--images'
         ],
-        [GirderFileIdToVolume(imageFile['_id'], gc=gc) for imageFile in imageFiles],
+        [GirderFileIdToVolume(imageFile['_id'], gc=gc)
+         for imageFile in imageFiles],
     ))
 
     # Result hooks
