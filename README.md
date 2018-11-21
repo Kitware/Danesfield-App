@@ -1,10 +1,12 @@
 # Danesfield App
 
-Application to run Danesfield algorithms.
+The Danesfield App is a web application for running the [Danesfield](https://gitlab.kitware.com/core3d/danesfield) algorithms and visualizing results.  Danesfield addresses the algorithmic challenges of the IARPA CORE3D program by reconstructing semantically meaningful 3D models of buildings and other man-made structures from satellite imagery.
 
 # Server
 
 ## Requirements
+
+This application is built on top of the Girder data management platform.
 
 - [Girder](https://github.com/girder/girder)
 - [Girder Worker](https://github.com/girder/girder_worker) at revision [31c28c6](https://github.com/girder/girder_worker/commit/31c28c6db32f56e0a6528cbbc8e38c3000d715e5) or later
@@ -48,10 +50,7 @@ To load an archived image, run `gzip -d -c image.gz | docker load`.
 
 ## Configuration
 
-### Segment by Height
 
-- Upload the OpenStreetMap road shapefiles (e.g. for D4, all files with the "ex_FgMKU8FtfzgKJNgmUTE7T3Y5E1cgb_osm_roads_gen1" prefix in [this folder](https://data.kitware.com/#folder/59dfcd238d777f31ac64345d)) for a given AOI into a folder on Girder.
-- Set the `danesfield.segment_by_height_shapefiles_folder_id` setting to the ID of that folder.
 
 ### UNet Semantic Segmentation
 
@@ -81,6 +80,14 @@ to Girder.
   https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#roof-geon-extraction)
   into a folder on Girder.
 - Set the `danesfield.roof_segmentation_model_folder_id` setting to the ID of that folder.
+
+### Run Metrics
+
+- Upload the ground truth data files referenced in the [tool
+  documentation](
+  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#run-metrics)
+  into a folder on Girder.
+- Set the `danesfield.reference_data_folder_id` setting to the ID of that folder.
 
 # Client Setup
 See [here](client/README.md)
