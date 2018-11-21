@@ -48,10 +48,7 @@ To load an archived image, run `gzip -d -c image.gz | docker load`.
 
 ## Configuration
 
-### Segment by Height
 
-- Upload the OpenStreetMap road shapefiles (e.g. for D4, all files with the "ex_FgMKU8FtfzgKJNgmUTE7T3Y5E1cgb_osm_roads_gen1" prefix in [this folder](https://data.kitware.com/#folder/59dfcd238d777f31ac64345d)) for a given AOI into a folder on Girder.
-- Set the `danesfield.segment_by_height_shapefiles_folder_id` setting to the ID of that folder.
 
 ### UNet Semantic Segmentation
 
