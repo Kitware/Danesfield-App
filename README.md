@@ -79,5 +79,13 @@ to Girder.
   into a folder on Girder.
 - Set the `danesfield.roof_segmentation_model_folder_id` setting to the ID of that folder.
 
+### Run Metrics
+
+- Upload the ground truth data files referenced in the [tool
+  documentation](
+  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#run-metrics)
+  into a folder on Girder.
+- Set the `danesfield.reference_data_folder_id` setting to the ID of that folder.
+
 # Client Setup
 See [here](client/README.md)
