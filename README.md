@@ -1,10 +1,12 @@
 # Danesfield App
 
-Application to run Danesfield algorithms.
+The Danesfield App is a web application for running the [Danesfield](https://gitlab.kitware.com/core3d/danesfield) algorithms and visualizing results.  Danesfield addresses the algorithmic challenges of the IARPA CORE3D program by reconstructing semantically meaningful 3D models of buildings and other man-made structures from satellite imagery.
 
 # Server
 
 ## Requirements
+
+This application is built on top of the Girder data management platform.
 
 - [Girder](https://github.com/girder/girder)
 - [Girder Worker](https://github.com/girder/girder_worker) at revision [31c28c6](https://github.com/girder/girder_worker/commit/31c28c6db32f56e0a6528cbbc8e38c3000d715e5) or later
