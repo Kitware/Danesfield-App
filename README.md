@@ -2,6 +2,12 @@
 
 The Danesfield App is a web application for running the [Danesfield](https://gitlab.kitware.com/core3d/danesfield) algorithms and visualizing results.  Danesfield addresses the algorithmic challenges of the IARPA CORE3D program by reconstructing semantically meaningful 3D models of buildings and other man-made structures from satellite imagery.
 
+![Screenshot 1](screenshot_1.png)
+
+![Screenshot 2](screenshot_2.png)
+
+![Screenshot 3](screenshot_3.png)
+
 # Server
 
 ## Requirements
