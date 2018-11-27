@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import os
 
 from girder.models.folder import Folder
@@ -31,7 +29,8 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
     - <none>
     """
     def __init__(self):
-        super(BuildingSegmentationStep, self).__init__(DanesfieldStep.BUILDING_SEGMENTATION)
+        super(BuildingSegmentationStep, self).__init__(
+            DanesfieldStep.BUILDING_SEGMENTATION)
         self.addDependency(DanesfieldStep.GENERATE_DSM)
         self.addDependency(DanesfieldStep.FIT_DTM)
         self.addDependency(DanesfieldStep.PANSHARPEN)
@@ -43,14 +42,21 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
         dsmWorkingSet = getWorkingSet(DanesfieldStep.GENERATE_DSM, jobInfo)
         dtmWorkingSet = getWorkingSet(DanesfieldStep.FIT_DTM, jobInfo)
-        pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
+        pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN,
+                                             jobInfo)
         rgbWorkingSet = getWorkingSet(DanesfieldStep.MSI_TO_RGB, jobInfo)
 
         # Get prefix of best image set
-        selectBestStandardOutput = getStandardOutput(DanesfieldStep.SELECT_BEST, jobInfo)
-        prefix = next(SelectBestStep.getImagePrefixes(selectBestStandardOutput), None)
+        selectBestStandardOutput = getStandardOutput(
+            DanesfieldStep.SELECT_BEST,
+            jobInfo)
+        prefix = next(
+            SelectBestStep.getImagePrefixes(selectBestStandardOutput),
+            None)
         if prefix is None:
-            raise DanesfieldWorkflowException('Error looking up best image set', step=self.name)
+            raise DanesfieldWorkflowException(
+                'Error looking up best image set',
+                step=self.name)
 
         # Get DSM
         dsmFile = self.getSingleFile(dsmWorkingSet)
@@ -92,7 +98,14 @@ class BuildingSegmentationStep(DanesfieldWorkflowStep):
         # Run algorithm
         buildingSegmentation(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, dsmFile=dsmFile, dtmFile=dtmFile,
-            msiImageFile=msiImageFile, rgbImageFile=rgbImageFile, modelFolder=modelFolder,
-            modelFilePrefix=modelFilePrefix, **buildingSegmentationOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            dsmFile=dsmFile,
+            dtmFile=dtmFile,
+            msiImageFile=msiImageFile,
+            rgbImageFile=rgbImageFile,
+            modelFolder=modelFolder,
+            modelFilePrefix=modelFilePrefix,
+            **buildingSegmentationOptions)

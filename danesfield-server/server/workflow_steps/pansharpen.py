@@ -7,12 +7,14 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from ..algorithms import pansharpen
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
-from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage, isPanImage
+from ..workflow_utilities import (
+    getOptions,
+    getWorkingSet,
+    isMsiImage,
+    isPanImage)
 
 
 class PansharpenStep(DanesfieldWorkflowStep):
@@ -29,7 +31,8 @@ class PansharpenStep(DanesfieldWorkflowStep):
     def run(self, jobInfo, outputFolder):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
-        orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY, jobInfo)
+        orthorectifyWorkingSet = getWorkingSet(DanesfieldStep.ORTHORECTIFY,
+                                               jobInfo)
 
         # Get MSI and PAN source image files
         imageFiles = self.getFiles(
@@ -42,5 +45,9 @@ class PansharpenStep(DanesfieldWorkflowStep):
         # Run algorithm
         pansharpen(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, imageFiles=imageFiles, **pansharpenOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            imageFiles=imageFiles,
+            **pansharpenOptions)

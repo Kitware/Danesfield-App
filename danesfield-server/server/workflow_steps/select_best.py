@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import os
 
 from ..algorithms import selectBest
@@ -47,8 +45,12 @@ class SelectBestStep(DanesfieldWorkflowStep):
         # Run algorithm
         selectBest(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, imageFiles=imageFiles, dsmFile=dsmFile,
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            imageFiles=imageFiles,
+            dsmFile=dsmFile,
             **selectBestOptions)
 
     @staticmethod

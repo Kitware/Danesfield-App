@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import re
 
 from ..algorithms import fitDtm
@@ -46,6 +44,10 @@ class FitDtmStep(DanesfieldWorkflowStep):
         # Run algorithm
         fitDtm(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, dsmFile=dsmFile,
-            outputPrefix=outputPrefix, **fitDtmOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            dsmFile=dsmFile,
+            outputPrefix=outputPrefix,
+            **fitDtmOptions)

@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from celery import group
 from six.moves import zip
 
@@ -17,15 +15,25 @@ from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 from ..utilities import getPrefix
 from ..workflow import DanesfieldWorkflowException
 from ..workflow_manager import DanesfieldWorkflowManager
 
 
-def msiToRgb(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles, byte=None,
-             alpha=None, rangePercentile=None):
+def msiToRgb(initWorkingSetName,
+             stepName,
+             requestInfo,
+             jobId,
+             outputFolder,
+             imageFiles,
+             byte=None,
+             alpha=None,
+             rangePercentile=None):
     """
     Run Girder Worker jobs to convert multispectral (MSI) images to RGB.
 
@@ -46,10 +54,11 @@ def msiToRgb(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, ima
     :type imageFiles: list[dict]
     :param byte: Stretch intensity range and convert to a byte image.
     :type byte: bool
-    :param alpha: Create an alpha channel instead of using zero as a no-value marker.
+    :param alpha: Create an alpha channel instead of using zero as a
+    no-value marker.
     :type alpha: bool
-    :param rangePercentile: The percent of largest and smallest intensities to ignore when
-        computing range for intensity scaling.
+    :param rangePercentile: The percent of largest and smallest
+    intensities to ignore when computing range for intensity scaling.
     :type rangePercentile: float
     :returns: None
     """
@@ -93,7 +102,8 @@ def msiToRgb(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, ima
             **createDockerRunArguments(
                 image=DockerImage.DANESFIELD,
                 containerArgs=containerArgs,
-                jobTitle='[%s] Convert MSI to RGB: %s' % (initWorkingSetName, prefix),
+                jobTitle=('[%s] Convert MSI to RGB: %s' %
+                          (initWorkingSetName, prefix)),
                 jobType=stepName,
                 user=requestInfo.user,
                 resultHooks=resultHooks
@@ -106,7 +116,8 @@ def msiToRgb(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, ima
         for imageFile in imageFiles
     ]
     if not all(prefixes):
-        raise DanesfieldWorkflowException('Invalid pansharpened image file name.', step=stepName)
+        raise DanesfieldWorkflowException(
+            'Invalid pansharpened image file name.', step=stepName)
 
     # Run tasks in parallel using a group
     tasks = [
@@ -116,7 +127,9 @@ def msiToRgb(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, ima
     ]
     groupResult = group(tasks).delay()
 
-    DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
+    DanesfieldWorkflowManager.instance().setGroupResult(jobId,
+                                                        stepName,
+                                                        groupResult)
 
     # Add info for job event listeners
     for result in groupResult.results:

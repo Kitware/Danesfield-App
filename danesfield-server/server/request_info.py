@@ -8,8 +8,6 @@
 ###############################################################################
 
 
-
-
 class RequestInfo:
     """
     Class to store HTTP request and authorization info.

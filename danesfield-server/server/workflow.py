@@ -8,8 +8,6 @@
 ###############################################################################
 
 
-
-
 class DanesfieldWorkflowException(RuntimeError):
     """
     Exception raised when the workflow can't run as expected due to

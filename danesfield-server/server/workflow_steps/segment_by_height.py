@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from ..algorithms import segmentByHeight
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep

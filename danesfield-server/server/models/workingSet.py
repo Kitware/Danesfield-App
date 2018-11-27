@@ -24,17 +24,23 @@ class WorkingSet(Model):
 
         # Dataset IDs must be a list
         if not isinstance(model['datasetIds'], list):
-            raise ValidationException('Dataset IDs must be a list.', 'datasetIds')
+            raise ValidationException('Dataset IDs must be a list.',
+                                      'datasetIds')
 
         return model
 
-    def createWorkingSet(self, name, parentWorkingSet=None, datasetIds=[], filterId=None):
+    def createWorkingSet(self,
+                         name,
+                         parentWorkingSet=None,
+                         datasetIds=[],
+                         filterId=None):
         """
         Create a new working set.
         """
         doc = {
             'name': name,
-            'parentWorkingSetId': parentWorkingSet['_id'] if parentWorkingSet is not None else None,
+            'parentWorkingSetId':
+            parentWorkingSet['_id'] if parentWorkingSet is not None else None,
             'datasetIds': [ObjectId(datasetId) for datasetId in datasetIds]
         }
 

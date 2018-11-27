@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from ..algorithms import getRoadVector
 from ..constants import DanesfieldStep
 from ..workflow import DanesfieldWorkflowException

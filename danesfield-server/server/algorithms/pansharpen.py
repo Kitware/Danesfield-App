@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from celery import group
 
 from girder import logprint
@@ -17,7 +15,10 @@ from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 from ..utilities import getPrefix
 from ..workflow import DanesfieldWorkflowException
@@ -25,7 +26,12 @@ from ..workflow_manager import DanesfieldWorkflowManager
 from ..workflow_utilities import isMsiImage, isPanImage
 
 
-def pansharpen(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, imageFiles):
+def pansharpen(initWorkingSetName,
+               stepName,
+               requestInfo,
+               jobId,
+               outputFolder,
+               imageFiles):
     """
     Run Girder Worker jobs to pansharpen orthorectified images.
 
@@ -93,7 +99,8 @@ def pansharpen(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, i
         prefix = getPrefix(imageFile['name'])
         if prefix is None:
             raise DanesfieldWorkflowException(
-                'Invalid orthorectified image file name: {}'.format(imageFile['name']),
+                'Invalid orthorectified image file name: {}'.
+                format(imageFile['name']),
                 step=stepName)
         pairs.setdefault(prefix, {'pan': None, 'msi': None})
         if isPanImage(imageFile):
@@ -102,7 +109,8 @@ def pansharpen(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, i
             pairs[prefix]['msi'] = imageFile
         else:
             raise DanesfieldWorkflowException(
-                'Unrecognized image: {}'.format(imageFile['name']), step=stepName)
+                'Unrecognized image: {}'.
+                format(imageFile['name']), step=stepName)
 
     # Ensure that both types of images exist for each prefix
     # Logging a warning for now and skipping rather than treating this
@@ -125,7 +133,9 @@ images for: {}".format(stepName, prefix))
     ]
     groupResult = group(tasks).delay()
 
-    DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
+    DanesfieldWorkflowManager.instance().setGroupResult(jobId,
+                                                        stepName,
+                                                        groupResult)
 
     # Add info for job event listeners
     for result in groupResult.results:

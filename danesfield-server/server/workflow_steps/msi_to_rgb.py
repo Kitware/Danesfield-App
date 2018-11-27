@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from ..algorithms import msiToRgb
 from ..constants import DanesfieldStep
 from ..workflow_step import DanesfieldWorkflowStep
@@ -31,7 +29,8 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
     def run(self, jobInfo, outputFolder):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
-        pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN, jobInfo)
+        pansharpenWorkingSet = getWorkingSet(DanesfieldStep.PANSHARPEN,
+                                             jobInfo)
 
         # Get pansharpened MSI images
         imageFiles = self.getFiles(pansharpenWorkingSet)
@@ -42,5 +41,9 @@ class MsiToRgbStep(DanesfieldWorkflowStep):
         # Run algorithm
         msiToRgb(
             initWorkingSetName=initWorkingSet['name'],
-            stepName=self.name, requestInfo=jobInfo.requestInfo, jobId=jobInfo.jobId,
-            outputFolder=outputFolder, imageFiles=imageFiles, **msiToRgbOptions)
+            stepName=self.name,
+            requestInfo=jobInfo.requestInfo,
+            jobId=jobInfo.jobId,
+            outputFolder=outputFolder,
+            imageFiles=imageFiles,
+            **msiToRgbOptions)

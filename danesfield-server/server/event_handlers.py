@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import datetime
 import json
 import threading
@@ -32,8 +30,8 @@ def onFinalizeUpload(event):
     """
     Event handler for finalize upload event.
 
-    When a Danesfield step uploads a file, add the file to the workflow manager to associate it
-    with the job and workflow step.
+    When a Danesfield step uploads a file, add the file to the
+    workflow manager to associate it with the job and workflow step.
     """
     upload = event.info['upload']
 
@@ -52,7 +50,8 @@ def onFinalizeUpload(event):
         return
 
     file = event.info['file']
-    DanesfieldWorkflowManager.instance().addFile(jobId=jobId, stepName=stepName, file=file)
+    DanesfieldWorkflowManager.instance().addFile(
+        jobId=jobId, stepName=stepName, file=file)
 
 
 def onJobUpdate(event):
@@ -60,7 +59,8 @@ def onJobUpdate(event):
     Event handler for job update event.
 
     When a Danesfield job succeeds, advance the workflow.
-    When a Danesfield job fails, remove its associated information from the workflow manager.
+    When a Danesfield job fails, remove its associated information
+    from the workflow manager.
     """
     job = event.info['job']
     params = event.info['params']
@@ -83,26 +83,34 @@ def onJobUpdate(event):
         # Handle composite steps
         if workflowManager.isCompositeStep(jobId, stepName):
             # Notify workflow manager when a job in a composite step completes
-            if status in (JobStatus.SUCCESS, JobStatus.ERROR, JobStatus.CANCELED):
+            if status in (JobStatus.SUCCESS,
+                          JobStatus.ERROR,
+                          JobStatus.CANCELED):
                 workflowManager.compositeStepJobCompleted(jobId, stepName)
             # Skip processing until all jobs in a composite step have completed
             if not workflowManager.isCompositeStepComplete(jobId, stepName):
                 return
             # Set overall status for composite step
-            successful = workflowManager.isCompositeStepSuccessful(jobId, stepName)
+            successful = workflowManager.isCompositeStepSuccessful(
+                jobId, stepName)
             status = JobStatus.SUCCESS if successful else JobStatus.ERROR
 
         if status == JobStatus.SUCCESS:
             # Add standard output from job
-            # TODO: Alternatively, could record job model ID and defer log lookup
-            # TODO: This currently doesn't support composite steps; only the output
+            # TODO: Alternatively, could record job model ID and defer
+            # log lookup
+            # TODO: This currently doesn't support composite steps;
+            # only the output
             # from the last job is saved
             job = Job().load(job['_id'], includeLog=True, force=True)
-            workflowManager.addStandardOutput(jobId=jobId, stepName=stepName, output=job.get('log'))
+            workflowManager.addStandardOutput(jobId=jobId,
+                                              stepName=stepName,
+                                              output=job.get('log'))
 
             workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
 
-            # Advance workflow asynchronously to avoid affecting finished job in case of error
+            # Advance workflow asynchronously to avoid affecting
+            # finished job in case of error
             events.daemon.trigger(info={
                 'jobId': jobId,
                 'stepName': stepName,
@@ -126,8 +134,8 @@ def advanceWorkflow(event):
         DanesfieldWorkflowManager.instance().advance(jobId=jobId)
     except DanesfieldWorkflowException as e:
         logprint.warning('advanceWorkflow: Error advancing workflow '
-                         'Job={} Step={} PreviousStep={} Message=\'{}\''.format(
-                             jobId, e.step, stepName, str(e)))
+                         'Job={} Step={} PreviousStep={} Message=\'{}\''.
+                         format(jobId, e.step, stepName, str(e)))
 
         # Create notification for workflow error
         Notification().createNotification(
@@ -138,4 +146,5 @@ def advanceWorkflow(event):
                 'message': str(e)
             },
             user=user,
-            expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=30))
+            expires=datetime.datetime.utcnow() +
+            datetime.timedelta(seconds=30))

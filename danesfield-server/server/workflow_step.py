@@ -7,8 +7,6 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from girder.models.file import File
 from girder.models.folder import Folder
 from girder.models.item import Item
@@ -28,7 +26,8 @@ class DanesfieldWorkflowStep(object):
 
     def addDependency(self, name):
         """
-        Add a dependency to indicate that this step depends on the output of another step.
+        Add a dependency to indicate that this step depends on the
+        output of another step.
         """
         self.dependencies.add(name)
 
@@ -49,7 +48,8 @@ class DanesfieldWorkflowStep(object):
 
         :param workingSet: The working set containing the file.
         :type workingSet: dict
-        :param condition: An optional condition that items in the working set must meet.
+        :param condition: An optional condition that items in the
+        working set must meet.
         :type condition: callable
         """
         items = [
@@ -61,9 +61,11 @@ class DanesfieldWorkflowStep(object):
             if condition is None or condition(item)
         ]
         if not items:
-            raise DanesfieldWorkflowException('Unable to find file', step=self.name)
+            raise DanesfieldWorkflowException('Unable to find file',
+                                              step=self.name)
         if len(items) > 1:
-            raise DanesfieldWorkflowException('Expected only one file, got {}'.format(len(items)),
+            raise DanesfieldWorkflowException('Expected only one file, got {}'.
+                                              format(len(items)),
                                               step=self.name)
         return fileFromItem(items[0])
 
@@ -73,7 +75,8 @@ class DanesfieldWorkflowStep(object):
 
         :param workingSet: The working set containing the files.
         :type workingSet: dict
-        :param condition: An optional condition that items in the working set must meet.
+        :param condition: An optional condition that items in the
+        working set must meet.
         :type condition: callable
         """
         files = [
@@ -97,7 +100,8 @@ class DanesfieldWorkflowStep(object):
         fileId = Setting().get(setting)
         if not fileId:
             raise DanesfieldWorkflowException(
-                'Invalid file ID \'{}\' for setting \'{}\''.format(fileId, setting),
+                'Invalid file ID \'{}\' for setting \'{}\''.
+                format(fileId, setting),
                 step=self.name)
         file = File().load(fileId, force=True, exc=True)
 
@@ -113,7 +117,8 @@ class DanesfieldWorkflowStep(object):
         folderId = Setting().get(setting)
         if not folderId:
             raise DanesfieldWorkflowException(
-                'Invalid folder ID \'{}\' for setting \'{}\''.format(folderId, setting),
+                'Invalid folder ID \'{}\' for setting \'{}\''.
+                format(folderId, setting),
                 step=self.name)
         folder = Folder().load(folderId, force=True, exc=True)
 

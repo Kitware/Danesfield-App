@@ -7,21 +7,30 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 
 
-def fitDtm(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFile, outputPrefix,
-           iterations=None, tension=None):
+def fitDtm(initWorkingSetName,
+           stepName,
+           requestInfo,
+           jobId,
+           outputFolder,
+           dsmFile,
+           outputPrefix,
+           iterations=None,
+           tension=None):
     """
-    Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a Digital Surface Model (DSM).
+    Run a Girder Worker job to fit a Digital Terrain Model (DTM) to a
+    Digital Surface Model (DSM).
 
     Requirements:
     - Danesfield Docker image is available on host
@@ -79,7 +88,8 @@ def fitDtm(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, dsmFi
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='[%s] Fit DTM: %s' % (initWorkingSetName, dsmFile['name']),
+            jobTitle=('[%s] Fit DTM: %s' %
+                      (initWorkingSetName, dsmFile['name'])),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

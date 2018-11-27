@@ -7,20 +7,28 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
     GirderFileIdToVolume, GirderUploadVolumePathToFolder)
 
-from .common import addJobInfo, createDockerRunArguments, createGirderClient, createUploadMetadata
+from .common import (addJobInfo,
+                     createDockerRunArguments,
+                     createGirderClient,
+                     createUploadMetadata)
 from ..constants import DockerImage
 
 
-def generateDsm(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, pointCloudFile, outputPrefix):
+def generateDsm(initWorkingSetName,
+                stepName,
+                requestInfo,
+                jobId,
+                outputFolder,
+                pointCloudFile,
+                outputPrefix):
     """
-    Run a Girder Worker job to generate a Digital Surface Model (DSM) from a point cloud.
+    Run a Girder Worker job to generate a Digital Surface Model (DSM)
+    from a point cloud.
 
     Requirements:
     - Danesfield Docker image is available on host
@@ -71,7 +79,8 @@ def generateDsm(initWorkingSetName, stepName, requestInfo, jobId, outputFolder, 
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
-            jobTitle='[%s] Generate DSM: %s' % (initWorkingSetName, pointCloudFile['name']),
+            jobTitle=('[%s] Generate DSM: %s' %
+                      (initWorkingSetName, pointCloudFile['name'])),
             jobType=stepName,
             user=requestInfo.user,
             resultHooks=resultHooks

@@ -7,13 +7,10 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-
-
 import re
 
 from ..algorithms import buildingsToDsm
 from ..constants import DanesfieldStep
-from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import (
     getOptions,
