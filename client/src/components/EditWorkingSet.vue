@@ -72,7 +72,7 @@
         <v-layout>
           <v-flex xs3>
             <v-btn block depressed color='error'
-              :disabled="!editingWorkingSet._id"
+              :disabled="!editingWorkingSet._id || resultWorkingSets.length!==0"
               @click="deleteRecord">
               <v-icon>delete</v-icon>
             </v-btn>
@@ -117,6 +117,7 @@
 
 <script>
 import { mapState, mapMutations, mapActions } from "vuex";
+import filter from "lodash-es/filter";
 import SlideFadeGroup from "resonantgeoview/src/components/transition/slide-fade-group";
 
 import FeatureSelector from "./FeatureSelector";
@@ -167,6 +168,14 @@ export default {
         return this.datasets.filter(dataset => !dataset.name.endsWith(".tar"));
       }
     },
+    resultWorkingSets() {
+      return filter(
+        this.workingSets,
+        workingSet =>
+          workingSet.parentWorkingSetId === this.editingWorkingSet._id
+      );
+    },
+    ...mapState(["workingSets"]),
     ...mapState("workingSet", [
       "editingWorkingSet",
       "datasets",

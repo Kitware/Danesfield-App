@@ -21,7 +21,6 @@ export default new Vuex.Store({
     return {
       sidePanelExpanded: true,
       workingSets: [],
-      filters: [],
       // For always showing datasets on Explore
       allDatasets: [],
       hideUnsupportedDatasetsOnFocus: false,
@@ -40,9 +39,6 @@ export default new Vuex.Store({
     },
     setSelectWorkingSetId(state, workingSetId) {
       state.selectedWorkingSetId = workingSetId;
-    },
-    addFilter(state, filter) {
-      state.filters.push(filter);
     },
     createWorkingSetFromFilter(state, filter) {
       var workingSet = { name: '', filterId: filter._id, datasetIds: [] };
@@ -142,12 +138,6 @@ export default new Vuex.Store({
         return workingSet;
       });
     },
-    // loadFilters() {
-    //   girder.girder.get('filter')
-    //     .then(({ data }) => {
-    //       this.state.filters = data;
-    //     });
-    // },
     saveFilter({ commit, state }, filter) {
       if (filter._id) {
         return girder.girder.put(`filter/${filter._id}`, filter)
@@ -159,7 +149,6 @@ export default new Vuex.Store({
       } else {
         return girder.girder.post('filter', filter)
           .then(({ data }) => {
-            commit('addFilter', data);
             return data;
           })
       }

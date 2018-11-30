@@ -163,7 +163,7 @@ export default {
     heatmapData() {
       var datasets = this.allDatasets;
       if (!datasets.length) {
-        return null;
+        return [];
       }
       return datasets.filter(dataset => dataset.geometa).map(dataset => {
         let point = pointOnFeature(dataset.geometa.bounds);
