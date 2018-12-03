@@ -1,6 +1,6 @@
 # Danesfield App
 
-The Danesfield App is a web application for running the [Danesfield](https://gitlab.kitware.com/core3d/danesfield) algorithms and visualizing results.  Danesfield addresses the algorithmic challenges of the IARPA CORE3D program by reconstructing semantically meaningful 3D models of buildings and other man-made structures from satellite imagery.
+The Danesfield App is a web application for running the [Danesfield](https://github.com/Kitware/Danesfield) algorithms and visualizing results.  Danesfield addresses the algorithmic challenges of the IARPA CORE3D program by reconstructing semantically meaningful 3D models of buildings and other man-made structures from satellite imagery.
 
 ## Video demo
 <kbd><img src="https://user-images.githubusercontent.com/3123478/49317901-5b759500-f4c4-11e8-9f65-936b718e5f65.gif" /></kbd>
@@ -65,7 +65,7 @@ To load an archived image, run `gzip -d -c image.gz | docker load`.
 ### UNet Semantic Segmentation
 
 - Upload the configuration and model files referenced in the [tool documentation](
-  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#unet-semantic-segmentation).
+  https://github.com/Kitware/Danesfield/tree/master/tools#unet-semantic-segmentation).
 - Set the `danesfield.unet_semantic_segmentation_config_file_id` and
   `danesfield.unet_semantic_segmentation_model_file_id` settings to the IDs of
   those files.
@@ -73,21 +73,21 @@ To load an archived image, run `gzip -d -c image.gz | docker load`.
 ### Building Segmentation
 
 - Upload the model files referenced in the [tool documentation](
-https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#columbia-building-segmentation)
+https://github.com/Kitware/Danesfield/tree/master/tools#columbia-building-segmentation)
 to a Girder folder.
 - Set the `danesfield.building_segmentation_model_folder_id` setting to the ID of that folder.
 
 ### Material Classification
 
 - Upload the model file referenced in the [tool documentation](
-https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#material-classification)
+https://github.com/Kitware/Danesfield/tree/master/tools#material-classification)
 to Girder.
 - Set the `danesfield.material_classifier_model_file_id` setting to the ID of that file.
 
 ### Roof Geon Extraction
 
 - Upload the model files referenced in the [tool documentation](
-  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#roof-geon-extraction)
+  https://github.com/Kitware/Danesfield/tree/master/tools#roof-geon-extraction)
   into a folder on Girder.
 - Set the `danesfield.roof_segmentation_model_folder_id` setting to the ID of that folder.
 
@@ -95,7 +95,7 @@ to Girder.
 
 - Upload the ground truth data files referenced in the [tool
   documentation](
-  https://gitlab.kitware.com/core3d/danesfield/tree/master/tools#run-metrics)
+  https://github.com/Kitware/Danesfield/tree/master/tools#run-metrics)
   into a folder on Girder.
 - Set the `danesfield.reference_data_folder_id` setting to the ID of that folder.
 
