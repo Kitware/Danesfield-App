@@ -20,74 +20,71 @@
       :changeVTKBGColor="changeVTKBGColor"
       ref="focusWorkspace"
       />
-    <SidePanel
-    class="side-panel"
-    :top="64"
-    :floating='false'
-    :expanded='sidePanelExpanded'
-    :footer='false'>
-      <template slot="actions">
+    <ResizableVNavigationDrawer
+      app
+      clipped
+      class="side-panel"
+      :value='sidePanelExpanded'>
+      <v-toolbar flat>
+        <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="returnFromCustomViz">
+          <v-icon>arrow_back</v-icon>
+        </v-btn>
+        <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
+        <v-toolbar-title v-else class="body-1">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-menu
+          v-if="!customVizDatasetId"
+          offset-y>
+          <v-btn
+            slot="activator"
+            icon
+            :disabled="!selectedWorkingSetId">
+            <v-icon>more_vert</v-icon>
+          </v-btn>
+          <v-list>
+            <v-list-tile
+              v-if="!focusedWorkspace.layers.length && focusedWorkspace.type==='vtk'"
+              @click="addAllDatasetsToWorkspace(focusedWorkspace)">
+              <v-list-tile-content>
+                Visualize all
+              </v-list-tile-content>
+            </v-list-tile>
+            <v-list-tile
+              v-if="focusedWorkspace.layers.length && focusedWorkspace.type==='vtk'"
+              @click="removeAllDatasetsFromWorkspace(focusedWorkspace)">
+              <v-list-tile-content>
+                Remove all
+              </v-list-tile-content>
+            </v-list-tile>
+            <v-divider v-if="focusedWorkspace.type==='vtk'" />
+            <v-list-tile
+              @click="toggleHideUnsupportedDatasets()">
+              <v-list-tile-content>
+                {{hideUnsupportedDatasetsOnFocus?'Show':'Hide'}} unsupported datasets
+              </v-list-tile-content>
+            </v-list-tile>
+            <v-list-tile
+              @click="datasetDetailDialog=true">
+              <v-list-tile-content>Datasets detail</v-list-tile-content>
+            </v-list-tile>
+            <v-divider />
+            <v-list-tile
+              :disabled="!evaluationItems.length&&!childrenWorkingSetEvaluationItems.length"
+              @click="downloadCombinedResult">
+              <v-list-tile-content>
+                Download{{evaluationItems.length?' step':''}} evaluation datasets
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+        </v-menu>
+      </v-toolbar>
+      <v-container class="action-buttons pa-0">
         <SidePanelAction 
           @click.stop="processConfirmDialog = true"
           :disabled="!selectedWorkingSetId">
           <v-icon>developer_board</v-icon>
         </SidePanelAction>
-      </template>
-      <template slot="toolbar">
-        <v-toolbar flat>
-          <v-btn icon class="hidden-xs-only" v-if="customVizDatasetId" @click="returnFromCustomViz">
-            <v-icon>arrow_back</v-icon>
-          </v-btn>
-          <v-toolbar-title v-if="!customVizDatasetId">Working Set</v-toolbar-title>
-          <v-toolbar-title v-else class="body-1">{{datasets[customVizDatasetId].name}}</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-menu
-            v-if="!customVizDatasetId"
-            offset-y>
-            <v-btn
-              slot="activator"
-              icon
-              :disabled="!selectedWorkingSetId">
-              <v-icon>more_vert</v-icon>
-            </v-btn>
-            <v-list>
-              <v-list-tile
-                v-if="!focusedWorkspace.layers.length && focusedWorkspace.type==='vtk'"
-                @click="addAllDatasetsToWorkspace(focusedWorkspace)">
-                <v-list-tile-content>
-                  Visualize all
-                </v-list-tile-content>
-              </v-list-tile>
-              <v-list-tile
-                v-if="focusedWorkspace.layers.length && focusedWorkspace.type==='vtk'"
-                @click="removeAllDatasetsFromWorkspace(focusedWorkspace)">
-                <v-list-tile-content>
-                  Remove all
-                </v-list-tile-content>
-              </v-list-tile>
-              <v-divider v-if="focusedWorkspace.type==='vtk'" />
-              <v-list-tile
-                @click="toggleHideUnsupportedDatasets()">
-                <v-list-tile-content>
-                  {{hideUnsupportedDatasetsOnFocus?'Show':'Hide'}} unsupported datasets
-                </v-list-tile-content>
-              </v-list-tile>
-              <v-list-tile
-                @click="datasetDetailDialog=true">
-                <v-list-tile-content>Datasets detail</v-list-tile-content>
-              </v-list-tile>
-              <v-divider />
-              <v-list-tile
-                :disabled="!evaluationItems.length&&!childrenWorkingSetEvaluationItems.length"
-                @click="downloadCombinedResult">
-                <v-list-tile-content>
-                  Download{{evaluationItems.length?' step':''}} evaluation datasets
-                </v-list-tile-content>
-              </v-list-tile>
-            </v-list>
-          </v-menu>
-        </v-toolbar>
-      </template>
+      </v-container>
       <div class="main">
         <transition name="slide-fade" mode="out-in">
           <div v-if="!customVizDatasetId" class="datasets-pane" key="datasets">
@@ -284,7 +281,7 @@
             />
         </transition>
       </div>
-    </SidePanel>
+    </ResizableVNavigationDrawer>
     <v-dialog
       v-model="datasetDetailDialog"
       scrollable
@@ -390,6 +387,7 @@ import bboxPolygon from "@turf/bbox-polygon";
 import center from "@turf/center";
 import { featureCollection } from "@turf/helpers";
 import VectorCustomVizPane from "resonantgeoview/src/components/VectorCustomVizPane/VectorCustomVizPane";
+import ResizableVNavigationDrawer from "resonantgeoview/src/components/ResizableVNavigationDrawer";
 import { getDefaultGeojsonVizProperties } from "resonantgeoview/src/utils/getDefaultGeojsonVizProperties";
 import GeotiffCustomVizPane from "resonantgeoview/src/components/GeotiffCustomVizPane";
 import { summarize } from "resonantgeoview/src/utils/geojsonUtil";
@@ -418,7 +416,8 @@ export default {
     GeotiffCustomVizPane,
     draggable,
     FeatureSelector,
-    Logo
+    Logo,
+    ResizableVNavigationDrawer
   },
   inject: ["girderRest"],
   data() {
@@ -881,6 +880,15 @@ export default {
 
 <style lang="scss">
 .side-panel {
+  overflow: visible;
+
+  .action-buttons {
+    position: fixed;
+    top: 64px;
+    width: 50px;
+    right: -50px;
+  }
+
   .v-toolbar__title:not(:first-child) {
     margin-left: 0;
   }
