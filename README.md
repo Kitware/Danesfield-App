@@ -38,7 +38,11 @@ Ensure that the following Docker images are available:
 - `gitlab.kitware.com:4567/core3d/danesfield-app/danesfield`
 - `gitlab.kitware.com:4567/core3d/danesfield-app/p3d_gw`
 
-These images may be pulled from the [container registry](https://gitlab.kitware.com/core3d/danesfield-app/container_registry).
+The Danesfield image is publicly available on Docker Hub at [https://hub.docker.com/r/kitware/danesfield](https://hub.docker.com/r/kitware/danesfield), and can be pulled down with `docker pull kitware/danesfield`.  Note that the image will need to be re-tagged to the name expected by this application: `docker tag kitware/danesfield:latest gitlab.kitware.com:4567/core3d/danesfield-app/danesfield:latest`.
+
+While the `p3d_gw` Docker image is not publicly available, it is available to US Government users upon request.  Please contact Kitware for more information.
+
+Users with access to the private Danesfield-App GitLab repository can pull the images down from the [container registry](https://gitlab.kitware.com/core3d/danesfield-app/container_registry).
 
 Ensure that the [GTOPO 30 data](https://data.kitware.com/#folder/5aa993db8d777f068578d08c) is
 available in `/mnt/GTOPO30`. This data is a requirement of P3D.
