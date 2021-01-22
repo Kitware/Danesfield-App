@@ -1,0 +1,24 @@
+version: "2.4"
+services:
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo_db:/data/db
+
+  girder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gitlab.kitware.com:4567/core3d/danesfield-app/danesfield:${TAG:-latest}
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+    volumes:
+      - girder_assetstore:/home/assetstore
+    environment:
+      - GIRDER_MONGO_URI=mongodb://mongo:27017/girder
+
+volumes:
+  mongo_db:
+  girder_assetstore:
