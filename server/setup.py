@@ -4,30 +4,14 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
-import re
 from setuptools import setup, find_packages
-
-requires = []
-dep_links = []
-# parse requirements file
-with open("requirements.txt") as f:
-    comment = re.compile("(^#.*$|\s+#.*$)")
-    for line in f.readlines():
-        line = line.strip()
-        line = comment.sub("", line)
-        if line:
-            if line.startswith("git+") and "#egg=" in line:
-                dep_links.append(line)
-                requires.append(line.split("#egg=", 1)[1].replace("-", "=="))
-            else:
-                requires.append(line)
 
 setup(
     name="danesfield-server",
     version="0.0.0.dev1",
     description="",
     url="",
-    python_requires="~=3.8",
+    python_requires="~=3.7",
     install_requires=[
         "girder>=3.1.3",
         "girder_jobs>=3.1.3",
@@ -41,7 +25,6 @@ setup(
     entry_points={
         "girder.plugin": ["danesfield = danesfield_server:DanesfieldPlugin"],
     },
-    dependency_links=dep_links,
     author="Kitware Inc",
     author_email="",
     license="",
