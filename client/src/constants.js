@@ -4,5 +4,5 @@
 # See accompanying Copyright.txt and LICENSE files for details
 #############################################################################*/
 
-export const API_URL = process.env.VUE_APP_API_URL;
 export const GIRDER_URL = process.env.VUE_APP_GIRDER_URL;
+export const API_URL = `${GIRDER_URL}/api/v1`;
