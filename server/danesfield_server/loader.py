@@ -9,6 +9,7 @@
 
 import os
 from girder import events
+from girder.utility.config import getServerMode
 
 from .rest import dataset, workingSet, processing, filter
 
@@ -80,16 +81,14 @@ def load(info):
     # Set workflow on workflow manager
     DanesfieldWorkflowManager.instance().workflow = createWorkflow()
 
-    if os.getenv("production"):
+    if getServerMode() == "production":
         # Serve client from /
         # Relocate girder to serve from /girder
         info["serverRoot"], info["serverRoot"].girder = (
             ClientWebroot(),
             info["serverRoot"],
         )
-
-        # Shouldn't be necessary
-        # info["serverRoot"].api = info["serverRoot"].girder.api
+        info["serverRoot"].api = info["serverRoot"].girder.api
 
     # Add API routes
     info["apiRoot"].dataset = dataset.DatasetResource()
