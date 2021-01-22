@@ -22,9 +22,6 @@ class ClientWebroot(WebrootBase):
         file = open(
             os.path.join(
                 constants.STATIC_ROOT_DIR,
-                "clients",
-                "web",
-                "static",
                 "core3d",
                 "index.html",
             ),
