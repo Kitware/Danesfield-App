@@ -12,9 +12,6 @@ COPY .git/ /app/.git/
 COPY .gitmodules /app/.gitmodules
 
 # Install resonantgeoview
-RUN ls -al
-RUN ls -al /app/client
-RUN cat /app/.gitmodules
 RUN git submodule update --init --recursive
 
 # Build
