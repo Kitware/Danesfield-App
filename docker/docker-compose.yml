@@ -7,8 +7,8 @@ services:
 
   girder:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     image: gitlab.kitware.com:4567/core3d/danesfield-app/danesfield:${TAG:-latest}
     depends_on:
       - mongo
@@ -18,6 +18,8 @@ services:
       - girder_assetstore:/home/assetstore
     environment:
       - GIRDER_MONGO_URI=mongodb://mongo:27017/girder
+      - GIRDER_ADMIN_USER=${GIRDER_ADMIN_USER}
+      - GIRDER_ADMIN_PASS=${GIRDER_ADMIN_PASS}
 
 volumes:
   mongo_db:

@@ -24,10 +24,8 @@ RUN yarn --cwd /app/client build
 FROM girder/girder as runtime
 
 ENV GIRDER_MONGO_URI mongodb://mongo:27017/girder
-# ENV GIRDER_ADMIN_USER admin
-# ENV GIRDER_ADMIN_PASSWORD letmein
-# ENV CELERY_BROKER_URL amqp://guest:guest@rabbit/
-# ENV BROKER_CONNECTION_TIMEOUT 2
+ENV GIRDER_ADMIN_USER admin
+ENV GIRDER_ADMIN_PASSWORD letmein
 
 # Initialize python virtual environment
 RUN apt-get update && apt-get install -y python3.7-venv
@@ -62,5 +60,5 @@ RUN pip install --no-deps .
 
 RUN girder build
 
-COPY girder_entrypoint.sh /home/core3d
-ENTRYPOINT [ "/home/core3d/girder_entrypoint.sh" ]
+COPY docker/provision/ /home/provision
+ENTRYPOINT [ "/home/provision/girder_entrypoint.sh" ]
