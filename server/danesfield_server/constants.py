@@ -8,7 +8,7 @@
 ###############################################################################
 
 
-class DanesfieldJobKey(object):
+class DanesfieldJobKey:
     """
     Keys for metadata attached to Danesfield jobs and related objects.
     """
@@ -17,7 +17,7 @@ class DanesfieldJobKey(object):
     STEP_NAME = "danesfieldJobStep"
 
 
-class DanesfieldStep(object):
+class DanesfieldStep:
     """
     Names to identify steps in the Danesfield workflow.
     """
@@ -43,7 +43,7 @@ class DanesfieldStep(object):
     RUN_METRICS = "run-metrics"
 
 
-class DockerImage(object):
+class DockerImage:
     """
     Names of Docker images to run Danesfield algorithms.
     """

@@ -16,7 +16,7 @@ from .workflow import DanesfieldWorkflowException
 from .workflow_utilities import fileFromItem
 
 
-class DanesfieldWorkflowStep(object):
+class DanesfieldWorkflowStep:
     """
     Class to define a step in the Danesfield workflow.
     """

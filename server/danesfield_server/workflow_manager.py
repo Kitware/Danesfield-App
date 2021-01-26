@@ -21,7 +21,7 @@ from .models.workingSet import WorkingSet
 from .workflow import DanesfieldWorkflowException
 
 
-class DanesfieldWorkflowManager(object):
+class DanesfieldWorkflowManager:
     """
     Class to manage files and orchestrate steps in the Danesfield
     workflow.

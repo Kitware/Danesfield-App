@@ -19,7 +19,7 @@ class DanesfieldWorkflowException(RuntimeError):
         super(DanesfieldWorkflowException, self).__init__(message)
 
 
-class DanesfieldWorkflow(object):
+class DanesfieldWorkflow:
     """
     Class to define the Danesfield workflow.
     """

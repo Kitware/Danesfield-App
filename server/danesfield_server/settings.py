@@ -13,7 +13,7 @@ from girder.exceptions import ValidationException
 from girder.utility import setting_utilities
 
 
-class PluginSettings(object):
+class PluginSettings:
     BUILDING_SEGMENTATION_MODEL_FOLDER_ID = (
         "danesfield.building_segmentation_model_folder_id"
     )
