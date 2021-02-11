@@ -5,11 +5,16 @@ services:
     volumes:
       - mongo_db:/data/db
 
+  rabbit:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+
   girder:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: gitlab.kitware.com:4567/core3d/danesfield-app/danesfield-app:${TAG:-latest}
+    image: gitlab.kitware.com:4567/core3d/danesfield-app/danesfield-app-girder:${TAG:-latest}
     depends_on:
       - mongo
     ports:
@@ -20,6 +25,7 @@ services:
       - GIRDER_MONGO_URI=mongodb://mongo:27017/girder
       - GIRDER_ADMIN_USER=${GIRDER_ADMIN_USER}
       - GIRDER_ADMIN_PASS=${GIRDER_ADMIN_PASS}
+
 
 volumes:
   mongo_db:
