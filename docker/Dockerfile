@@ -28,8 +28,15 @@ ENV GIRDER_ADMIN_PASSWORD letmein
 RUN apt-get update && apt-get install -y python3.7-venv
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3.7 -m venv $VIRTUAL_ENV
+
+# Activate the environment
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+# Cryptography requires latest pip, setuptools.
+# https://cryptography.io/en/latest/faq.html#installing-cryptography-fails-with-error-can-not-find-rust-compiler
+RUN pip install -U pip setuptools
+
+# Copy built frontend to be served by Girder
 COPY --from=builder /app/client/dist/ $VIRTUAL_ENV/share/girder/static/core3d/
 
 # install tini init system
@@ -39,12 +46,16 @@ RUN chmod +x /tini
 
 WORKDIR /home/core3d
 
+# Install numpy before installing GDAL
+# https://gis.stackexchange.com/questions/153199/import-error-no-module-named-gdal-array
+RUN pip install numpy>=1.20.1
+
 # Install GDAL deps
 RUN apt-get update \
  && apt-get install -y binutils libproj-dev gdal-bin libgdal-dev
 
 # Install GDAL
-RUN pip install "gdal==$(gdal-config --version)"
+RUN pip install gdal==$(gdal-config --version) --global-option=build_ext --global-option="-I/usr/include/gdal"
 
 # Pin this dep so that install below succeeds
 RUN pip install "pyproj==2.6.1"
