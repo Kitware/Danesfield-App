@@ -3,10 +3,12 @@ module.exports = {
     ? '/static/core3d/'
     : '/',
   chainWebpack: config => {
-    // config.module
-    //   .rule('js')
-    //   .include
-    //   .add('resonantgeo')
+    config.module
+      .rule('js')
+      .include.add('/^resonantgeo$/')
+      .end()
+      .use()
+      .loader('babel-loader')
 
     config.module
       .rule('glsl')
