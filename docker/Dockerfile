@@ -24,6 +24,9 @@ ENV GIRDER_MONGO_URI mongodb://mongo:27017/girder
 ENV GIRDER_ADMIN_USER admin
 ENV GIRDER_ADMIN_PASSWORD letmein
 
+ENV CELERY_BROKER_URL amqp://guest:guest@rabbit/
+ENV BROKER_CONNECTION_TIMEOUT 2
+
 # Initialize python virtual environment
 RUN apt-get update && apt-get install -y python3.7-venv
 ENV VIRTUAL_ENV=/opt/venv
@@ -48,7 +51,7 @@ WORKDIR /home/core3d
 
 # Install numpy before installing GDAL
 # https://gis.stackexchange.com/questions/153199/import-error-no-module-named-gdal-array
-RUN pip install numpy>=1.20.1
+RUN pip install "numpy>=1.20.1"
 
 # Install GDAL deps
 RUN apt-get update \
@@ -57,8 +60,9 @@ RUN apt-get update \
 # Install GDAL
 RUN pip install gdal==$(gdal-config --version) --global-option=build_ext --global-option="-I/usr/include/gdal"
 
-# Pin this dep so that install below succeeds
-RUN pip install "pyproj==2.6.1"
+# Install packages that can't be listed properly in setup.py
+COPY server/extra-requirements.txt /home/core3d/
+RUN pip install -r extra-requirements.txt
 
 COPY server/setup.py /home/core3d/
 RUN pip install --no-cache-dir .

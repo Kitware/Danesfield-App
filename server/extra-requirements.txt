@@ -1,0 +1,3 @@
+large-image-source-tiff==1.3.2 --find-links https://girder.github.io/large_image_wheels
+libtiff==0.4.2
+pyproj==2.6.1
