@@ -21,12 +21,14 @@ services:
       - "8080:8080"
     volumes:
       - girder_assetstore:/home/assetstore
+      - ${HOST_GTOPO30_DATA_PATH}:${HOST_GTOPO30_DATA_PATH}
     environment:
       - GIRDER_MONGO_URI=mongodb://mongo:27017/girder
       - GIRDER_ADMIN_USER=${GIRDER_ADMIN_USER}
       - GIRDER_ADMIN_PASS=${GIRDER_ADMIN_PASS}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbit/
       - BROKER_CONNECTION_TIMEOUT=2
+      - HOST_GTOPO30_DATA_PATH=${HOST_GTOPO30_DATA_PATH}
 
   worker:
     build:

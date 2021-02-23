@@ -9,6 +9,8 @@
 
 import itertools
 
+from danesfield_server.settings import PluginSettings
+from girder.models.setting import Setting
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import BindMountVolume, VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -71,7 +73,9 @@ def generatePointCloud(
     # Docker volumes
     volumes = [
         BindMountVolume(
-            host_path="/mnt/GTOPO30", container_path="/P3D/GTOPO30", mode="ro"
+            host_path=Setting().get(PluginSettings.HOST_GTOPO30_DATA_PATH),
+            container_path="/P3D/GTOPO30",
+            mode="ro",
         )
     ]
 

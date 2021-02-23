@@ -10,6 +10,7 @@
 import os
 from girder import events
 from girder.utility.config import getServerMode
+from girder.models.setting import Setting
 
 from .rest import dataset, workingSet, processing, filter
 
@@ -17,6 +18,7 @@ from .event_handlers import onFinalizeUpload, onJobUpdate
 from .workflow import DanesfieldWorkflow
 from .workflow_manager import DanesfieldWorkflowManager
 from .client_webroot import ClientWebroot
+from .settings import PluginSettings
 
 from .workflow_steps import (
     # BuildingSegmentationStep,
@@ -89,6 +91,10 @@ def load(info):
             info["serverRoot"],
         )
         info["serverRoot"].api = info["serverRoot"].girder.api
+
+    host_gtopo30_data_path = os.getenv("HOST_GTOPO30_DATA_PATH")
+    if host_gtopo30_data_path:
+        Setting().set(PluginSettings.HOST_GTOPO30_DATA_PATH, host_gtopo30_data_path)
 
     # Add API routes
     info["apiRoot"].dataset = dataset.DatasetResource()
