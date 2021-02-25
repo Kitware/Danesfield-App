@@ -64,6 +64,7 @@ def getRoadVector(
 
     # Docker container arguments
     containerArgs = [
+        "python",
         "danesfield/tools/get_road_vector.py",
         "--left",
         str(left),
