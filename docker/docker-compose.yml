@@ -21,6 +21,7 @@ services:
       - "8080:8080"
     volumes:
       - girder_assetstore:/home/assetstore
+      - ${HOST_DATA_PATH}:${HOST_DATA_PATH}
       - ${HOST_GTOPO30_DATA_PATH}:${HOST_GTOPO30_DATA_PATH}
     environment:
       - GIRDER_MONGO_URI=mongodb://mongo:27017/girder
