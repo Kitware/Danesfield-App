@@ -18,8 +18,6 @@ setup(
         "girder_jobs>=3.1.3",
         "girder-worker>=0.8.0",
         "girder-large-image>=1.3.2",
-        "large-image-source-tiff>=1.3.2",
-        "large-image-source-pil>=1.3.2",
         "large-image-source-gdal>=1.3.2",
         "girder-geospatial>=0.2.0",
         "girder-geospatial>=0.2.0",

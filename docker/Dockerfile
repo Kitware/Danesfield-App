@@ -1,18 +1,17 @@
 FROM node:latest as builder
 WORKDIR /app
 
+# Install resonantgeoview
+COPY .git/ /app/.git/
+COPY .gitmodules /app/.gitmodules
+COPY client /app/client
+RUN git submodule update --init --recursive
+
 # Install dependencies
-COPY client/package.json client/yarn.lock /app/client/
-COPY client/resonantgeoview /app/client/resonantgeoview
 RUN yarn --cwd /app/client --frozen-lockfile
 
 # Copy client and git files
 COPY client/ /app/client/
-COPY .git/ /app/.git/
-COPY .gitmodules /app/.gitmodules
-
-# Install resonantgeoview
-RUN git submodule update --init --recursive
 
 # Build
 RUN yarn --cwd /app/client build
@@ -55,7 +54,7 @@ RUN pip install "numpy>=1.20.1"
 
 # Install GDAL deps
 RUN apt-get update \
- && apt-get install -y binutils libproj-dev gdal-bin libgdal-dev
+ && apt-get install -y binutils libproj-dev gdal-bin libgdal-dev libtiff-dev
 
 # Install GDAL
 RUN pip install gdal==$(gdal-config --version) --global-option=build_ext --global-option="-I/usr/include/gdal"
@@ -63,6 +62,10 @@ RUN pip install gdal==$(gdal-config --version) --global-option=build_ext --globa
 # Install packages that can't be listed properly in setup.py
 COPY server/extra-requirements.txt /home/core3d/
 RUN pip install -r extra-requirements.txt
+
+# Copy this header file so it can be found by venv
+# https://stackoverflow.com/a/65776297
+RUN cp /usr/include/x86_64-linux-gnu/tiff.h $VIRTUAL_ENV/include/tiff.h
 
 COPY server/setup.py /home/core3d/
 RUN pip install --no-cache-dir .
