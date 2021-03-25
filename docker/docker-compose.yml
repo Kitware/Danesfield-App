@@ -2,6 +2,8 @@ version: "2.4"
 services:
   mongo:
     image: mongo:latest
+    ports:
+      - "27017:27017"
     volumes:
       - mongo_db:/data/db
 
@@ -21,6 +23,7 @@ services:
       - "8080:8080"
     volumes:
       - girder_assetstore:/home/assetstore
+      - ${HOST_DATA_PATH}:${HOST_DATA_PATH}
       - ${HOST_GTOPO30_DATA_PATH}:${HOST_GTOPO30_DATA_PATH}
     environment:
       - GIRDER_MONGO_URI=mongodb://mongo:27017/girder
