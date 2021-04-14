@@ -49,4 +49,3 @@ class DockerImage:
     """
 
     DANESFIELD = "gitlab.kitware.com:4567/core3d/danesfield-app/danesfield"
-    P3D = "gitlab.kitware.com:4567/core3d/danesfield-app/p3d_gw"

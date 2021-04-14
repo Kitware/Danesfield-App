@@ -16,13 +16,10 @@ from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage, isPanIma
 
 class GeneratePointCloudStep(DanesfieldWorkflowStep):
     """
-    Step that runs p3d to generate a point cloud.
+    Step that generates a point cloud.
 
     Supports the following options:
-    - longitude (required)
-    - latitude (required)
-    - longitudeWidth (required)
-    - latitudeWidth (required)
+    - aoiBBox (required)
     """
 
     def __init__(self):
@@ -34,23 +31,36 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
 
+        def isImageFile(item):
+            return isMsiImage(item) or isPanImage(item)
+
+        def isTarFile(item):
+            return item["name"].endswith(".tar")
+
         # Get IDs of PAN image files
-        imageFiles = self.getFiles(
-            initWorkingSet, lambda item: isMsiImage(item) or isPanImage(item)
-        )
+        fileNameDict = {}
+        workingSetFiles = self.getFiles(initWorkingSet)
+        for file in workingSetFiles:
+            baseFileName = file["name"].split(".")[0]
+
+            if not fileNameDict.get(baseFileName):
+                fileNameDict[baseFileName] = [None, None]
+
+            if isImageFile(file):
+                fileNameDict[baseFileName][0] = file
+            elif isTarFile(file):
+                fileNameDict[baseFileName][1] = file
+
+        filePairs = [tuple(pair) for pair in fileNameDict.values() if all(pair)]
 
         # Get required options
         generatePointCloudOptions = getOptions(self.name, jobInfo)
 
         try:
-            longitude = generatePointCloudOptions["longitude"]
-            latitude = generatePointCloudOptions["latitude"]
-            longitudeWidth = generatePointCloudOptions["longitudeWidth"]
-            latitudeWidth = generatePointCloudOptions["latitudeWidth"]
+            aoiBBox = generatePointCloudOptions["aoiBBox"]
         except KeyError:
             raise DanesfieldWorkflowException(
-                "The following options are required: longtitude, latitude, "
-                "longitudewith, latitudeWidth",
+                "The following options are required: aoiBBox",
                 step=self.name,
             )
 
@@ -61,9 +71,6 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
             requestInfo=jobInfo.requestInfo,
             jobId=jobInfo.jobId,
             outputFolder=outputFolder,
-            imageFiles=imageFiles,
-            longitude=longitude,
-            latitude=latitude,
-            longitudeWidth=longitudeWidth,
-            latitudeWidth=latitudeWidth,
+            filePairs=filePairs,
+            aoiBBox=aoiBBox,
         )

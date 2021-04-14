@@ -14,6 +14,7 @@ setup(
     python_requires="~=3.7",
     install_requires=[
         "numpy>=1.20.1",
+        "utm>=0.7.0",
         "girder>=3.1.3",
         "girder_jobs>=3.1.3",
         "girder-worker>=0.8.0",

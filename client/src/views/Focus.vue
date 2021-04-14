@@ -27,7 +27,7 @@
     :expanded='sidePanelExpanded'
     :footer='false'>
       <template slot="actions">
-        <SidePanelAction 
+        <SidePanelAction
           @click.stop="processConfirmDialog = true"
           :disabled="!selectedWorkingSetId">
           <v-icon>developer_board</v-icon>
@@ -583,10 +583,7 @@ export default {
       var centerPoint = center(bboxPolygon(this.AOIBbox));
       let options = {
         "generate-point-cloud": {
-          longitude: centerPoint.geometry.coordinates[0],
-          latitude: centerPoint.geometry.coordinates[1],
-          longitudeWidth: this.AOIBbox[2] - this.AOIBbox[0],
-          latitudeWidth: this.AOIBbox[3] - this.AOIBbox[1]
+          aoiBBox: this.AOIBbox,
         },
         "get-road-vector": {
           left: this.AOIBbox[0],
