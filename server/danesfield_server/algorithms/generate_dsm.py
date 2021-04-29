@@ -58,11 +58,12 @@ def generateDsm(
     gc = createGirderClient(requestInfo)
 
     # Set output file name based on point cloud file
-    dsmName = outputPrefix + "_P3D_DSM.tif"
+    dsmName = outputPrefix + "_DSM.tif"
     outputVolumePath = VolumePath(dsmName)
 
     # Docker container arguments
     containerArgs = [
+        "python",
         "danesfield/tools/generate_dsm.py",
         outputVolumePath,
         "--source_points",

@@ -69,6 +69,7 @@ def fitDtm(
 
     # Docker container arguments
     containerArgs = [
+        "python",
         "danesfield/tools/fit_dtm.py",
         GirderFileIdToVolume(dsmFile["_id"], gc=gc),
         outputVolumePath,

@@ -16,7 +16,7 @@ from ..workflow_utilities import getOptions, getWorkingSet
 
 class GetRoadVectorStep(DanesfieldWorkflowStep):
     """
-    Step that runs p3d to generate a point cloud.
+    Step that runs danesfield to generate a road vector.
 
     Supports the following options:
     - left (required)
