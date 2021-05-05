@@ -10,9 +10,7 @@
 import os
 
 from celery import group
-from six.moves import zip
 
-from girder import logprint
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms import VolumePath
 from girder_worker.docker.transforms.girder import (
@@ -25,7 +23,6 @@ from .common import (
     createDockerRunArguments,
     createGirderClient,
     createUploadMetadata,
-    rpcFileMatchesImageFile,
 )
 from ..constants import DockerImage
 from ..workflow_manager import DanesfieldWorkflowManager
@@ -40,7 +37,6 @@ def orthorectify(
     imageFiles,
     dsmFile,
     dtmFile,
-    rpcFiles,
     occlusionThreshold=None,
     denoiseRadius=None,
 ):
@@ -76,13 +72,14 @@ def orthorectify(
     """
     gc = createGirderClient(requestInfo)
 
-    def createOrthorectifyTask(imageFile, rpcFile):
+    def createOrthorectifyTask(imageFile):
         # Set output file name based on input file name
         orthoName = os.path.splitext(imageFile["name"])[0] + "_ortho.tif"
         outputVolumePath = VolumePath(orthoName)
 
         # Docker container arguments
         containerArgs = [
+            "python",
             "danesfield/tools/orthorectify.py",
             # Source image
             GirderFileIdToVolume(imageFile["_id"], gc=gc),
@@ -92,8 +89,6 @@ def orthorectify(
             outputVolumePath,
             "--dtm",
             GirderFileIdToVolume(dtmFile["_id"], gc=gc),
-            "--raytheon-rpc",
-            GirderFileIdToVolume(rpcFile["_id"], gc=gc),
         ]
         if occlusionThreshold is not None:
             containerArgs.extend(["--occlusion-thresh", str(occlusionThreshold)])
@@ -126,43 +121,8 @@ def orthorectify(
             )
         )
 
-    # Find RPC file corresponding to each image, or None
-    correspondingRpcFiles = [
-        next(
-            (
-                rpcFile
-                for rpcFile in rpcFiles
-                if rpcFileMatchesImageFile(rpcFile, imageFile)
-            ),
-            None,
-        )
-        for imageFile in imageFiles
-    ]
-    # For some images, it seems that we're not getting RPC files from
-    # the P3D step.  Deciding to simply skip those images and log a
-    # warning instead of raising an exception for now.
-    imagesMissingRpcFiles = [
-        imageFile["name"]
-        for imageFile, rpcFile in zip(imageFiles, correspondingRpcFiles)
-        if not rpcFile
-    ]
-    if imagesMissingRpcFiles:
-        logprint.info(
-            "Step: {} -- Warning: Missing RPC files for images: {}".format(
-                stepName, imagesMissingRpcFiles
-            )
-        )
-        # raise DanesfieldWorkflowException(
-        #     'Missing RPC files for images: {}'.format(imagesMissingRpcFiles),
-        #     step=stepName)
-
-    # Run tasks in parallel using a group; skip if we have no rpcFile
-    # for the given image
-    tasks = [
-        createOrthorectifyTask(imageFile, rpcFile)
-        for imageFile, rpcFile in zip(imageFiles, correspondingRpcFiles)
-        if rpcFile is not None
-    ]
+    # Run tasks in parallel using a group
+    tasks = [createOrthorectifyTask(imageFile) for imageFile in imageFiles]
     groupResult = group(tasks).delay()
 
     DanesfieldWorkflowManager.instance().setGroupResult(jobId, stepName, groupResult)
