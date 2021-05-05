@@ -11,7 +11,7 @@ from ..algorithms import generatePointCloud
 from ..constants import DanesfieldStep
 from ..workflow import DanesfieldWorkflowException
 from ..workflow_step import DanesfieldWorkflowStep
-from ..workflow_utilities import getOptions, getWorkingSet, isMsiImage, isPanImage
+from ..workflow_utilities import getOptions, getWorkingSet, isPanImage
 
 
 class GeneratePointCloudStep(DanesfieldWorkflowStep):
@@ -31,9 +31,6 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
         # Get working set
         initWorkingSet = getWorkingSet(DanesfieldStep.INIT, jobInfo)
 
-        def isImageFile(item):
-            return isMsiImage(item) or isPanImage(item)
-
         def isTarFile(item):
             return item["name"].endswith(".tar")
 
@@ -46,7 +43,7 @@ class GeneratePointCloudStep(DanesfieldWorkflowStep):
             if not fileNameDict.get(baseFileName):
                 fileNameDict[baseFileName] = [None, None]
 
-            if isImageFile(file):
+            if isPanImage(file):
                 fileNameDict[baseFileName][0] = file
             elif isTarFile(file):
                 fileNameDict[baseFileName][1] = file
