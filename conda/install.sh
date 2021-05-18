@@ -10,7 +10,6 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda env create -f ansible/conda_environment.yml
 conda activate danesfield
 mkdir -p $CONDA_PREFIX/var/lib/mongodb
-mongod --fork --syslog --dbpath=$CONDA_PREFIX/var/lib/mongodb
 
 # girder
 pip install -e server/
@@ -27,7 +26,3 @@ girder build
 
 # Copy static files
 cp -r client/dist $CONDA_PREFIX/share/girder/static/core3d
-
-# TEST
-conda deactivate
-conda env remove --name danesfield
