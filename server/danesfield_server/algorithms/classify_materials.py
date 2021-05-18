@@ -77,6 +77,7 @@ def classifyMaterials(
     containerArgs = list(
         itertools.chain(
             [
+                "python",
                 "danesfield/tools/material_classifier.py",
                 "--model_path",
                 GirderFileIdToVolume(modelFile["_id"], gc=gc),
@@ -110,6 +111,7 @@ def classifyMaterials(
     ]
 
     asyncResult = docker_run.delay(
+        runtime="nvidia",
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,

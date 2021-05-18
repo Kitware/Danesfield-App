@@ -64,6 +64,7 @@ def computeNdvi(
     containerArgs = list(
         itertools.chain(
             [
+                "python",
                 "danesfield/tools/compute_ndvi.py",
             ],
             [GirderFileIdToVolume(imageFile["_id"], gc=gc) for imageFile in imageFiles],

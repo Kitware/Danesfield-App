@@ -70,6 +70,7 @@ def segmentByHeight(
 
     # Docker container arguments
     containerArgs = [
+        "python",
         "danesfield/tools/segment_by_height.py",
         # DSM
         GirderFileIdToVolume(dsmFile["_id"], gc=gc),
