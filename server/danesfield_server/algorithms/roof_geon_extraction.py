@@ -73,6 +73,7 @@ def roofGeonExtraction(
 
     # Docker container arguments
     containerArgs = [
+        "python",
         "danesfield/tools/roof_geon_extraction.py",
         "--las",
         GirderFileIdToVolume(pointCloudFile["_id"], gc=gc),
