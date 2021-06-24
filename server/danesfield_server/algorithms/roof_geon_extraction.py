@@ -100,6 +100,7 @@ def roofGeonExtraction(
     ]
 
     asyncResult = docker_run.delay(
+        runtime="nvidia",
         **createDockerRunArguments(
             image=DockerImage.DANESFIELD,
             containerArgs=containerArgs,
