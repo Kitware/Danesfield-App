@@ -67,35 +67,42 @@
             </StyledGeoTIFFLayer>
           </template>
         </GeojsMapViewport>
-        <VTKViewport v-if="workspace.type === 'vtk'" :background="vtkBGColor">
-          <OBJMultiItemActor
-            v-for="layer in workspace.layers"
-            v-if="isOBJItem(layer.dataset)"
-            :key="layer.dataset._id"
-            :item="layer.dataset"
-            :texture="workspace.texture"
-          />
-        </VTKViewport>
-        <template slot="actions" v-if="workspace.type === 'vtk'">
-          <WorkspaceAction>
-            <v-menu top offset-y origin="center center">
-              <v-icon slot="activator">palette</v-icon>
-              <v-card width="130px">
-                <Palette
-                  :value="vtkBGColor"
-                  @input="changeVTKBGColor($event)"
-                />
-              </v-card>
-            </v-menu>
-          </WorkspaceAction>
-          <WorkspaceAction>
-            <v-icon
-              :class="{ 'grey--text text--darken-1': !workspace.texture }"
-              @click="workspace.texture = !workspace.texture"
-              >texture</v-icon
-            >
-          </WorkspaceAction>
-        </template>
+
+        <div v-if="!useCesium">
+          <VTKViewport v-if="workspace.type === 'vtk'" :background="vtkBGColor">
+            <OBJMultiItemActor
+              v-for="layer in workspace.layers"
+              v-if="isOBJItem(layer.dataset)"
+              :key="layer.dataset._id"
+              :item="layer.dataset"
+              :texture="workspace.texture"
+            />
+          </VTKViewport>
+
+          <template slot="actions" v-if="workspace.type === 'vtk'">
+            <WorkspaceAction>
+              <v-menu top offset-y origin="center center">
+                <v-icon slot="activator">palette</v-icon>
+                <v-card width="130px">
+                  <Palette
+                    :value="vtkBGColor"
+                    @input="changeVTKBGColor($event)"
+                  />
+                </v-card>
+              </v-menu>
+            </WorkspaceAction>
+            <WorkspaceAction>
+              <v-icon
+                :class="{ 'grey--text text--darken-1': !workspace.texture }"
+                @click="workspace.texture = !workspace.texture"
+                >texture</v-icon
+              >
+            </WorkspaceAction>
+          </template>
+        </div>
+
+        <CesiumViewer v-else />
+
       </Workspace>
     </WorkspaceContainer>
     <ClickInfoDialog
@@ -127,6 +134,7 @@ import VTKViewport from "../components/vtk/VTKViewport";
 import OBJMultiItemActor from "../components/vtk/OBJMultiItemActor";
 import isOBJItem from "../utils/isOBJItem";
 import Palette from "../components/vtk/Palette";
+import CesiumViewer from "../components/CesiumViewer";
 
 export default {
   name: "FocusWorkspaces",
@@ -141,6 +149,7 @@ export default {
     OBJMultiItemActor,
     Palette,
     ClickInfoDialog,
+    CesiumViewer,
   },
   props: [
     "boundDatasets",
@@ -159,6 +168,7 @@ export default {
     return {
       isOBJItem,
       datasetClickEvents: [],
+      useCesium: true,
     };
   },
   computed: {

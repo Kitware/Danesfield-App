@@ -54,6 +54,16 @@ export const loadDatasetByWorkingSetId = async (id) => {
 }
 
 export const saveDatasetMetadata = async (dataset) => {
-    var { data: dataset } = await girder.girder.put(`item/${dataset._id}/metadata`, dataset.meta);
-    return dataset;
+    var { data: savedDataset } = await girder.girder.put(`item/${dataset._id}/metadata`, dataset.meta);
+    return savedDataset;
+}
+
+export const loadWorkingSetById = async (id) => {
+    var { data: workingset } = await girder.girder.get(`workingSet/${id}`);
+    return workingset;
+}
+
+export const getTilesetFolderId = async (output_folder_id) => {
+    var { data: tilesetFolderId } = await girder.girder.get(`resource/${output_folder_id}/path`, { params: { type: "folder" }});
+    return tilesetFolderId;
 }

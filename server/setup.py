@@ -24,6 +24,7 @@ setup(
         "girder-geospatial-grid>=0.1.0",
         "girder-geospatial-raster>=0.1.0",
         "girder-geospatial-vector>=0.1.0",
+        "girder-resource-path-tools>=0.0.0",
     ],
     entry_points={
         "girder.plugin": ["danesfield = danesfield_server:DanesfieldPlugin"],
