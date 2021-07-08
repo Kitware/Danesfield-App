@@ -17,26 +17,7 @@ from .workflow import DanesfieldWorkflow
 from .workflow_manager import DanesfieldWorkflowManager
 from .client_webroot import ClientWebroot
 
-from .workflow_steps import (
-    # BuildingSegmentationStep,
-    ClassifyMaterialsStep,
-    FitDtmStep,
-    GenerateDsmStep,
-    GeneratePointCloudStep,
-    # MsiToRgbStep,
-    OrthorectifyStep,
-    # PansharpenStep,
-    RoofGeonExtractionStep,
-    ComputeNdviStep,
-    SegmentByHeightStep,
-    # SelectBestStep,
-    # UNetSemanticSegmentationStep,
-    BuildingsToDsmStep,
-    GetRoadVectorStep,
-    CropAndPansharpenStep,
-    TextureMappingStep,
-    RunMetricsStep,
-)
+from .workflow_steps import RunDanesfieldImageless
 
 
 def createWorkflow():
@@ -46,24 +27,7 @@ def createWorkflow():
     workflow = DanesfieldWorkflow()
 
     for step in [
-        # BuildingSegmentationStep,
-        ClassifyMaterialsStep,
-        FitDtmStep,
-        GenerateDsmStep,
-        GeneratePointCloudStep,
-        # MsiToRgbStep,
-        OrthorectifyStep,
-        # PansharpenStep,
-        RoofGeonExtractionStep,
-        ComputeNdviStep,
-        SegmentByHeightStep,
-        # SelectBestStep,
-        # UNetSemanticSegmentationStep,
-        BuildingsToDsmStep,
-        GetRoadVectorStep,
-        CropAndPansharpenStep,
-        TextureMappingStep,
-        RunMetricsStep,
+        RunDanesfieldImageless,
     ]:
         workflow.addStep(step())
 

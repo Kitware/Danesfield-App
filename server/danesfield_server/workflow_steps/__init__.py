@@ -25,3 +25,4 @@ from .get_road_vector import GetRoadVectorStep  # noqa: F401
 from .texture_mapping import TextureMappingStep  # noqa: F401
 from .crop_and_pansharpen import CropAndPansharpenStep  # noqa: F401
 from .run_metrics import RunMetricsStep  # noqa: F401
+from .run_danesfield_imageless import RunDanesfieldImageless  # noqa: F401
