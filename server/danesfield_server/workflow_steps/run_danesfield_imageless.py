@@ -7,20 +7,28 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
+from danesfield_server.workflow import DanesfieldWorkflowException
 from typing import Dict
+
+import tempfile
+from docker.types import DeviceRequest
+from girder.models.collection import Collection
+from girder.models.folder import Folder
+from girder.models.user import User
 from girder_worker.docker.tasks import docker_run
 from girder_worker.docker.transforms.girder import GirderUploadVolumePathToFolder
+from girder_worker.docker.transforms import BindMountVolume, VolumePath
+
 from danesfield_server.algorithms.common import (
     addJobInfo,
     createDockerRunArguments,
     createGirderClient,
 )
-import tempfile
 
-from girder_worker.docker.transforms import BindMountVolume
 from ..constants import DanesfieldStep, DockerImage
 from ..workflow_step import DanesfieldWorkflowStep
 from ..workflow_utilities import getWorkingSet
+from ..models.workingSet import WorkingSet
 
 
 class RunDanesfieldImageless(DanesfieldWorkflowStep):
@@ -44,6 +52,30 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             DanesfieldStep.GENERATE_POINT_CLOUD, jobInfo
         )
 
+        core3dCollection = Collection().createCollection(
+            name="core3d",
+            creator=User().getAdmins().next(),
+            description="",
+            public=True,
+            reuseExisting=True,
+        )
+
+        modelsFolder = Folder().findOne(
+            {
+                "parentId": core3dCollection["_id"],
+                "name": "models",
+            }
+        )
+        if modelsFolder is None:
+            raise DanesfieldWorkflowException(
+                "Models folder has not been created and populated"
+            )
+
+        # Download models folder
+        models_folder = tempfile.mkdtemp()
+        modelsFolderVolume = BindMountVolume(models_folder, models_folder)
+        gc.downloadFolderRecursive(modelsFolder["_id"], models_folder)
+
         # Get single file, there will only be one
         point_cloud_path = tempfile.mktemp(suffix=".las")
         pointCloudFile = self.getFiles(pointCloudWorkingSet)[0]
@@ -63,7 +95,8 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 "[paths]\n"
                 + f"p3d_fpath = {point_cloud_path}\n"
                 + f"work_dir = {outputDir}\n"
-                + "rpc_dir = /tmp/asdasdsdjshdjshdjsds\n"
+                # May need to update below
+                + f"rpc_dir = {tempfile.mkdtemp()}\n"
             )
             in_config_file.write(f"{paths_section}\n")
 
@@ -79,16 +112,28 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             in_config_file.write(f"{params_section}\n")
 
             # Parameters for the roof geon extraction step
-            # TODO: Download models into MODEL_DIR and use in below line
             roof_section = (
-                "[roof]\n" + "model_dir = MODEL_DIR\n" + "model_prefix = dayton_geon"
+                "[roof]\n"
+                + f"model_dir = {models_folder}/Columbia Geon Segmentation Model\n"
+                + "model_prefix = dayton_geon"
             )
             in_config_file.write(f"{roof_section}\n")
 
-        # Pull down existing output folder, if it exists
+        # Ensure folder exists
         existing_folder_id = baseWorkingSet.get("output_folder_id")
-        if existing_folder_id is not None:
-            gc.downloadFolderRecursive(existing_folder_id, outputDir)
+        if existing_folder_id is None:
+            output_folder = Folder().createFolder(
+                parent=core3dCollection,
+                parentType="collection",
+                name=f"(Imageless) {baseWorkingSet['name']}",
+                reuseExisting=True,
+            )
+            existing_folder_id = output_folder["_id"]
+            baseWorkingSet["output_folder_id"] = output_folder["_id"]
+            WorkingSet().save(baseWorkingSet)
+
+        # Pull down contents of existing output folder
+        gc.downloadFolderRecursive(existing_folder_id, outputDir)
 
         containerArgs = [
             "python",
@@ -96,15 +141,22 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             config_file_path,
         ]
 
-        # TODO: Add GirderUploadVolumePathToFolder transform to resultHooks
-        # resultHooks=[GirderUploadVolumePathToFolder(outputDirVolume, )],
+        # Ensure result is uploaded to output folder
+        resultHooks = [
+            GirderUploadVolumePathToFolder(
+                VolumePath(".", volume=outputDirVolume),
+                existing_folder_id,
+            )
+        ]
 
         asyncResult = docker_run.delay(
-            runtime="nvidia",
+            device_requests=[DeviceRequest(count=-1, capabilities=[["gpu"]])],
             volumes=[
                 pointCloudFileVolume,
                 configFileVolume,
                 outputDirVolume,
+                modelsFolderVolume,
+                #
                 # Test mount
                 BindMountVolume(
                     "/home/local/KHQ/jacob.nesbitt/Danesfield-Imageless-Fork/tools",
@@ -117,7 +169,7 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 jobTitle=f"Run imageless workflow on [{baseWorkingSet['name']}]",
                 jobType=self.name,
                 user=jobInfo.requestInfo.user,
-                # resultHooks=resultHooks,
+                resultHooks=resultHooks,
             ),
         )
 
