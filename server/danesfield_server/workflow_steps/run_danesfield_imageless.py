@@ -16,7 +16,9 @@ from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.user import User
 from girder_worker.docker.tasks import docker_run
-from girder_worker.docker.transforms.girder import GirderUploadVolumePathToFolder
+from girder_worker.docker.transforms.girder import (
+    GirderUploadVolumePathToFolder,
+)
 from girder_worker.docker.transforms import BindMountVolume, VolumePath
 
 from danesfield_server.algorithms.common import (
@@ -136,6 +138,8 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
         gc.downloadFolderRecursive(existing_folder_id, outputDir)
 
         containerArgs = [
+            # "touch",
+            # f"{outputDir}/test.txt",
             "python",
             "/danesfield/tools/run_danesfield_imageless.py",
             config_file_path,
@@ -146,11 +150,13 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             GirderUploadVolumePathToFolder(
                 VolumePath(".", volume=outputDirVolume),
                 existing_folder_id,
+                delete_file=True,
             )
         ]
 
         asyncResult = docker_run.delay(
             device_requests=[DeviceRequest(count=-1, capabilities=[["gpu"]])],
+            shm_size="8G",
             volumes=[
                 pointCloudFileVolume,
                 configFileVolume,
@@ -164,7 +170,8 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 ),
             ],
             **createDockerRunArguments(
-                image=DockerImage.DANESFIELD,
+                # image=DockerImage.DANESFIELD,
+                image="kitware/danesfield:latest",
                 containerArgs=containerArgs,
                 jobTitle=f"Run imageless workflow on [{baseWorkingSet['name']}]",
                 jobType=self.name,
