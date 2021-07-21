@@ -23,6 +23,7 @@
     "stylus-loader": "^3.0.2",
     "vtk.js": "^7.13.2",
     "vue-async-computed": "^3.3.1",
+    "vue-cesium": "^2.2.5",
     "vue-router": "^3.0.1",
     "vuedraggable": "^2.16.0",
     "vuex": "^3.0.1"
