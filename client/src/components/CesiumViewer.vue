@@ -6,7 +6,11 @@
 
 <template>
   <div>
-    <vc-viewer @ready="ready">
+    <vc-viewer baseLayerPicker @ready="ready"
+      ><vc-layer-imagery>
+        <vc-provider-imagery-ion :assetId="3" />
+      </vc-layer-imagery>
+      <vc-provider-terrain-cesium />
       <vc-primitive-tileset :url="url" @readyPromise="readyPromise" />
     </vc-viewer>
   </div>
