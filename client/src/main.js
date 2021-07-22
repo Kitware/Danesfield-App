@@ -8,7 +8,6 @@ import Vue from 'vue';
 import ResonantGeo from 'resonantgeo';
 import { Session } from 'resonantgeo/src/rest';
 import '@fortawesome/fontawesome-free/css/all.css';
-import VueCesium from 'vue-cesium';
 
 import { API_URL } from './constants';
 import App from './App.vue';
@@ -24,7 +23,6 @@ girder.girder.$refresh().then(() => {
   Vue.use(ResonantGeo, {
     girder: girder.girder,
   });
-  Vue.use(VueCesium);
   Vue.use(VuePortals);
   new Vue({
     router,
