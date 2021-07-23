@@ -5,13 +5,23 @@
 #############################################################################*/
 
 <template>
-  <div>
-    <vc-viewer baseLayerPicker @ready="ready"
-      ><vc-layer-imagery>
+  <div :style="{ height: '87%' }">
+    <v-switch
+      label="Show Bounding Volumes"
+      v-model="debugShowBoundingVolume"
+    ></v-switch>
+    <vc-viewer baseLayerPicker fullscreenButton @ready="ready">
+      <vc-layer-imagery>
         <vc-provider-imagery-ion :assetId="3" />
       </vc-layer-imagery>
-      <vc-provider-terrain-cesium />
-      <vc-primitive-tileset :url="url" @readyPromise="readyPromise" />
+      <vc-layer-imagery>
+        <vc-provider-terrain-cesium />
+      </vc-layer-imagery>
+      <vc-primitive-tileset
+        :url="url"
+        @readyPromise="readyPromise"
+        :debugShowContentBoundingVolume="debugShowBoundingVolume"
+      />
     </vc-viewer>
   </div>
 </template>
@@ -26,6 +36,7 @@ export default {
   data() {
     return {
       cesiumInstance: null,
+      debugShowBoundingVolume: false,
     };
   },
   asyncComputed: {
