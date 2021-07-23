@@ -7,6 +7,8 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
+import os
+from danesfield_server.algorithms.generate_point_cloud import ResultRunDockerCommand
 from danesfield_server.workflow import DanesfieldWorkflowException
 from typing import Dict
 
@@ -98,7 +100,8 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 + f"p3d_fpath = {point_cloud_path}\n"
                 + f"work_dir = {outputDir}\n"
                 # May need to update below
-                + f"rpc_dir = {tempfile.mkdtemp()}\n"
+                # + f"rpc_dir = {tempfile.mkdtemp()}\n"
+                + "rpc_dir = /mnt/Jacksonville/RPCs\n"
             )
             in_config_file.write(f"{paths_section}\n")
 
@@ -120,6 +123,14 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 + "model_prefix = dayton_geon"
             )
             in_config_file.write(f"{roof_section}\n")
+
+            # Parameters for the metrics step
+            metrics_section = (
+                "[metrics]\n"
+                + "ref_data_dir = /mnt/Jacksonville/AOI-D4-Jacksonville\n"
+                + "ref_data_prefix = AOI-D4\n"
+            )
+            in_config_file.write(f"{metrics_section}\n")
 
         # Ensure folder exists
         existing_folder_id = baseWorkingSet.get("output_folder_id")
@@ -145,13 +156,19 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             config_file_path,
         ]
 
-        # Ensure result is uploaded to output folder
         resultHooks = [
+            # - Fix output folder permissions
+            ResultRunDockerCommand(
+                DockerImage.DANESFIELD,
+                command=["chown", "-R", f"{os.getuid()}:{os.getgid()}", outputDir],
+                volumes=outputDirVolume._repr_json_(),
+            ),
+            # Upload results
             GirderUploadVolumePathToFolder(
                 VolumePath(".", volume=outputDirVolume),
                 existing_folder_id,
                 delete_file=True,
-            )
+            ),
         ]
 
         asyncResult = docker_run.delay(
@@ -162,6 +179,9 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 configFileVolume,
                 outputDirVolume,
                 modelsFolderVolume,
+                #
+                # Test mount
+                BindMountVolume("/data/core3D-data", "/mnt", mode="r"),
                 #
                 # Test mount
                 BindMountVolume(
