@@ -12,10 +12,7 @@
     ></v-switch>
     <vc-viewer baseLayerPicker fullscreenButton @ready="ready">
       <vc-layer-imagery>
-        <vc-provider-imagery-ion :assetId="3" />
-      </vc-layer-imagery>
-      <vc-layer-imagery>
-        <vc-provider-terrain-cesium />
+        <vc-provider-imagery-ion :assetId="2" />
       </vc-layer-imagery>
       <vc-primitive-tileset
         :url="url"
