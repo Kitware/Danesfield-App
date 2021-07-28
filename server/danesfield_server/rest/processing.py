@@ -140,6 +140,13 @@ in the **options** parameter. For example:\n
     )
     def setPointCloud(self, workingSet, itemId):
         workingSetName = f"{workingSet['name']}: {DanesfieldStep.GENERATE_POINT_CLOUD}"
+        existingWorkingSet = WorkingSet().findOne({"name": workingSetName})
+        if existingWorkingSet is not None:
+            existingWorkingSet["datasetIds"] = [itemId]
+            WorkingSet().save(existingWorkingSet)
+            return
+
+        # Create otherwise
         workingSet = WorkingSet().createWorkingSet(
             name=workingSetName,
             parentWorkingSet=workingSet,
