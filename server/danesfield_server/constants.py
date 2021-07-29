@@ -15,6 +15,7 @@ class DanesfieldJobKey:
 
     ID = "danesfieldJobId"
     STEP_NAME = "danesfieldJobStep"
+    WORKINGSETID = "danesfieldWorkingSetId"
 
 
 class DanesfieldStep:

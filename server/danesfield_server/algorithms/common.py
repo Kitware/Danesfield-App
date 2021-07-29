@@ -85,7 +85,7 @@ def createDockerRunArguments(
     return args
 
 
-def addJobInfo(job, jobId, stepName):
+def addJobInfo(job, jobId, stepName, workingSetId):
     """
     Add common information to a job for use by job event listeners.
     This information allows the job event handler/workflow manager to
@@ -104,6 +104,7 @@ def addJobInfo(job, jobId, stepName):
             {
                 DanesfieldJobKey.ID: jobId,
                 DanesfieldJobKey.STEP_NAME: stepName,
+                DanesfieldJobKey.WORKINGSETID: workingSetId,
             }
         )
         job = Job().save(job)

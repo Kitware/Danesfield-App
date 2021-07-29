@@ -8,11 +8,12 @@
 ###############################################################################
 
 import os
-from danesfield_server.algorithms.generate_point_cloud import ResultRunDockerCommand
-from danesfield_server.workflow import DanesfieldWorkflowException
+import tempfile
 from typing import Dict
 
-import tempfile
+from danesfield_server.algorithms.generate_point_cloud import ResultRunDockerCommand
+from danesfield_server.workflow import DanesfieldWorkflowException
+
 from docker.types import DeviceRequest
 from girder.models.collection import Collection
 from girder.models.folder import Folder
@@ -99,9 +100,8 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 "[paths]\n"
                 + f"p3d_fpath = {point_cloud_path}\n"
                 + f"work_dir = {outputDir}\n"
-                # May need to update below
-                # + f"rpc_dir = {tempfile.mkdtemp()}\n"
-                + "rpc_dir = /mnt/Jacksonville/RPCs\n"
+                # Supply empty dir so no errors are generated
+                + f"rpc_dir = {tempfile.mkdtemp()}\n"
             )
             in_config_file.write(f"{paths_section}\n")
 
@@ -125,6 +125,7 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             in_config_file.write(f"{roof_section}\n")
 
             # Parameters for the metrics step
+            # TODO: Remove once able
             metrics_section = (
                 "[metrics]\n"
                 + "ref_data_dir = /mnt/Jacksonville/AOI-D4-Jacksonville\n"
@@ -145,9 +146,6 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             baseWorkingSet["output_folder_id"] = output_folder["_id"]
             WorkingSet().save(baseWorkingSet)
 
-        # Pull down contents of existing output folder
-        gc.downloadFolderRecursive(existing_folder_id, outputDir)
-
         containerArgs = [
             # "touch",
             # f"{outputDir}/test.txt",
@@ -167,7 +165,6 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             GirderUploadVolumePathToFolder(
                 VolumePath(".", volume=outputDirVolume),
                 existing_folder_id,
-                delete_file=True,
             ),
         ]
 
@@ -181,7 +178,7 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 modelsFolderVolume,
                 #
                 # Test mount
-                BindMountVolume("/data/core3D-data", "/mnt", mode="r"),
+                BindMountVolume("/data/core3D-data", "/mnt"),
                 #
                 # Test mount
                 BindMountVolume(
@@ -202,6 +199,11 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
 
         # Add info for job event listeners
         job = asyncResult.job
-        job = addJobInfo(job, jobId=jobInfo.jobId, stepName=self.name)
+        job = addJobInfo(
+            job,
+            jobId=jobInfo.jobId,
+            stepName=self.name,
+            workingSetId=baseWorkingSet["_id"],
+        )
 
         return job

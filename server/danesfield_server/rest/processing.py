@@ -147,7 +147,7 @@ in the **options** parameter. For example:\n
             return
 
         # Create otherwise
-        workingSet = WorkingSet().createWorkingSet(
+        WorkingSet().createWorkingSet(
             name=workingSetName,
             parentWorkingSet=workingSet,
             datasetIds=[itemId],

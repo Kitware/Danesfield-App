@@ -12,18 +12,52 @@ import json
 import threading
 
 from girder import events, logprint
+from girder.models.folder import Folder
 from girder.models.notification import Notification
 from girder.models.user import User
 from girder_jobs.models.job import Job
 from girder_jobs.constants import JobStatus
 
 from .constants import DanesfieldJobKey
+from .models.workingSet import WorkingSet
 from .workflow import DanesfieldWorkflowException
 from .workflow_manager import DanesfieldWorkflowManager
 
 
 # Lock for onJobUpdate()
 _onJobUpdateLock = threading.RLock()
+
+
+def cleanWorkingSetOutputFolder(job):
+    """Clean a working set's existing output folder."""
+    adminUser = User().getAdmins().next()
+    workingSet = WorkingSet().load(job[DanesfieldJobKey.WORKINGSETID])
+    output_folder = Folder().load(workingSet["output_folder_id"], user=adminUser)
+    Folder().clean(output_folder)
+
+
+def setWorkflowResultWorkingSets(job):
+    """Create working sets from a workflow's output."""
+    adminUser = User().getAdmins().next()
+    workingSet = WorkingSet().load(job[DanesfieldJobKey.WORKINGSETID])
+    output_folder = Folder().load(workingSet["output_folder_id"], user=adminUser)
+
+    # Remove existing child working sets (except the necessary point cloud)
+    childWorkingSets = [
+        ws
+        for ws in WorkingSet().find({"parentWorkingSetId": workingSet["_id"]})
+        if "generate-point-cloud" not in ws["name"]
+    ]
+    for ws in childWorkingSets:
+        WorkingSet().remove(ws)
+
+    # For each folder in the output directory, create a working set
+    for folder in Folder().childFolders(output_folder, "folder", user=adminUser):
+        WorkingSet().createWorkingSet(
+            name=f"{workingSet['name']}: {folder['name']}",
+            parentWorkingSet=workingSet,
+            datasetIds=[item["_id"] for item in Folder().childItems(folder)],
+        )
 
 
 def onFinalizeUpload(event):
@@ -93,6 +127,10 @@ def onJobUpdate(event):
             successful = workflowManager.isCompositeStepSuccessful(jobId, stepName)
             status = JobStatus.SUCCESS if successful else JobStatus.ERROR
 
+        # Perform steps once job has been queued
+        if status in (JobStatus.QUEUED, JobStatus.RUNNING):
+            cleanWorkingSetOutputFolder(job)
+
         if status == JobStatus.SUCCESS:
             # Add standard output from job
             # TODO: Alternatively, could record job model ID and defer
@@ -106,6 +144,9 @@ def onJobUpdate(event):
             )
 
             workflowManager.stepSucceeded(jobId=jobId, stepName=stepName)
+
+            # For one-step imageless workflow results
+            setWorkflowResultWorkingSets(job)
 
             # Advance workflow asynchronously to avoid affecting
             # finished job in case of error
