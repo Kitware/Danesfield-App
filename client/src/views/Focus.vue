@@ -319,24 +319,6 @@
           <div class="ml-1">
             <v-container grid-list-md class="pa-0">
               <v-layout>
-                <v-flex xs11 v-if="AOIBbox">
-                  <v-text-field
-                    clearable
-                    @click:clear="clearAOI"
-                    :value="AOIDisplay"
-                    label="AOI"
-                    readonly></v-text-field>
-                </v-flex>
-                <v-flex xs6 v-else>
-                  <FeatureSelector
-                    class="feature-selector"
-                    v-model="AOIFeature"
-                    label="AOI"
-                    messages="Choose from a geojson file"
-                    @message="prompt({message:$event})" />
-                </v-flex>
-              </v-layout>
-              <v-layout>
                 <v-flex>
                   <file-selector
                     label="Point Cloud File"
@@ -469,7 +451,7 @@ export default {
   },
   computed: {
     startPipelineConfirmDisabled() {
-      return !(this.AOIFeature && this.workflowPointCloudFileName)
+      return !(this.workflowPointCloudFile || this.workflowPointCloudFileName)
     },
     portal() {
       return {
@@ -669,30 +651,12 @@ export default {
         });
       }
 
-      // var centerPoint = center(bboxPolygon(this.AOIBbox));
-      let options = {
-        "generate-point-cloud": {
-          aoiBBox: this.AOIBbox,
-        },
-        "get-road-vector": {
-          left: this.AOIBbox[0],
-          bottom: this.AOIBbox[1],
-          right: this.AOIBbox[2],
-          top: this.AOIBbox[3]
-        },
-        "classify-materials": {
-          model: this.materialClassificationModel
-        }
-      };
-
       this.startPipelineInProgress = true;
-
-      var { data: job } = await girder.girder.post(
+      await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
-        }&options=${encodeURIComponent(JSON.stringify(options))}`
+        }`
       );
-
       this.processConfirmDialog = false
       this.startPipelineInProgress = false;
       this.workflowPointCloudUploadProgress = null;
