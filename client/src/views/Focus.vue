@@ -364,8 +364,9 @@
                 </v-flex>
               </v-layout>
               <v-progress-linear
-                v-if="workflowPointCloudUploadProgress"
+                v-if="workflowPointCloudUploadProgress || startPipelineInProgress"
                 :value="workflowPointCloudUploadProgress"
+                :indeterminate="startPipelineInProgress"
                 height="4"
               />
             </v-container>
@@ -456,6 +457,7 @@ export default {
       workflowPointCloudFile: null,
       workflowPointCloudUploadProgress: null,
       workflowPointCloudFileName: null,
+      startPipelineInProgress: false,
       datasetDetailDialog: false,
       evaluationItems: [],
       childrenWorkingSetEvaluationItems: [],
@@ -683,6 +685,8 @@ export default {
         }
       };
 
+      this.startPipelineInProgress = true;
+
       var { data: job } = await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
@@ -690,6 +694,7 @@ export default {
       );
 
       this.processConfirmDialog = false
+      this.startPipelineInProgress = false;
       this.workflowPointCloudUploadProgress = null;
     },
     supportWorkspaceType(dataset) {
