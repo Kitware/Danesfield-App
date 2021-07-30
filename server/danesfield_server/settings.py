@@ -31,7 +31,6 @@ class PluginSettings:
         "danesfield.segment_by_height_shapefiles_folder_id"
     )
     REFERENCE_DATA_FOLDER_ID = "danesfield.reference_data_folder_id"
-    HOST_GTOPO30_DATA_PATH = "danesfield.host_gtopo30_data_path"
 
 
 @setting_utilities.validator(PluginSettings.BUILDING_SEGMENTATION_MODEL_FOLDER_ID)
@@ -119,14 +118,3 @@ def _validateReferenceDataFolderId(doc):
 @setting_utilities.default(PluginSettings.REFERENCE_DATA_FOLDER_ID)
 def _defaultReferenceDataFolderId():
     return ""
-
-
-@setting_utilities.validator(PluginSettings.HOST_GTOPO30_DATA_PATH)
-def _validateHostGTOPO30DataPath(doc):
-    if not isinstance(doc["value"], six.string_types):
-        raise ValidationException("Host GTOPO30 data path must be a string.")
-
-
-@setting_utilities.default(PluginSettings.HOST_GTOPO30_DATA_PATH)
-def _defaultHostGTOPO30DataPath():
-    return "/mnt/GTOPO30"

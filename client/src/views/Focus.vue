@@ -319,21 +319,14 @@
           <div class="ml-1">
             <v-container grid-list-md class="pa-0">
               <v-layout>
-                <v-flex xs11 v-if="AOIBbox">
-                  <v-text-field
-                    clearable
-                    @click:clear="clearAOI"
-                    :value="AOIDisplay"
-                    label="AOI"
-                    readonly></v-text-field>
-                </v-flex>
-                <v-flex xs6 v-else>
-                  <FeatureSelector
-                    class="feature-selector"
-                    v-model="AOIFeature"
-                    label="AOI"
-                    messages="Choose from a geojson file"
-                    @message="prompt({message:$event})" />
+                <v-flex>
+                  <file-selector
+                    label="Point Cloud File"
+                    @file="setWorkflowPointCloudFile"
+                    :value="workflowPointCloudFileName"
+                    hide-details
+                    dense
+                  />
                 </v-flex>
               </v-layout>
               <v-layout>
@@ -352,6 +345,12 @@
                     v-model="materialClassificationModel" />
                 </v-flex>
               </v-layout>
+              <v-progress-linear
+                v-if="workflowPointCloudUploadProgress || startPipelineInProgress"
+                :value="workflowPointCloudUploadProgress"
+                :indeterminate="startPipelineInProgress"
+                height="4"
+              />
             </v-container>
           </div>
         </v-card-text>
@@ -364,8 +363,8 @@
           </v-btn>
           <v-btn
             color="primary"
-            :disabled="!AOIFeature"
-            @click="processConfirmDialog = false; startPipeline()">
+            :disabled="startPipelineConfirmDisabled"
+            @click="startPipeline()">
             Confirm
           </v-btn>
         </v-card-actions>
@@ -393,6 +392,7 @@ import VectorCustomVizPane from "resonantgeoview/src/components/VectorCustomVizP
 import { getDefaultGeojsonVizProperties } from "resonantgeoview/src/utils/getDefaultGeojsonVizProperties";
 import GeotiffCustomVizPane from "resonantgeoview/src/components/GeotiffCustomVizPane";
 import { summarize } from "resonantgeoview/src/utils/geojsonUtil";
+import Upload from "@girder/components/src/utils/upload";
 
 import girder from "../girder";
 import { API_URL, GIRDER_URL } from "../constants";
@@ -409,6 +409,7 @@ import { blueRed, blueWhiteRed, blackWhite } from "../utils/extraPalettes";
 import Logo from "../components/Logo";
 import postDownload from "../utils/postDownload";
 import isOBJItem from "../utils/isOBJItem";
+import FileSelector from '../components/FileSelector.vue';
 
 export default {
   name: "Focus",
@@ -418,6 +419,7 @@ export default {
     GeotiffCustomVizPane,
     draggable,
     FeatureSelector,
+    FileSelector,
     Logo
   },
   data() {
@@ -434,6 +436,10 @@ export default {
       preserveCustomViz: false,
       AOIFeature: null,
       materialClassificationModel: "STANDARD",
+      workflowPointCloudFile: null,
+      workflowPointCloudUploadProgress: null,
+      workflowPointCloudFileName: null,
+      startPipelineInProgress: false,
       datasetDetailDialog: false,
       evaluationItems: [],
       childrenWorkingSetEvaluationItems: [],
@@ -444,6 +450,9 @@ export default {
     };
   },
   computed: {
+    startPipelineConfirmDisabled() {
+      return !(this.workflowPointCloudFile || this.workflowPointCloudFileName)
+    },
     portal() {
       return {
         name: "title",
@@ -516,6 +525,7 @@ export default {
         this.datasets = {};
         this.datasetIdMetaMap = {};
         this.removeAllDatasetsFromWorkspaces();
+        this.loadWorkflowPointCloud()
       }
       this.load();
     }
@@ -538,6 +548,46 @@ export default {
     next();
   },
   methods: {
+    async ensurePointCloudFolder() {
+      const {data: collections} = await girder.girder.get('collection', { params: {text: 'core3d', sort: 'name'}})
+      const core3dCollection = collections.find((coll) => coll.name === 'core3d');
+
+      const {data: folder} = await girder.girder.post('folder', null, {
+        params: {
+          parentType: 'collection',
+          parentId: core3dCollection._id,
+          name:  `(${this.selectedWorkingSet.name}) Point Cloud`,
+          reuseExisting: true,
+          public: true,
+        }
+      });
+
+      return folder;
+    },
+
+    // Load point cloud if it's been set
+    async loadWorkflowPointCloud() {
+      const pointCloudWorkingSet = this.workingSets.find(
+        (ws) => ws.parentWorkingSetId
+          && ws.parentWorkingSetId === this.selectedWorkingSet._id
+          && ws.name === `${this.selectedWorkingSet.name}: generate-point-cloud`,
+      );
+
+      if (!(pointCloudWorkingSet && pointCloudWorkingSet.datasetIds)) {
+        this.workflowPointCloudFileName = null;
+        this.workflowPointCloudFile = null;
+        this.workflowPointCloudUploadProgress = null;
+        return;
+      }
+
+      const itemId = pointCloudWorkingSet.datasetIds[0];
+      const { data: item } = await girder.girder.get(`item/${itemId}`)
+      this.workflowPointCloudFileName = item.name;
+    },
+    setWorkflowPointCloudFile(file) {
+      this.workflowPointCloudFile = file;
+      this.workflowPointCloudFileName = file.name
+    },
     change(workingSetId) {
       this.$store.commit("setSelectWorkingSetId", workingSetId);
     },
@@ -548,6 +598,7 @@ export default {
         return;
       }
       return Promise.all([
+        this.loadWorkflowPointCloud(),
         this.tryLoadFilterAOIFeatures().then(feature => {
           this.AOIFeature = feature;
         }),
@@ -580,27 +631,35 @@ export default {
       }, 0);
     },
     async startPipeline() {
-      var centerPoint = center(bboxPolygon(this.AOIBbox));
-      let options = {
-        "generate-point-cloud": {
-          aoiBBox: this.AOIBbox,
-        },
-        "get-road-vector": {
-          left: this.AOIBbox[0],
-          bottom: this.AOIBbox[1],
-          right: this.AOIBbox[2],
-          top: this.AOIBbox[3]
-        },
-        "classify-materials": {
-          model: this.materialClassificationModel
-        }
-      };
+      // Upload point cloud file first, if necessary
+      if (this.workflowPointCloudFile !== null) {
+        const folder = await this.ensurePointCloudFolder();
+        const uploadManager = new Upload(this.workflowPointCloudFile, {
+          '$rest': girder.girder,
+          parent: folder,
+          progress: (val) => {
+            this.workflowPointCloudUploadProgress = (val.current/val.size)*100;
+          },
+        });
 
-      var { data: job } = await girder.girder.post(
+        const file = await uploadManager.start();
+        await girder.girder.post('processing/setPointCloud', null, {
+          params: {
+            workingSet: this.selectedWorkingSetId,
+            itemId: file.itemId,
+          }
+        });
+      }
+
+      this.startPipelineInProgress = true;
+      await girder.girder.post(
         `/processing/process/?workingSet=${
           this.selectedWorkingSetId
-        }&options=${encodeURIComponent(JSON.stringify(options))}`
+        }`
       );
+      this.processConfirmDialog = false
+      this.startPipelineInProgress = false;
+      this.workflowPointCloudUploadProgress = null;
     },
     supportWorkspaceType(dataset) {
       if (

@@ -7,6 +7,7 @@
 # See accompanying Copyright.txt and LICENSE files for details
 ###############################################################################
 
+from danesfield_server.constants import DanesfieldStep
 import time
 
 from girder.api import access
@@ -16,7 +17,7 @@ from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.user import User
 
-from ..models import workingSet
+from ..models.workingSet import WorkingSet
 from ..request_info import RequestInfo
 from ..workflow_manager import DanesfieldWorkflowManager
 
@@ -32,6 +33,7 @@ class ProcessingResource(Resource):
         self.resourceName = "processing"
 
         self.route("POST", ("process",), self.process)
+        self.route("POST", ("setPointCloud",), self.setPointCloud)
 
     def _outputFolder(self, workingSet):
         """
@@ -91,7 +93,7 @@ in the **options** parameter. For example:\n
         .modelParam(
             "workingSet",
             "The ID of the working set.",
-            model=workingSet.WorkingSet,
+            model=WorkingSet,
             paramType="query",
         )
         .jsonParam(
@@ -117,3 +119,36 @@ in the **options** parameter. For example:\n
         workflowManager = DanesfieldWorkflowManager.instance()
         jobId = workflowManager.initJob(requestInfo, workingSet, outputFolder, options)
         workflowManager.advance(jobId=jobId)
+
+    @access.user
+    @autoDescribeRoute(
+        Description(
+            "Set the point cloud file (by supplying an item ID)"
+            " for the imageless workflow, after upload"
+        )
+        .modelParam(
+            "workingSet",
+            "The ID of the working set.",
+            model=WorkingSet,
+            paramType="query",
+        )
+        .param(
+            "itemId",
+            "The ID of the item containing the point cloud file.",
+            required=True,
+        )
+    )
+    def setPointCloud(self, workingSet, itemId):
+        workingSetName = f"{workingSet['name']}: {DanesfieldStep.GENERATE_POINT_CLOUD}"
+        existingWorkingSet = WorkingSet().findOne({"name": workingSetName})
+        if existingWorkingSet is not None:
+            existingWorkingSet["datasetIds"] = [itemId]
+            WorkingSet().save(existingWorkingSet)
+            return
+
+        # Create otherwise
+        WorkingSet().createWorkingSet(
+            name=workingSetName,
+            parentWorkingSet=workingSet,
+            datasetIds=[itemId],
+        )
