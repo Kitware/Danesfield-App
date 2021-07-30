@@ -49,4 +49,4 @@ class DockerImage:
     Names of Docker images to run Danesfield algorithms.
     """
 
-    DANESFIELD = "gitlab.kitware.com:4567/core3d/danesfield-app/danesfield"
+    DANESFIELD = "kitware/danesfield"

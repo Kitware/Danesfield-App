@@ -147,8 +147,6 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             WorkingSet().save(baseWorkingSet)
 
         containerArgs = [
-            # "touch",
-            # f"{outputDir}/test.txt",
             "python",
             "/danesfield/tools/run_danesfield_imageless.py",
             config_file_path,
@@ -187,8 +185,7 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 ),
             ],
             **createDockerRunArguments(
-                # image=DockerImage.DANESFIELD,
-                image="kitware/danesfield:latest",
+                image=f"{DockerImage.DANESFIELD}:latest",
                 containerArgs=containerArgs,
                 jobTitle=f"Run imageless workflow on [{baseWorkingSet['name']}]",
                 jobType=self.name,
