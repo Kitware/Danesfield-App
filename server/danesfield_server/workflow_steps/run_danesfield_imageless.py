@@ -124,15 +124,6 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
             )
             in_config_file.write(f"{roof_section}\n")
 
-            # Parameters for the metrics step
-            # TODO: Remove once able
-            metrics_section = (
-                "[metrics]\n"
-                + "ref_data_dir = /mnt/Jacksonville/AOI-D4-Jacksonville\n"
-                + "ref_data_prefix = AOI-D4\n"
-            )
-            in_config_file.write(f"{metrics_section}\n")
-
         # Ensure folder exists
         existing_folder_id = baseWorkingSet.get("output_folder_id")
         if existing_folder_id is None:
@@ -148,7 +139,7 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
 
         containerArgs = [
             "python",
-            "/danesfield/tools/run_danesfield_imageless.py",
+            "/danesfield/tools/run_danesfield.py",
             config_file_path,
         ]
 
@@ -174,15 +165,6 @@ class RunDanesfieldImageless(DanesfieldWorkflowStep):
                 configFileVolume,
                 outputDirVolume,
                 modelsFolderVolume,
-                #
-                # Test mount
-                BindMountVolume("/data/core3D-data", "/mnt"),
-                #
-                # Test mount
-                BindMountVolume(
-                    "/home/local/KHQ/jacob.nesbitt/Danesfield-Imageless-Fork/tools",
-                    "/danesfield/tools",
-                ),
             ],
             **createDockerRunArguments(
                 image=f"{DockerImage.DANESFIELD}:latest",

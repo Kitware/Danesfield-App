@@ -63,6 +63,9 @@ class WorkingSetResource(Resource):
     @access.user
     def create(self, data, params):
         data["datasetIds"] = self.normalizeworkingSetDatasets(data["datasetIds"])
+        if data.get("parentWorkingSetId"):
+            data["parentWorkingSetId"] = ObjectId(data["parentWorkingSetId"])
+
         return WorkingSet().save(data)
 
     @autoDescribeRoute(
@@ -87,7 +90,21 @@ class WorkingSetResource(Resource):
     )
     @access.user
     def delete(self, workingSet, params):
+        childWorkingSets = WorkingSet().find({"parentWorkingSetId": workingSet["_id"]})
+
+        # Remove child workingSets
+        for ws in childWorkingSets:
+            WorkingSet().remove(ws)
+
+        # Remove workingSet output folder
+        output_folder_id = workingSet.get("output_folder_id")
+        if output_folder_id:
+            output_folder = Folder().findOne({"_id": output_folder_id})
+            Folder().remove(output_folder)
+
+        # Remove workingSet
         WorkingSet().remove(workingSet)
+
         return
 
     def normalizeworkingSetDatasets(self, datasetIds):
