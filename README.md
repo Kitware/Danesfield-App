@@ -21,7 +21,7 @@ The Danesfield App is a web application for running the [Danesfield](https://git
 
 ## Setup
 
-1. Run `cd conda; ./install.sh`. This will create and active a new conda environment, as well as install the required packages.
+1. Run `conda/install.sh`. This will create and active a new conda environment, as well as install the required packages.
 2. Pull the publicly available [Danesfield image](https://hub.docker.com/r/kitware/danesfield) on Docker Hub
 3. Run `pip install -e server` to install girder and it's
 4. (Optional) To setup girder with some default settings, you can run `python server/init_girder.py`. A default admin user and password are included in that script. If you would like to configure this, you can export the `GIRDER_ADMIN_USER` and `GIRDER_ADMIN_PASS` environment varibales before running the above command.
