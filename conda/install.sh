@@ -7,7 +7,7 @@ set -e
 source $(conda info --base)/etc/profile.d/conda.sh
 
 # Env
-conda env create -f ansible/conda_environment.yml
+conda env create -f conda/conda_environment.yml
 conda activate danesfield
 mkdir -p $CONDA_PREFIX/var/lib/mongodb
 
