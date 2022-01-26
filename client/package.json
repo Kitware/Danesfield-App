@@ -14,7 +14,7 @@
     "jszip": "^3.1.5",
     "postcss-import": "^11.1.0",
     "postcss-url": "^7.3.2",
-    "pug": "^2.0.3",
+    "pug": "^3.0.1",
     "pug-loader": "^2.4.0",
     "pug-plain-loader": "^1.0.0",
     "resonantgeo": "^1.16.1",
