@@ -1,3 +1,7 @@
+# Deprecation Notice
+
+The Danesfield-App web application has been superseded by https://github.com/girder/Danesfield. This repo is deprecated, see the original README below.
+
 # Danesfield App
 
 The Danesfield App is a web application for running the [Danesfield](https://github.com/Kitware/Danesfield) algorithms and visualizing results.  Danesfield addresses the algorithmic challenges of the IARPA CORE3D program by reconstructing semantically meaningful 3D models of buildings and other man-made structures from satellite imagery.
